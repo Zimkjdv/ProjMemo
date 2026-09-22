@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}專案列表｜ProjMemo{% endblock %}
+{% block content %}
+<section class="hero">
+  <div>
+    <p class="eyebrow">PERSONAL PROJECT KNOWLEDGE BASE</p>
+    <h1>專案備註，一處整理。</h1>
+    <p class="hero-copy">集中保存重要連結、注意事項與交接清單，讓專案資訊更容易維護與交接。</p>
+  </div>
+</section>
+
+<form class="filter-bar" method="get" action="/">
+  <input name="q" value="{{ q }}" placeholder="搜尋專案名稱、描述或標籤">
+  <select name="status">
+    <option value="">全部狀態</option>
+    {% for value, label in status_options %}
+    <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <button class="button button-secondary" type="submit">搜尋</button>
+</form>
+
+{% if projects %}
+<section class="project-grid">
+  {% for project in projects %}
+  <a class="project-card" href="/projects/{{ project.id }}">
+    <div class="card-topline">
+      <span class="status status-{{ project.status }}">{{ status_label(project.status) }}</span>
+      <span class="muted">{{ project.updated_at }}</span>
+    </div>
+    <h2>{{ project.name }}</h2>
+    <p>{{ project.description or '尚未填寫專案描述。' }}</p>
+    {% if project.tags %}<div class="tag-list">{% for tag in project.tags.split(',') %}<span class="tag">{{ tag.strip() }}</span>{% endfor %}</div>{% endif %}
+  </a>
+  {% endfor %}
+</section>
+{% else %}
+<section class="empty-state">
+  <h2>還沒有專案</h2>
+  <p>建立第一個專案，開始整理 URL、備註與交接事項。</p>
+  <a class="button button-primary" href="/projects/new">建立第一個專案</a>
+</section>
+{% endif %}
+{% endblock %}

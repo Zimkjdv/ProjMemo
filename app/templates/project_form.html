@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{{ form_title }}｜ProjMemo{% endblock %}
+{% block content %}
+<div class="section-heading">
+  <div>
+    <p class="eyebrow">PROJECT BASIC INFO</p>
+    <h1>{{ form_title }}</h1>
+  </div>
+  <a class="button button-ghost" href="{% if project %}/projects/{{ project.id }}{% else %}/{% endif %}">取消</a>
+</div>
+
+<form class="panel form-panel" method="post" action="{% if project %}/projects/{{ project.id }}/edit{% else %}/projects/new{% endif %}">
+  <label>專案名稱 <span class="required">*</span><input name="name" required value="{{ project.name if project else '' }}"></label>
+  <label>專案描述<textarea name="description" rows="5" placeholder="這個專案的目的、範圍與目前狀態">{{ project.description if project else '' }}</textarea></label>
+  <div class="form-grid two-columns">
+    <label>專案狀態
+      <select name="status">
+        {% for value, label in status_options %}<option value="{{ value }}" {% if (project.status if project else 'maintenance') == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </label>
+    <label>負責人<input name="owner" value="{{ project.owner if project else '' }}" placeholder="姓名或團隊"></label>
+  </div>
+  <label>標籤 <span class="field-help">使用逗號分隔，例如：Python, API, legacy</span><input name="tags" value="{{ project.tags if project else '' }}"></label>
+  <div class="form-actions"><button class="button button-primary" type="submit">儲存專案</button></div>
+</form>
+{% endblock %}

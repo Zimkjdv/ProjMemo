@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }}｜ProjMemo{% endblock %}
+{% block content %}
+<div class="section-heading">
+  <div>
+    <p class="eyebrow">PROJECT</p>
+    <h1>{{ project.name }}</h1>
+    <div class="heading-meta"><span class="status status-{{ project.status }}">{{ status_label(project.status) }}</span>{% if project.owner %}<span>負責人：{{ project.owner }}</span>{% endif %}</div>
+  </div>
+  <div class="button-row"><a class="button button-secondary" href="/projects/{{ project.id }}/export.md">匯出 Markdown</a><a class="button button-ghost" href="/projects/{{ project.id }}/edit">編輯專案</a></div>
+</div>
+
+{% if project.description %}<section class="panel project-description"><h2>專案描述</h2><p>{{ project.description }}</p></section>{% endif %}
+
+<div class="detail-layout">
+  <div class="detail-main">
+    <section class="panel">
+      <div class="panel-heading"><div><p class="eyebrow">IMPORTANT LINKS</p><h2>重要 URL</h2></div></div>
+      {% if urls %}<div class="url-list">{% for item in urls %}<div class="url-item"><div><span class="mini-label">{{ url_type_label(item.type) }}</span><a href="{{ item.url }}" target="_blank" rel="noreferrer">{{ item.title }}</a>{% if item.note %}<p>{{ item.note }}</p>{% endif %}</div><code>{{ item.url }}</code></div>{% endfor %}</div>{% else %}<p class="muted">尚未建立重要 URL。</p>{% endif %}
+      <details class="add-form"><summary>新增 URL</summary><form method="post" action="/projects/{{ project.id }}/urls"><div class="form-grid two-columns"><label>類型<select name="type">{% for value, label in url_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label><label>標題<input name="title" required placeholder="例如：Production"></label></div><label>網址<input name="url" type="url" required placeholder="https://..."></label><label>備註<input name="note" placeholder="選填"></label><button class="button button-primary" type="submit">新增 URL</button></form></details>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading"><div><p class="eyebrow">NOTES & CAUTIONS</p><h2>備註與注意事項</h2></div></div>
+      {% if notes %}<div class="note-list">{% for note in notes %}<article class="note-card priority-{{ note.priority }}"><div class="card-topline"><span class="mini-label">{{ note_category_label(note.category) }}</span><span class="muted">{{ note.priority }}</span></div><h3>{{ note.title }}</h3><div class="markdown-body">{{ note.content_markdown|markdown|safe }}</div></article>{% endfor %}</div>{% else %}<p class="muted">尚未建立備註。</p>{% endif %}
+      <details class="add-form"><summary>新增 Markdown 備註</summary><form method="post" action="/projects/{{ project.id }}/notes"><div class="form-grid two-columns"><label>類型<select name="category">{% for value, label in note_categories %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label><label>優先級<select name="priority">{% for value, label in priorities %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label></div><label>標題<input name="title" required placeholder="例如：第一次部署前注意事項"></label><label>Markdown 內容<textarea name="content_markdown" rows="9" required placeholder="支援 Markdown、程式碼區塊與表格"></textarea></label><button class="button button-primary" type="submit">新增備註</button></form></details>
+    </section>
+  </div>
+
+  <aside class="detail-side">
+    <section class="panel">
+      <div class="panel-heading"><div><p class="eyebrow">HANDOVER</p><h2>交接清單</h2></div></div>
+      {% if checklist %}<div class="checklist">{% for item in checklist %}<div class="checklist-item {% if item.completed %}completed{% endif %}"><form method="post" action="/checklist/{{ item.id }}/toggle"><button class="check-button" title="切換完成狀態" type="submit">{% if item.completed %}✓{% else %}○{% endif %}</button></form><div><strong>{{ item.title }}</strong><span class="mini-label">{{ checklist_category_label(item.category) }}</span>{% if item.description %}<p>{{ item.description }}</p>{% endif %}{% if item.owner %}<p class="muted">負責人：{{ item.owner }}</p>{% endif %}{% if item.note %}<p class="muted">備註：{{ item.note }}</p>{% endif %}</div></div>{% endfor %}</div>{% else %}<p class="muted">尚未建立交接項目。</p>{% endif %}
+      <details class="add-form"><summary>新增交接項目</summary><form method="post" action="/projects/{{ project.id }}/checklist"><label>項目類型<select name="category">{% for value, label in checklist_categories %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label><label>項目名稱<input name="title" required placeholder="例如：確認 AWS 權限已移交"></label><label>說明<textarea name="description" rows="3"></textarea></label><label>負責人<input name="owner"></label><label>備註<input name="note"></label><button class="button button-primary" type="submit">新增項目</button></form></details>
+    </section>
+  </aside>
+</div>
+{% endblock %}
