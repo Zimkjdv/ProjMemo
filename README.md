@@ -1,12 +1,12 @@
 # ProjMemo
 
-ProjMemo 是一個 Docker 化的個人專案備註與交接清單管理工具，用來集中保存專案 URL、注意事項、已知問題、部署流程與交接資訊。
+ProjMemo 是一個以本機 Python `.venv` 執行的個人專案備註與交接清單管理工具，用來集中保存專案 URL、注意事項、已知問題、環境設定說明與交接資訊；Docker 化安排在功能接近完成後。
 
 ## GitHub Repository 建議
 
 - **Repository name**：`projmemo`
-- **Description**：`A Dockerized personal project knowledge base and handover checklist manager.`
-- **中文描述**：Docker 化的個人專案備註與交接清單管理工具，支援 Markdown、重要 URL 與 Markdown/PDF 匯出。
+- **Description**：`A personal project knowledge base and handover checklist manager with Markdown export.`
+- **中文描述**：個人專案備註與交接清單管理工具，支援重要 URL、Markdown 備註、環境設定說明及 Markdown 匯出。
 
 ## 主要目標
 
@@ -17,6 +17,8 @@ ProjMemo 是一個 Docker 化的個人專案備註與交接清單管理工具，
 - 一鍵匯出 Markdown 或 PDF，方便交接與寄送
 
 ## 預計功能
+
+目前已提供 URL、Markdown 備註、交接清單、環境變數說明與 Markdown 匯出；PDF 匯出仍是後續項目。
 
 ### 1. Project Basic Info
 
@@ -35,6 +37,7 @@ ProjMemo 是一個 Docker 化的個人專案備註與交接清單管理工具，
 - Figma
 - API 文件
 - 其他自訂連結
+- URL 可編輯與刪除
 
 ### 2. Notes & Cautions
 
@@ -42,6 +45,7 @@ ProjMemo 是一個 Docker 化的個人專案備註與交接清單管理工具，
 - 支援程式碼區塊與表格
 - 可記錄一般備註、注意事項、Known Issues 與 Workarounds
 - 可設定備註優先等級
+- 可編輯與刪除備註
 - 規劃支援 Mermaid，方便記錄架構圖與流程圖
 
 ### 3. Handover Checklist
@@ -52,6 +56,7 @@ ProjMemo 是一個 Docker 化的個人專案備註與交接清單管理工具，
 - 部署步驟
 - 環境變數對照表
 - 交接項目完成狀態
+- 可編輯與刪除交接項目
 - 補充說明與相關文件連結
 
 ### 4. Export
@@ -111,6 +116,8 @@ ProjMemo 是一個 Docker 化的個人專案備註與交接清單管理工具，
 - `source_or_owner`
 - `is_secret`
 
+環境變數區只記錄設定用途、套用環境及 Secret 的存放位置或負責人，不提供 Secret 值欄位。重要 URL 與環境變數也可編輯或刪除。
+
 ## 技術方向
 
 - Backend：FastAPI
@@ -163,24 +170,23 @@ ProjMemo 不應直接保存密碼、API Key 或其他 Secret。建議只記錄�
 
 ### Phase 1：基本專案管理
 
-- 專案 CRUD
-- Project Basic Info
-- 重要 URL
-- Markdown 備註
+- [x] 專案 CRUD
+- [x] Project Basic Info
+- [x] 重要 URL（含編輯與刪除）
+- [x] Markdown 備註（含編輯與刪除）
 
 ### Phase 2：交接資訊
 
-- Handover Checklist
-- 完成狀態
-- 環境變數說明
-- Known Issues 與 Workarounds
+- [x] Handover Checklist（含編輯、刪除與完成狀態）
+- [x] 環境變數說明
+- [x] Known Issues 與 Workarounds
 
 ### Phase 3：匯出與搜尋
 
-- Markdown 匯出
-- PDF 匯出
-- 專案搜尋
-- 標籤與狀態篩選
+- [x] Markdown 匯出（包含環境變數說明）
+- [ ] PDF 匯出
+- [x] 專案搜尋
+- [x] 標籤與狀態篩選
 
 ### Phase 4：延伸功能
 

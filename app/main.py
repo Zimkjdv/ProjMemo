@@ -44,6 +44,11 @@ CHECKLIST_CATEGORIES = [
     ("service", "第三方服務"),
     ("other", "其他"),
 ]
+ENVIRONMENTS = [
+    ("local", "Local"),
+    ("staging", "Staging"),
+    ("production", "Production"),
+]
 
 
 @asynccontextmanager
@@ -64,6 +69,7 @@ def page_context(request: Request, **values: object) -> dict[str, object]:
         "note_categories": NOTE_CATEGORIES,
         "priorities": PRIORITIES,
         "checklist_categories": CHECKLIST_CATEGORIES,
+        "environments": ENVIRONMENTS,
         **values,
     }
 
@@ -90,6 +96,16 @@ def project_detail(connection: sqlite3.Connection, project_id: int) -> dict[str,
         ).fetchall(),
         "checklist": connection.execute(
             "SELECT * FROM checklist_items WHERE project_id = ? ORDER BY completed, id DESC",
+            (project_id,),
+        ).fetchall(),
+        "environment_variables": connection.execute(
+            """
+            SELECT * FROM environment_variables
+            WHERE project_id = ?
+            ORDER BY CASE environment
+                WHEN 'local' THEN 1 WHEN 'staging' THEN 2 WHEN 'production' THEN 3 ELSE 4
+            END, key COLLATE NOCASE
+            """,
             (project_id,),
         ).fetchall(),
     }
@@ -234,6 +250,56 @@ def add_url(
     return redirect_to_project(project_id)
 
 
+@app.post("/urls/{url_id}/edit")
+def update_url(
+    url_id: int,
+    type: str = Form("other"),
+    title: str = Form(...),
+    url: str = Form(...),
+    note: str = Form(""),
+) -> RedirectResponse:
+    if type not in {value for value, _ in URL_TYPES}:
+        type = "other"
+    if not title.strip() or not url.strip():
+        raise HTTPException(status_code=400, detail="URL 標題與網址不可為空白")
+    if not url.strip().startswith(("http://", "https://")):
+        raise HTTPException(status_code=400, detail="網址必須以 http:// 或 https:// 開頭")
+    with db_session() as connection:
+        item = connection.execute(
+            "SELECT project_id FROM project_urls WHERE id = ?", (url_id,)
+        ).fetchone()
+        if item is None:
+            raise HTTPException(status_code=404, detail="找不到此 URL")
+        project_id = item["project_id"]
+        connection.execute(
+            """
+            UPDATE project_urls SET type = ?, title = ?, url = ?, note = ?
+            WHERE id = ?
+            """,
+            (type, title.strip(), url.strip(), note.strip(), url_id),
+        )
+        connection.execute(
+            "UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = ?", (project_id,)
+        )
+    return redirect_to_project(int(project_id))
+
+
+@app.post("/urls/{url_id}/delete")
+def delete_url(url_id: int) -> RedirectResponse:
+    with db_session() as connection:
+        item = connection.execute(
+            "SELECT project_id FROM project_urls WHERE id = ?", (url_id,)
+        ).fetchone()
+        if item is None:
+            raise HTTPException(status_code=404, detail="找不到此 URL")
+        project_id = item["project_id"]
+        connection.execute("DELETE FROM project_urls WHERE id = ?", (url_id,))
+        connection.execute(
+            "UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = ?", (project_id,)
+        )
+    return redirect_to_project(int(project_id))
+
+
 @app.post("/projects/{project_id}/notes")
 def add_note(
     project_id: int,
@@ -261,6 +327,58 @@ def add_note(
             "UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = ?", (project_id,)
         )
     return redirect_to_project(project_id)
+
+
+@app.post("/notes/{note_id}/edit")
+def update_note(
+    note_id: int,
+    category: str = Form("note"),
+    title: str = Form(...),
+    content_markdown: str = Form(...),
+    priority: str = Form("normal"),
+) -> RedirectResponse:
+    if category not in {value for value, _ in NOTE_CATEGORIES}:
+        category = "note"
+    if priority not in {value for value, _ in PRIORITIES}:
+        priority = "normal"
+    if not title.strip() or not content_markdown.strip():
+        raise HTTPException(status_code=400, detail="備註標題與內容不可為空白")
+    with db_session() as connection:
+        item = connection.execute(
+            "SELECT project_id FROM notes WHERE id = ?", (note_id,)
+        ).fetchone()
+        if item is None:
+            raise HTTPException(status_code=404, detail="找不到此備註")
+        project_id = item["project_id"]
+        connection.execute(
+            """
+            UPDATE notes
+            SET category = ?, title = ?, content_markdown = ?, priority = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (category, title.strip(), content_markdown.strip(), priority, note_id),
+        )
+        connection.execute(
+            "UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = ?", (project_id,)
+        )
+    return redirect_to_project(int(project_id))
+
+
+@app.post("/notes/{note_id}/delete")
+def delete_note(note_id: int) -> RedirectResponse:
+    with db_session() as connection:
+        item = connection.execute(
+            "SELECT project_id FROM notes WHERE id = ?", (note_id,)
+        ).fetchone()
+        if item is None:
+            raise HTTPException(status_code=404, detail="找不到此備註")
+        project_id = item["project_id"]
+        connection.execute("DELETE FROM notes WHERE id = ?", (note_id,))
+        connection.execute(
+            "UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = ?", (project_id,)
+        )
+    return redirect_to_project(int(project_id))
 
 
 @app.post("/projects/{project_id}/checklist")
@@ -316,6 +434,151 @@ def toggle_checklist(item_id: int) -> RedirectResponse:
     return redirect_to_project(int(project_id))
 
 
+@app.post("/checklist/{item_id}/edit")
+def update_checklist_item(
+    item_id: int,
+    category: str = Form("other"),
+    title: str = Form(...),
+    description: str = Form(""),
+    owner: str = Form(""),
+    note: str = Form(""),
+) -> RedirectResponse:
+    if category not in {value for value, _ in CHECKLIST_CATEGORIES}:
+        category = "other"
+    if not title.strip():
+        raise HTTPException(status_code=400, detail="交接項目不可為空白")
+    with db_session() as connection:
+        item = connection.execute(
+            "SELECT project_id FROM checklist_items WHERE id = ?", (item_id,)
+        ).fetchone()
+        if item is None:
+            raise HTTPException(status_code=404, detail="找不到此交接項目")
+        project_id = item["project_id"]
+        connection.execute(
+            """
+            UPDATE checklist_items
+            SET category = ?, title = ?, description = ?, owner = ?, note = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (category, title.strip(), description.strip(), owner.strip(), note.strip(), item_id),
+        )
+        connection.execute(
+            "UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = ?", (project_id,)
+        )
+    return redirect_to_project(int(project_id))
+
+
+@app.post("/checklist/{item_id}/delete")
+def delete_checklist_item(item_id: int) -> RedirectResponse:
+    with db_session() as connection:
+        item = connection.execute(
+            "SELECT project_id FROM checklist_items WHERE id = ?", (item_id,)
+        ).fetchone()
+        if item is None:
+            raise HTTPException(status_code=404, detail="找不到此交接項目")
+        project_id = item["project_id"]
+        connection.execute("DELETE FROM checklist_items WHERE id = ?", (item_id,))
+        connection.execute(
+            "UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = ?", (project_id,)
+        )
+    return redirect_to_project(int(project_id))
+
+
+@app.post("/projects/{project_id}/environment-variables")
+def add_environment_variable(
+    project_id: int,
+    key: str = Form(...),
+    environment: str = Form("local"),
+    description: str = Form(""),
+    source_or_owner: str = Form(""),
+    is_secret: bool = Form(False),
+) -> RedirectResponse:
+    if environment not in {value for value, _ in ENVIRONMENTS}:
+        environment = "local"
+    if not key.strip():
+        raise HTTPException(status_code=400, detail="環境變數名稱不可為空白")
+    with db_session() as connection:
+        get_project(connection, project_id)
+        connection.execute(
+            """
+            INSERT INTO environment_variables
+                (project_id, key, environment, description, source_or_owner, is_secret)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                project_id,
+                key.strip(),
+                environment,
+                description.strip(),
+                source_or_owner.strip(),
+                int(is_secret),
+            ),
+        )
+        connection.execute(
+            "UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = ?", (project_id,)
+        )
+    return redirect_to_project(project_id)
+
+
+@app.post("/environment-variables/{variable_id}/edit")
+def update_environment_variable(
+    variable_id: int,
+    key: str = Form(...),
+    environment: str = Form("local"),
+    description: str = Form(""),
+    source_or_owner: str = Form(""),
+    is_secret: bool = Form(False),
+) -> RedirectResponse:
+    if environment not in {value for value, _ in ENVIRONMENTS}:
+        environment = "local"
+    if not key.strip():
+        raise HTTPException(status_code=400, detail="環境變數名稱不可為空白")
+    with db_session() as connection:
+        item = connection.execute(
+            "SELECT project_id FROM environment_variables WHERE id = ?", (variable_id,)
+        ).fetchone()
+        if item is None:
+            raise HTTPException(status_code=404, detail="找不到此環境變數")
+        project_id = item["project_id"]
+        connection.execute(
+            """
+            UPDATE environment_variables
+            SET key = ?, environment = ?, description = ?, source_or_owner = ?,
+                is_secret = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (
+                key.strip(),
+                environment,
+                description.strip(),
+                source_or_owner.strip(),
+                int(is_secret),
+                variable_id,
+            ),
+        )
+        connection.execute(
+            "UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = ?", (project_id,)
+        )
+    return redirect_to_project(int(project_id))
+
+
+@app.post("/environment-variables/{variable_id}/delete")
+def delete_environment_variable(variable_id: int) -> RedirectResponse:
+    with db_session() as connection:
+        item = connection.execute(
+            "SELECT project_id FROM environment_variables WHERE id = ?", (variable_id,)
+        ).fetchone()
+        if item is None:
+            raise HTTPException(status_code=404, detail="找不到此環境變數")
+        project_id = item["project_id"]
+        connection.execute("DELETE FROM environment_variables WHERE id = ?", (variable_id,))
+        connection.execute(
+            "UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = ?", (project_id,)
+        )
+    return redirect_to_project(int(project_id))
+
+
 def status_label(status: str) -> str:
     return dict(STATUS_OPTIONS).get(status, status)
 
@@ -332,11 +595,25 @@ def checklist_category_label(category: str) -> str:
     return dict(CHECKLIST_CATEGORIES).get(category, category)
 
 
+def priority_label(priority: str) -> str:
+    return dict(PRIORITIES).get(priority, priority)
+
+
+def environment_label(environment: str) -> str:
+    return dict(ENVIRONMENTS).get(environment, environment)
+
+
+def markdown_table_cell(value: str) -> str:
+    return (value or "—").replace("\r", " ").replace("\n", " ").replace("|", "\\|")
+
+
 templates.env.globals.update(
     status_label=status_label,
     url_type_label=url_type_label,
     note_category_label=note_category_label,
     checklist_category_label=checklist_category_label,
+    priority_label=priority_label,
+    environment_label=environment_label,
 )
 
 
@@ -345,6 +622,7 @@ def build_markdown(
     urls: list[sqlite3.Row],
     notes: list[sqlite3.Row],
     checklist: list[sqlite3.Row],
+    environment_variables: list[sqlite3.Row],
 ) -> str:
     lines = [
         f"# {project['name']}",
@@ -375,7 +653,7 @@ def build_markdown(
                     f"### {note['title']}",
                     "",
                     f"- 類型：{note_category_label(note['category'])}",
-                    f"- 優先級：{note['priority']}",
+                    f"- 優先級：{priority_label(note['priority'])}",
                     "",
                     note["content_markdown"],
                     "",
@@ -383,6 +661,19 @@ def build_markdown(
             )
     else:
         lines.append("尚未建立備註。")
+    lines.extend(["## 環境變數說明", ""])
+    if environment_variables:
+        lines.extend(["| 變數 | 環境 | 說明 | Secret 存放位置/負責人 |", "| --- | --- | --- | --- |"])
+        for variable in environment_variables:
+            value_description = "Secret（不匯出值）" if variable["is_secret"] else variable["description"]
+            lines.append(
+                f"| `{markdown_table_cell(variable['key'])}` | "
+                f"{markdown_table_cell(environment_label(variable['environment']))} | "
+                f"{markdown_table_cell(value_description)} | "
+                f"{markdown_table_cell(variable['source_or_owner'])} |"
+            )
+    else:
+        lines.append("尚未建立環境變數說明。")
     lines.extend(["## Handover Checklist", ""])
     if checklist:
         for item in checklist:
@@ -409,6 +700,7 @@ def export_markdown(project_id: int) -> Response:
         values["urls"],
         values["notes"],
         values["checklist"],
+        values["environment_variables"],
     )
     filename = f"{project['name']}.md".replace("/", "-").replace("\\", "-")
     return Response(
