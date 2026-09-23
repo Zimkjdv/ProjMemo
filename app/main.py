@@ -12,6 +12,7 @@ from fastapi.templating import Jinja2Templates
 from markdown import markdown as render_markdown
 
 from .db import db_session, init_db
+from .pdf_export import PDFExportError, generate_project_pdf
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -688,6 +689,35 @@ def build_markdown(
         lines.append("尚未建立交接項目。")
     lines.append("")
     return "\n".join(lines)
+
+
+@app.get("/projects/{project_id}/export.pdf")
+def export_pdf(project_id: int) -> Response:
+    with db_session() as connection:
+        values = project_detail(connection, project_id)
+    project = values["project"]
+    try:
+        content = generate_project_pdf(
+            project,
+            values["urls"],
+            values["notes"],
+            values["checklist"],
+            values["environment_variables"],
+        )
+    except PDFExportError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+
+    filename = f"{project['name']}.pdf".replace("/", "-").replace("\\", "-")
+    return Response(
+        content=content,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="projmemo-{project_id}.pdf"; '
+                f"filename*=UTF-8''{quote(filename)}"
+            )
+        },
+    )
 
 
 @app.get("/projects/{project_id}/export.md")

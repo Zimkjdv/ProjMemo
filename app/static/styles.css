@@ -125,7 +125,7 @@ label input, label select, label textarea { display: block; margin-top: 6px; }
 .jump-count { min-width: 29px; height: 29px; display: grid; place-items: center; border-radius: 8px; color: var(--primary); background: var(--primary-soft); font-size: .8rem; font-weight: 800; }
 .jump-name { flex: 1; font-size: .83rem; font-weight: 650; }
 .jump-arrow { color: var(--subtle); }
-.detail-layout { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(300px, .9fr); gap: 16px; align-items: start; }
+.detail-layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(300px, .95fr); gap: 16px; align-items: start; }
 .panel { min-width: 0; padding: 21px 22px; margin-bottom: 16px; }
 .detail-panel { scroll-margin-top: 88px; }
 .panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-bottom: 17px; }

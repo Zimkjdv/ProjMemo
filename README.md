@@ -5,8 +5,8 @@ ProjMemo 是一個以本機 Python `.venv` 執行的個人專案備註與交接�
 ## GitHub Repository 建議
 
 - **Repository name**：`projmemo`
-- **Description**：`A personal project knowledge base and handover checklist manager with Markdown export.`
-- **中文描述**：個人專案備註與交接清單管理工具，支援重要 URL、Markdown 備註、環境設定說明及 Markdown 匯出。
+- **Description**：`A personal project knowledge base and handover checklist manager with Markdown and PDF export.`
+- **中文描述**：個人專案備註與交接清單管理工具，支援重要 URL、Markdown 備註、環境設定說明及 Markdown/PDF 匯出。
 
 ## 主要目標
 
@@ -18,7 +18,7 @@ ProjMemo 是一個以本機 Python `.venv` 執行的個人專案備註與交接�
 
 ## 預計功能
 
-目前已提供 URL、Markdown 備註、交接清單、環境變數說明與 Markdown 匯出；PDF 匯出仍是後續項目。
+目前已提供 URL、Markdown 備註、交接清單、環境變數說明，以及 Markdown/PDF 匯出。
 
 ### 1. Project Basic Info
 
@@ -126,7 +126,9 @@ ProjMemo 是一個以本機 Python `.venv` 執行的個人專案備註與交接�
 - Local runtime：Python `.venv`
 - Later deployment：Docker Compose
 - 文件格式：Markdown
-- PDF：由 Markdown 或 HTML 轉換產生
+- PDF：ReportLab 產生 A4 文件
+
+PDF 匯出會包含專案資料、重要 URL、備註中的 Markdown 內容、環境變數說明及交接清單，並加入頁首、頁尾與頁碼。繁體中文字型會自動尋找作業系統字型（Windows 優先使用 Microsoft JhengHei；Linux 可安裝 Noto Sans CJK）。如需指定字型，可設定 `PROJMEMO_PDF_FONT`；粗體字型可選用 `PROJMEMO_PDF_BOLD_FONT`。
 
 目前先以本機 `.venv` 執行，確認資料模型與使用流程接近完成後，再進行 Docker 化。第一版不急著導入 MySQL、複雜權限或多使用者架構。未來若需要多人協作，再考慮切換至 PostgreSQL 或 MySQL。
 
@@ -184,7 +186,7 @@ ProjMemo 不應直接保存密碼、API Key 或其他 Secret。建議只記錄�
 ### Phase 3：匯出與搜尋
 
 - [x] Markdown 匯出（包含環境變數說明）
-- [ ] PDF 匯出
+- [x] PDF 匯出（包含繁體中文字型、表格與頁碼）
 - [x] 專案搜尋
 - [x] 標籤與狀態篩選
 
