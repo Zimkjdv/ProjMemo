@@ -1,44 +1,44 @@
 {% extends "base.html" %}
 {% block title %}專案列表｜ProjMemo{% endblock %}
 {% block content %}
-<section class="hero">
-  <div>
+<section class="hero page-hero">
+  <div class="hero-copy-block">
     <p class="eyebrow">PERSONAL PROJECT KNOWLEDGE BASE</p>
-    <h1>專案備註，一處整理。</h1>
-    <p class="hero-copy">集中保存重要連結、注意事項與交接清單，讓專案資訊更容易維護與交接。</p>
+    <h1>專案資訊，清楚有序。</h1>
+    <p class="hero-copy">保存重要連結、實用備註與交接事項，讓每個專案的關鍵資訊都找得到。</p>
   </div>
+  <a class="button button-primary hero-action" href="/projects/new"><span aria-hidden="true">＋</span> 建立專案</a>
 </section>
 
 <form class="filter-bar" method="get" action="/">
-  <input name="q" value="{{ q }}" placeholder="搜尋專案名稱、描述或標籤">
-  <select name="status">
+  <label class="search-field"><span class="search-icon" aria-hidden="true">⌕</span><input name="q" value="{{ q }}" aria-label="搜尋專案" placeholder="搜尋名稱、描述或標籤"></label>
+  <label class="filter-select"><span>狀態</span><select name="status">
     <option value="">全部狀態</option>
     {% for value, label in status_options %}
     <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
     {% endfor %}
-  </select>
-  <button class="button button-secondary" type="submit">搜尋</button>
+  </select></label>
+  <button class="button button-secondary" type="submit">套用篩選</button>
 </form>
 
 {% if projects %}
+<div class="list-caption"><h2>所有專案</h2><span>{{ projects|length }} 個專案</span></div>
 <section class="project-grid">
   {% for project in projects %}
   <a class="project-card" href="/projects/{{ project.id }}">
-    <div class="card-topline">
-      <span class="status status-{{ project.status }}">{{ status_label(project.status) }}</span>
-      <span class="muted">{{ project.updated_at }}</span>
-    </div>
-    <h2>{{ project.name }}</h2>
-    <p>{{ project.description or '尚未填寫專案描述。' }}</p>
+    <div class="project-card-top"><span class="project-card-icon" aria-hidden="true">{{ project.name[:1]|upper }}</span><span class="status status-{{ project.status }}">{{ status_label(project.status) }}</span></div>
+    <h3>{{ project.name }}</h3>
+    <p class="project-card-description">{{ project.description or '新增一段簡短描述，記下這個專案的目的。' }}</p>
     {% if project.tags %}<div class="tag-list">{% for tag in project.tags.split(',') %}<span class="tag">{{ tag.strip() }}</span>{% endfor %}</div>{% endif %}
+    <div class="project-card-footer"><span>更新於 {{ project.updated_at }}</span><span class="card-arrow" aria-hidden="true">→</span></div>
   </a>
   {% endfor %}
 </section>
 {% else %}
 <section class="empty-state">
-  <h2>還沒有專案</h2>
-  <p>建立第一個專案，開始整理 URL、備註與交接事項。</p>
-  <a class="button button-primary" href="/projects/new">建立第一個專案</a>
+  <span class="empty-icon" aria-hidden="true">▤</span>
+  {% if q or selected_status %}<h2>沒有符合條件的專案</h2><p>試試其他關鍵字或狀態篩選。</p><a class="button button-ghost" href="/">清除篩選</a>
+  {% else %}<h2>開始整理第一個專案</h2><p>把常用連結、注意事項與交接資訊集中在一起。</p><a class="button button-primary" href="/projects/new">建立第一個專案</a>{% endif %}
 </section>
 {% endif %}
 {% endblock %}

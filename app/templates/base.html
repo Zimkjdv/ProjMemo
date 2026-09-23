@@ -4,13 +4,16 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}ProjMemo{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}?v=20260923">
   </head>
   <body>
     <header class="site-header">
       <div class="container header-inner">
-        <a class="brand" href="/">ProjMemo</a>
-        <a class="button button-primary" href="/projects/new">建立專案</a>
+        <a class="brand" href="/" aria-label="ProjMemo 首頁"><span class="brand-symbol">P</span><span><strong>ProjMemo</strong><small>Project notes, organized.</small></span></a>
+        <nav class="header-nav" aria-label="主要導覽">
+          <a class="nav-link" href="/">我的專案</a>
+          <a class="button button-primary" href="/projects/new"><span aria-hidden="true">＋</span> 建立專案</a>
+        </nav>
       </div>
     </header>
     <main class="container page-content">

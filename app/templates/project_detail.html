@@ -1,44 +1,148 @@
 {% extends "base.html" %}
 {% block title %}{{ project.name }}｜ProjMemo{% endblock %}
 {% block content %}
-<div class="section-heading">
-  <div>
-    <p class="eyebrow">PROJECT</p>
-    <h1>{{ project.name }}</h1>
-    <div class="heading-meta"><span class="status status-{{ project.status }}">{{ status_label(project.status) }}</span>{% if project.owner %}<span>負責人：{{ project.owner }}</span>{% endif %}</div>
+<section class="project-hero">
+  <nav class="breadcrumb" aria-label="breadcrumb">
+    <a href="/">專案列表</a><span aria-hidden="true">/</span><span>{{ project.name }}</span>
+  </nav>
+  <div class="project-hero-row">
+    <div class="project-identity">
+      <p class="eyebrow">PROJECT OVERVIEW</p>
+      <div class="project-title-row">
+        <h1>{{ project.name }}</h1>
+        <span class="status status-{{ project.status }}">{{ status_label(project.status) }}</span>
+      </div>
+      <p class="project-summary">{{ project.description or '新增專案描述，記下用途、範圍或目前進度。' }}</p>
+      <div class="project-meta">
+        {% if project.owner %}<span><span class="meta-label">負責人</span>{{ project.owner }}</span>{% endif %}
+        {% if project.tags %}<span class="tag-list">{% for tag in project.tags.split(',') %}<span class="tag">{{ tag.strip() }}</span>{% endfor %}</span>{% endif %}
+      </div>
+    </div>
+    <div class="project-actions">
+      <a class="button button-secondary" href="/projects/{{ project.id }}/export.md"><span aria-hidden="true">↓</span> 匯出 Markdown</a>
+      <a class="button button-ghost" href="/projects/{{ project.id }}/edit">編輯專案</a>
+    </div>
   </div>
-  <div class="button-row"><a class="button button-secondary" href="/projects/{{ project.id }}/export.md">匯出 Markdown</a><a class="button button-ghost" href="/projects/{{ project.id }}/edit">編輯專案</a></div>
-</div>
+</section>
 
-{% if project.description %}<section class="panel project-description"><h2>專案描述</h2><p>{{ project.description }}</p></section>{% endif %}
+<nav class="section-jumps" aria-label="專案內容捷徑">
+  <a href="#important-links"><span class="jump-count">{{ urls|length }}</span><span class="jump-name">重要 URL</span><span class="jump-arrow" aria-hidden="true">↘</span></a>
+  <a href="#project-notes"><span class="jump-count">{{ notes|length }}</span><span class="jump-name">備註</span><span class="jump-arrow" aria-hidden="true">↘</span></a>
+  <a href="#handover"><span class="jump-count">{{ checklist|length }}</span><span class="jump-name">交接項目</span><span class="jump-arrow" aria-hidden="true">↘</span></a>
+  <a href="#environment"><span class="jump-count">{{ environment_variables|length }}</span><span class="jump-name">環境設定</span><span class="jump-arrow" aria-hidden="true">↘</span></a>
+</nav>
 
 <div class="detail-layout">
   <div class="detail-main">
-    <section class="panel">
-      <div class="panel-heading"><div><p class="eyebrow">IMPORTANT LINKS</p><h2>重要 URL</h2></div></div>
-      {% if urls %}<div class="url-list">{% for item in urls %}<div class="url-entry"><div class="url-item"><div><span class="mini-label">{{ url_type_label(item.type) }}</span><a href="{{ item.url }}" target="_blank" rel="noreferrer">{{ item.title }}</a>{% if item.note %}<p>{{ item.note }}</p>{% endif %}</div><code>{{ item.url }}</code></div><details class="item-actions"><summary>編輯或刪除</summary><form method="post" action="/urls/{{ item.id }}/edit"><div class="form-grid two-columns"><label>類型<select name="type">{% for value, label in url_types %}<option value="{{ value }}" {% if item.type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><label>標題<input name="title" required value="{{ item.title }}"></label></div><label>網址<input name="url" type="url" required value="{{ item.url }}"></label><label>備註<input name="note" value="{{ item.note }}"></label><button class="button button-primary" type="submit">儲存 URL</button></form><form class="delete-form" method="post" action="/urls/{{ item.id }}/delete" onsubmit="return confirm('確定刪除此 URL？')"><button class="button button-danger" type="submit">刪除 URL</button></form></details></div>{% endfor %}</div>{% else %}<p class="muted">尚未建立重要 URL。</p>{% endif %}
-      <details class="add-form"><summary>新增 URL</summary><form method="post" action="/projects/{{ project.id }}/urls"><div class="form-grid two-columns"><label>類型<select name="type">{% for value, label in url_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label><label>標題<input name="title" required placeholder="例如：Production"></label></div><label>網址<input name="url" type="url" required placeholder="https://..."></label><label>備註<input name="note" placeholder="選填"></label><button class="button button-primary" type="submit">新增 URL</button></form></details>
+    <section class="panel detail-panel" id="important-links">
+      <div class="panel-heading">
+        <div><p class="eyebrow">REFERENCE</p><div class="heading-line"><h2>重要 URL</h2><span class="section-count">{{ urls|length }}</span></div></div>
+      </div>
+      {% if urls %}
+      <div class="url-list">
+        {% for item in urls %}
+        <article class="url-entry">
+          <div class="url-item">
+            <span class="url-type-icon" aria-hidden="true">↗</span>
+            <div class="url-copy">
+              <span class="mini-label">{{ url_type_label(item.type) }}</span>
+              <a href="{{ item.url }}" target="_blank" rel="noreferrer">{{ item.title }} <span aria-hidden="true">↗</span></a>
+              {% if item.note %}<p>{{ item.note }}</p>{% endif %}
+              <code>{{ item.url }}</code>
+            </div>
+            <details class="item-actions">
+              <summary aria-label="編輯或刪除 {{ item.title }}">•••</summary>
+              <div class="action-popover">
+                <form method="post" action="/urls/{{ item.id }}/edit">
+                  <div class="form-grid two-columns">
+                    <label>類型<select name="type">{% for value, label in url_types %}<option value="{{ value }}" {% if item.type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+                    <label>標題<input name="title" required value="{{ item.title }}"></label>
+                  </div>
+                  <label>網址<input name="url" type="url" required value="{{ item.url }}"></label>
+                  <label>備註<input name="note" value="{{ item.note }}"></label>
+                  <button class="button button-primary" type="submit">儲存 URL</button>
+                </form>
+                <form class="delete-form" method="post" action="/urls/{{ item.id }}/delete" onsubmit="return confirm('確定刪除此 URL？')"><button class="button button-danger" type="submit">刪除 URL</button></form>
+              </div>
+            </details>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-inline"><span class="empty-icon" aria-hidden="true">↗</span><div><strong>還沒有重要連結</strong><p>加入正式環境、程式碼庫或相關文件，方便快速找到入口。</p></div></div>
+      {% endif %}
+      <details class="add-form"><summary><span aria-hidden="true">＋</span> 新增 URL</summary><form method="post" action="/projects/{{ project.id }}/urls"><div class="form-grid two-columns"><label>類型<select name="type">{% for value, label in url_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label><label>標題<input name="title" required placeholder="例如：Production"></label></div><label>網址<input name="url" type="url" required placeholder="https://..."></label><label>備註<input name="note" placeholder="選填"></label><button class="button button-primary" type="submit">新增 URL</button></form></details>
     </section>
 
-    <section class="panel">
-      <div class="panel-heading"><div><p class="eyebrow">NOTES & CAUTIONS</p><h2>備註與注意事項</h2></div></div>
-      {% if notes %}<div class="note-list">{% for note in notes %}<article class="note-card priority-{{ note.priority }}"><div class="card-topline"><span class="mini-label">{{ note_category_label(note.category) }}</span><span class="muted">{{ priority_label(note.priority) }}</span></div><h3>{{ note.title }}</h3><div class="markdown-body">{{ note.content_markdown|markdown|safe }}</div><details class="item-actions"><summary>編輯或刪除</summary><form method="post" action="/notes/{{ note.id }}/edit"><div class="form-grid two-columns"><label>類型<select name="category">{% for value, label in note_categories %}<option value="{{ value }}" {% if note.category == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><label>優先級<select name="priority">{% for value, label in priorities %}<option value="{{ value }}" {% if note.priority == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label></div><label>標題<input name="title" required value="{{ note.title }}"></label><label>Markdown 內容<textarea name="content_markdown" rows="8" required>{{ note.content_markdown }}</textarea></label><button class="button button-primary" type="submit">儲存備註</button></form><form class="delete-form" method="post" action="/notes/{{ note.id }}/delete" onsubmit="return confirm('確定刪除此備註？')"><button class="button button-danger" type="submit">刪除備註</button></form></details></article>{% endfor %}</div>{% else %}<p class="muted">尚未建立備註。</p>{% endif %}
-      <details class="add-form"><summary>新增 Markdown 備註</summary><form method="post" action="/projects/{{ project.id }}/notes"><div class="form-grid two-columns"><label>類型<select name="category">{% for value, label in note_categories %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label><label>優先級<select name="priority">{% for value, label in priorities %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label></div><label>標題<input name="title" required placeholder="例如：第一次部署前注意事項"></label><label>Markdown 內容<textarea name="content_markdown" rows="9" required placeholder="支援 Markdown、程式碼區塊與表格"></textarea></label><button class="button button-primary" type="submit">新增備註</button></form></details>
+    <section class="panel detail-panel" id="project-notes">
+      <div class="panel-heading">
+        <div><p class="eyebrow">NOTES & CAUTIONS</p><div class="heading-line"><h2>備註與注意事項</h2><span class="section-count">{{ notes|length }}</span></div></div>
+      </div>
+      {% if notes %}
+      <div class="note-list">
+        {% for note in notes %}
+        <article class="note-card priority-{{ note.priority }}">
+          <div class="note-heading"><div><span class="mini-label">{{ note_category_label(note.category) }}</span><span class="priority-label priority-{{ note.priority }}">{{ priority_label(note.priority) }}</span></div><details class="item-actions"><summary aria-label="編輯或刪除 {{ note.title }}">•••</summary><div class="action-popover"><form method="post" action="/notes/{{ note.id }}/edit"><div class="form-grid two-columns"><label>類型<select name="category">{% for value, label in note_categories %}<option value="{{ value }}" {% if note.category == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><label>優先級<select name="priority">{% for value, label in priorities %}<option value="{{ value }}" {% if note.priority == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label></div><label>標題<input name="title" required value="{{ note.title }}"></label><label>Markdown 內容<textarea name="content_markdown" rows="8" required>{{ note.content_markdown }}</textarea></label><button class="button button-primary" type="submit">儲存備註</button></form><form class="delete-form" method="post" action="/notes/{{ note.id }}/delete" onsubmit="return confirm('確定刪除此備註？')"><button class="button button-danger" type="submit">刪除備註</button></form></div></details></div>
+          <h3>{{ note.title }}</h3>
+          <div class="markdown-body">{{ note.content_markdown|markdown|safe }}</div>
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-inline"><span class="empty-icon" aria-hidden="true">✎</span><div><strong>還沒有專案備註</strong><p>記錄容易忘記的設定、踩坑經驗和解決方式。</p></div></div>
+      {% endif %}
+      <details class="add-form"><summary><span aria-hidden="true">＋</span> 新增 Markdown 備註</summary><form method="post" action="/projects/{{ project.id }}/notes"><div class="form-grid two-columns"><label>類型<select name="category">{% for value, label in note_categories %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label><label>優先級<select name="priority">{% for value, label in priorities %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label></div><label>標題<input name="title" required placeholder="例如：第一次部署前注意事項"></label><label>Markdown 內容<textarea name="content_markdown" rows="9" required placeholder="支援 Markdown、程式碼區塊與表格"></textarea></label><button class="button button-primary" type="submit">新增備註</button></form></details>
     </section>
   </div>
 
   <aside class="detail-side">
-    <section class="panel">
-      <div class="panel-heading"><div><p class="eyebrow">HANDOVER</p><h2>交接清單</h2></div></div>
-      {% if checklist %}<div class="checklist">{% for item in checklist %}<div class="checklist-item {% if item.completed %}completed{% endif %}"><form method="post" action="/checklist/{{ item.id }}/toggle"><button class="check-button" title="切換完成狀態" type="submit">{% if item.completed %}✓{% else %}○{% endif %}</button></form><div class="checklist-content"><strong>{{ item.title }}</strong><span class="mini-label">{{ checklist_category_label(item.category) }}</span>{% if item.description %}<p>{{ item.description }}</p>{% endif %}{% if item.owner %}<p class="muted">負責人：{{ item.owner }}</p>{% endif %}{% if item.note %}<p class="muted">備註：{{ item.note }}</p>{% endif %}<details class="item-actions"><summary>編輯或刪除</summary><form method="post" action="/checklist/{{ item.id }}/edit"><label>項目類型<select name="category">{% for value, label in checklist_categories %}<option value="{{ value }}" {% if item.category == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><label>項目名稱<input name="title" required value="{{ item.title }}"></label><label>說明<textarea name="description" rows="3">{{ item.description }}</textarea></label><label>負責人<input name="owner" value="{{ item.owner }}"></label><label>備註<input name="note" value="{{ item.note }}"></label><button class="button button-primary" type="submit">儲存項目</button></form><form class="delete-form" method="post" action="/checklist/{{ item.id }}/delete" onsubmit="return confirm('確定刪除此交接項目？')"><button class="button button-danger" type="submit">刪除項目</button></form></details></div></div>{% endfor %}</div>{% else %}<p class="muted">尚未建立交接項目。</p>{% endif %}
-      <details class="add-form"><summary>新增交接項目</summary><form method="post" action="/projects/{{ project.id }}/checklist"><label>項目類型<select name="category">{% for value, label in checklist_categories %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label><label>項目名稱<input name="title" required placeholder="例如：確認 AWS 權限已移交"></label><label>說明<textarea name="description" rows="3"></textarea></label><label>負責人<input name="owner"></label><label>備註<input name="note"></label><button class="button button-primary" type="submit">新增項目</button></form></details>
+    <section class="panel detail-panel" id="handover">
+      <div class="panel-heading">
+        <div><p class="eyebrow">HANDOVER</p><div class="heading-line"><h2>交接清單</h2><span class="section-count">{{ checklist|length }}</span></div></div>
+      </div>
+      {% if checklist %}
+      <div class="checklist">
+        {% for item in checklist %}
+        <article class="checklist-item {% if item.completed %}completed{% endif %}">
+          <form method="post" action="/checklist/{{ item.id }}/toggle"><button class="check-button" aria-label="切換 {{ item.title }} 完成狀態" title="切換完成狀態" type="submit">{% if item.completed %}✓{% else %}○{% endif %}</button></form>
+          <div class="checklist-content">
+            <div class="checklist-title-row"><strong>{{ item.title }}</strong><details class="item-actions"><summary aria-label="編輯或刪除 {{ item.title }}">•••</summary><div class="action-popover"><form method="post" action="/checklist/{{ item.id }}/edit"><label>項目類型<select name="category">{% for value, label in checklist_categories %}<option value="{{ value }}" {% if item.category == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><label>項目名稱<input name="title" required value="{{ item.title }}"></label><label>說明<textarea name="description" rows="3">{{ item.description }}</textarea></label><label>負責人<input name="owner" value="{{ item.owner }}"></label><label>備註<input name="note" value="{{ item.note }}"></label><button class="button button-primary" type="submit">儲存項目</button></form><form class="delete-form" method="post" action="/checklist/{{ item.id }}/delete" onsubmit="return confirm('確定刪除此交接項目？')"><button class="button button-danger" type="submit">刪除項目</button></form></div></details></div>
+            <span class="mini-label">{{ checklist_category_label(item.category) }}</span>
+            {% if item.description %}<p>{{ item.description }}</p>{% endif %}
+            {% if item.owner %}<p class="muted">負責人：{{ item.owner }}</p>{% endif %}
+            {% if item.note %}<p class="muted">備註：{{ item.note }}</p>{% endif %}
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-inline"><span class="empty-icon" aria-hidden="true">☑</span><div><strong>交接清單還是空的</strong><p>列出權限、部署或服務移交事項，逐項追蹤完成狀態。</p></div></div>
+      {% endif %}
+      <details class="add-form"><summary><span aria-hidden="true">＋</span> 新增交接項目</summary><form method="post" action="/projects/{{ project.id }}/checklist"><label>項目類型<select name="category">{% for value, label in checklist_categories %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label><label>項目名稱<input name="title" required placeholder="例如：確認 AWS 權限已移交"></label><label>說明<textarea name="description" rows="3"></textarea></label><label>負責人<input name="owner"></label><label>備註<input name="note"></label><button class="button button-primary" type="submit">新增項目</button></form></details>
     </section>
 
-    <section class="panel">
-      <div class="panel-heading"><div><p class="eyebrow">CONFIGURATION</p><h2>環境變數說明</h2></div></div>
-      <p class="security-hint">只記錄變數用途與 Secret 存放位置，不要輸入密碼或 Key 的實際值。</p>
-      {% if environment_variables %}<div class="variable-list">{% for variable in environment_variables %}<article class="variable-card"><div class="variable-heading"><code>{{ variable.key }}</code><span class="mini-label">{{ environment_label(variable.environment) }}</span></div>{% if variable.is_secret %}<p class="secret-badge">Secret · 不儲存實際值</p>{% endif %}{% if variable.description %}<p>{{ variable.description }}</p>{% endif %}{% if variable.source_or_owner %}<p class="muted">存放位置／負責人：{{ variable.source_or_owner }}</p>{% endif %}<details class="item-actions"><summary>編輯或刪除</summary><form method="post" action="/environment-variables/{{ variable.id }}/edit"><label>變數名稱<input name="key" required value="{{ variable.key }}"></label><label>環境<select name="environment">{% for value, label in environments %}<option value="{{ value }}" {% if variable.environment == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><label>用途說明<input name="description" value="{{ variable.description }}"></label><label>Secret 存放位置或負責人<input name="source_or_owner" value="{{ variable.source_or_owner }}"></label><label class="checkbox-label"><input type="checkbox" name="is_secret" value="true" {% if variable.is_secret %}checked{% endif %}>此變數包含 Secret</label><button class="button button-primary" type="submit">儲存變數</button></form><form class="delete-form" method="post" action="/environment-variables/{{ variable.id }}/delete" onsubmit="return confirm('確定刪除此環境變數說明？')"><button class="button button-danger" type="submit">刪除變數</button></form></details></article>{% endfor %}</div>{% else %}<p class="muted">尚未建立環境變數說明。</p>{% endif %}
-      <details class="add-form"><summary>新增環境變數說明</summary><form method="post" action="/projects/{{ project.id }}/environment-variables"><label>變數名稱<input name="key" required placeholder="例如：DATABASE_URL"></label><label>環境<select name="environment">{% for value, label in environments %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label><label>用途說明<input name="description" placeholder="此設定的用途"></label><label>Secret 存放位置或負責人<input name="source_or_owner" placeholder="例如：GitHub Actions Secrets / 維運負責人"></label><label class="checkbox-label"><input type="checkbox" name="is_secret" value="true">此變數包含 Secret</label><button class="button button-primary" type="submit">新增變數</button></form></details>
+    <section class="panel detail-panel" id="environment">
+      <div class="panel-heading">
+        <div><p class="eyebrow">CONFIGURATION</p><div class="heading-line"><h2>環境變數說明</h2><span class="section-count">{{ environment_variables|length }}</span></div></div>
+      </div>
+      <p class="security-hint">記錄用途與 Secret 存放位置即可，請勿輸入密碼或 Key 的實際值。</p>
+      {% if environment_variables %}
+      <div class="variable-list">
+        {% for variable in environment_variables %}
+        <article class="variable-card">
+          <div class="variable-heading"><code>{{ variable.key }}</code><span class="mini-label">{{ environment_label(variable.environment) }}</span></div>
+          {% if variable.is_secret %}<p class="secret-badge">Secret · 不儲存實際值</p>{% endif %}
+          {% if variable.description %}<p>{{ variable.description }}</p>{% endif %}
+          {% if variable.source_or_owner %}<p class="muted">存放位置／負責人：{{ variable.source_or_owner }}</p>{% endif %}
+          <details class="item-actions"><summary>編輯或刪除</summary><div class="action-popover"><form method="post" action="/environment-variables/{{ variable.id }}/edit"><label>變數名稱<input name="key" required value="{{ variable.key }}"></label><label>環境<select name="environment">{% for value, label in environments %}<option value="{{ value }}" {% if variable.environment == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><label>用途說明<input name="description" value="{{ variable.description }}"></label><label>Secret 存放位置或負責人<input name="source_or_owner" value="{{ variable.source_or_owner }}"></label><label class="checkbox-label"><input type="checkbox" name="is_secret" value="true" {% if variable.is_secret %}checked{% endif %}>此變數包含 Secret</label><button class="button button-primary" type="submit">儲存變數</button></form><form class="delete-form" method="post" action="/environment-variables/{{ variable.id }}/delete" onsubmit="return confirm('確定刪除此環境變數說明？')"><button class="button button-danger" type="submit">刪除變數</button></form></div></details>
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-inline"><span class="empty-icon" aria-hidden="true">{ }</span><div><strong>尚未整理環境設定</strong><p>標明設定在哪個環境使用，以及 Secret 的存放位置。</p></div></div>
+      {% endif %}
+      <details class="add-form"><summary><span aria-hidden="true">＋</span> 新增環境變數說明</summary><form method="post" action="/projects/{{ project.id }}/environment-variables"><label>變數名稱<input name="key" required placeholder="例如：DATABASE_URL"></label><label>環境<select name="environment">{% for value, label in environments %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label><label>用途說明<input name="description" placeholder="此設定的用途"></label><label>Secret 存放位置或負責人<input name="source_or_owner" placeholder="例如：GitHub Actions Secrets / 維運負責人"></label><label class="checkbox-label"><input type="checkbox" name="is_secret" value="true">此變數包含 Secret</label><button class="button button-primary" type="submit">新增變數</button></form></details>
     </section>
   </aside>
 </div>
