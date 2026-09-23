@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}資料備份與還原｜ProjMemo{% endblock %}
+{% block content %}
+<section class="hero page-hero">
+  <div class="hero-copy-block">
+    <p class="eyebrow">DATA SAFETY</p>
+    <h1>資料備份與還原</h1>
+    <p class="hero-copy">下載完整 SQLite 備份，或從先前的 ProjMemo 備份還原資料。</p>
+  </div>
+  <a class="button button-ghost hero-action" href="/">返回我的專案</a>
+</section>
+
+{% if restored %}
+<div class="backup-notice backup-success" role="status">
+  <strong>資料還原完成。</strong>目前 ProjMemo 已載入備份中的資料。
+  {% if recovery_filename %}<a href="/settings/backup/files/{{ recovery_filename }}">下載還原前自動備份</a>{% endif %}
+</div>
+{% endif %}
+{% if error %}
+<div class="backup-notice backup-error" role="alert">
+  <strong>還原未完成。</strong>{{ error }}
+  {% if recovery_filename %}<a href="/settings/backup/files/{{ recovery_filename }}">下載還原前自動備份</a>{% endif %}
+</div>
+{% endif %}
+
+<div class="backup-grid">
+  <section class="panel backup-panel">
+    <div class="form-section-heading">
+      <span class="form-section-icon" aria-hidden="true">↓</span>
+      <div><h2>下載完整備份</h2><p>匯出所有專案資料與設定</p></div>
+    </div>
+    <p class="muted">備份包含專案基本資料、重要 URL、Markdown 備註、交接清單與環境變數說明，不包含實際 Secret 值。</p>
+    {% if project_count is not none %}<p class="backup-stat">目前資料庫有 <strong>{{ project_count }}</strong> 個專案。</p>{% endif %}
+    <a class="button button-primary" href="/settings/backup/download">下載 SQLite 備份</a>
+  </section>
+
+  <section class="panel backup-panel">
+    <div class="form-section-heading">
+      <span class="form-section-icon" aria-hidden="true">↻</span>
+      <div><h2>從備份還原</h2><p>只接受完整且相容的 ProjMemo 資料庫</p></div>
+    </div>
+    <div class="backup-notice backup-warning">
+      還原會以備份內容取代目前所有專案資料。系統會先自動保存目前資料，完成後可下載該份還原前備份。
+    </div>
+    <form class="backup-restore-form" method="post" action="/settings/backup/restore" enctype="multipart/form-data" onsubmit="return confirm('確定以所選備份取代目前所有專案資料？系統會先自動保存目前資料。')">
+      <label for="backup-file">選擇 ProjMemo SQLite 備份
+        <input id="backup-file" name="backup_file" type="file" accept=".sqlite3,.sqlite,.db,application/vnd.sqlite3" required>
+      </label>
+      <p class="field-help">檔案上限 100 MB。若檔案格式、完整性或資料表不符，現有資料不會被取代。</p>
+      <button class="button button-danger" type="submit">還原備份</button>
+    </form>
+  </section>
+</div>
+
+<section class="panel backup-history">
+  <div class="panel-heading"><div><p class="eyebrow">RECOVERY POINTS</p><h2>還原前自動備份</h2></div></div>
+  {% if recovery_backups %}
+  <div class="backup-history-list">
+    {% for backup in recovery_backups %}
+    <div class="backup-history-row">
+      <div><strong>{{ backup.created_at }}</strong><span>{{ backup.filename }}</span></div>
+      <span class="muted">{{ "%.2f"|format(backup.size_mb) }} MB</span>
+      <a class="button button-ghost" href="/settings/backup/files/{{ backup.filename }}">下載</a>
+    </div>
+    {% endfor %}
+  </div>
+  <p class="muted backup-retention-note">列出最近 10 份。自動備份儲存在目前 SQLite 資料庫旁的 <code>backups</code> 資料夾，不會自動刪除。</p>
+  {% else %}
+  <p class="muted">尚無還原前自動備份；每次成功開始還原前，系統都會先建立一份。</p>
+  {% endif %}
+</section>
+{% endblock %}

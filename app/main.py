@@ -3,15 +3,26 @@
 from pathlib import Path
 import sqlite3
 from contextlib import asynccontextmanager
+from datetime import datetime
 from urllib.parse import quote
 
-from fastapi import FastAPI, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markdown import markdown as render_markdown
+from starlette.background import BackgroundTask
 
-from .db import db_session, init_db
+from .backup import (
+    BackupRestoreError,
+    BackupValidationError,
+    create_temporary_backup,
+    is_recovery_backup_filename,
+    recovery_directory,
+    restore_database,
+    save_uploaded_backup,
+)
+from .db import database_path, db_session, init_db
 from .pdf_export import PDFExportError, generate_project_pdf
 
 
@@ -124,6 +135,140 @@ def markdown_filter(value: str) -> str:
 
 
 templates.env.filters["markdown"] = markdown_filter
+
+
+def _backup_page(
+    request: Request,
+    *,
+    restored: bool = False,
+    error: str = "",
+    recovery_filename: str = "",
+    status_code: int = 200,
+) -> HTMLResponse:
+    try:
+        with db_session() as connection:
+            project_count = connection.execute("SELECT COUNT(*) FROM projects").fetchone()[0]
+    except sqlite3.Error:
+        project_count = None
+
+    backup_directory = recovery_directory(database_path())
+    recovery_backups = []
+    try:
+        backup_paths = sorted(
+            backup_directory.glob("projmemo-pre-restore-*.sqlite3"),
+            key=lambda path: path.stat().st_mtime,
+            reverse=True,
+        )[:10]
+        for path in backup_paths:
+            stats = path.stat()
+            recovery_backups.append(
+                {
+                    "filename": path.name,
+                    "created_at": datetime.fromtimestamp(stats.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
+                    "size_mb": max(stats.st_size / (1024 * 1024), 0.01),
+                }
+            )
+    except OSError:
+        recovery_backups = []
+
+    if not is_recovery_backup_filename(recovery_filename):
+        recovery_filename = ""
+    elif not (backup_directory / recovery_filename).is_file():
+        recovery_filename = ""
+
+    return templates.TemplateResponse(
+        request,
+        "backup.html",
+        page_context(
+            request,
+            project_count=project_count,
+            restored=restored,
+            error=error,
+            recovery_filename=recovery_filename,
+            recovery_backups=recovery_backups,
+        ),
+        status_code=status_code,
+    )
+
+
+def _remove_temporary_backup(path: Path) -> None:
+    path.unlink(missing_ok=True)
+
+
+@app.get("/settings/backup", response_class=HTMLResponse)
+def backup_settings(
+    request: Request,
+    restored: bool = False,
+    recovery: str = "",
+) -> HTMLResponse:
+    return _backup_page(request, restored=restored, recovery_filename=recovery)
+
+
+@app.get("/settings/backup/download")
+def download_database_backup() -> FileResponse:
+    backup_path = create_temporary_backup(database_path())
+    filename = f"projmemo-backup-{datetime.now().strftime('%Y%m%d-%H%M%S')}.sqlite3"
+    return FileResponse(
+        backup_path,
+        media_type="application/vnd.sqlite3",
+        filename=filename,
+        background=BackgroundTask(_remove_temporary_backup, backup_path),
+    )
+
+
+@app.post("/settings/backup/restore")
+def restore_database_backup(
+    request: Request,
+    backup_file: UploadFile = File(...),
+) -> Response:
+    uploaded_path: Path | None = None
+    try:
+        uploaded_path = save_uploaded_backup(backup_file.file, database_path().parent)
+        recovery_path = restore_database(uploaded_path, database_path())
+    except BackupValidationError as error:
+        return _backup_page(request, error=str(error), status_code=400)
+    except BackupRestoreError as error:
+        return _backup_page(
+            request,
+            error=str(error),
+            recovery_filename=error.recovery_filename,
+            status_code=500,
+        )
+    except (OSError, sqlite3.Error):
+        return _backup_page(
+            request,
+            error="還原作業失敗，資料未完成替換。請確認磁碟空間與檔案權限。",
+            status_code=500,
+        )
+    finally:
+        if uploaded_path is not None:
+            uploaded_path.unlink(missing_ok=True)
+        backup_file.file.close()
+
+    return RedirectResponse(
+        url=f"/settings/backup?restored=1&recovery={quote(recovery_path.name)}",
+        status_code=303,
+    )
+
+
+@app.get("/settings/backup/files/{filename}")
+def download_recovery_backup(filename: str) -> FileResponse:
+    if not is_recovery_backup_filename(filename):
+        raise HTTPException(status_code=404, detail="找不到此備份檔")
+    backup_path = recovery_directory(database_path()) / filename
+    resolved_directory = recovery_directory(database_path()).resolve()
+    try:
+        if backup_path.is_symlink() or backup_path.resolve().parent != resolved_directory:
+            raise HTTPException(status_code=404, detail="找不到此備份檔")
+    except OSError as error:
+        raise HTTPException(status_code=404, detail="找不到此備份檔") from error
+    if not backup_path.is_file():
+        raise HTTPException(status_code=404, detail="找不到此備份檔")
+    return FileResponse(
+        backup_path,
+        media_type="application/vnd.sqlite3",
+        filename=filename,
+    )
 
 
 @app.get("/", response_class=HTMLResponse)
