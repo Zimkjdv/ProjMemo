@@ -1,16 +1,16 @@
 <section class="panel detail-panel" id="access-accounts">
   <div class="panel-heading">
-    <div><p class="eyebrow">ACCESS & CREDENTIALS</p><div class="heading-line"><h2>帳號與權限</h2><span class="section-count">{{ access_accounts|length }}</span></div></div>
+    <div>{% if language == 'en' %}<p class="eyebrow">ACCESS &amp; CREDENTIALS</p>{% endif %}<div class="heading-line"><h2>{{ t("帳號與權限") }}</h2><span class="section-count">{{ access_accounts|length }}</span></div></div>
   </div>
-  <p class="security-hint">整理資料庫、網站測試、主機及第三方服務帳號。只有「實際密碼」欄位會加密；帳號、主機、登入名稱、權限與用途等資料仍以一般 SQLite 欄位保存，請勿把密碼填在其他欄位。密碼不會出現在本頁 HTML 或一般匯出檔。</p>
+  <p class="security-hint">{{ t("整理資料庫、網站測試、主機及第三方服務帳號。只有「實際密碼」欄位會加密；帳號、主機、登入名稱、權限與用途等資料仍以一般 SQLite 欄位保存，請勿把密碼填在其他欄位。密碼不會出現在本頁 HTML 或一般匯出檔。") }}</p>
   {% if vault_configured %}
     {% if vault_unlocked %}
-    <div class="vault-inline-status"><span>保管庫已解鎖；15 分鐘後自動鎖定。</span><form method="post" action="/settings/vault/lock"><button class="button button-ghost" type="submit">立即鎖定</button></form></div>
+    <div class="vault-inline-status"><span>{{ t("保管庫已解鎖；15 分鐘後自動鎖定。") }}</span><form method="post" action="/settings/vault/lock"><button class="button button-ghost" type="submit">{{ t("立即鎖定") }}</button></form></div>
     {% else %}
-    <div class="vault-inline-status"><span>保管庫目前鎖定。</span><a class="button button-secondary" href="/settings/vault">解鎖保管庫</a></div>
+    <div class="vault-inline-status"><span>{{ t("保管庫目前鎖定。") }}</span><a class="button button-secondary" href="/settings/vault">{{ t("解鎖保管庫") }}</a></div>
     {% endif %}
   {% else %}
-  <div class="vault-inline-status"><span>尚未設定主密碼。</span><a class="button button-secondary" href="/settings/vault">設定保管庫</a></div>
+  <div class="vault-inline-status"><span>{{ t("尚未設定主密碼。") }}</span><a class="button button-secondary" href="/settings/vault">{{ t("設定保管庫") }}</a></div>
   {% endif %}
 
   {% if access_accounts %}
@@ -20,87 +20,92 @@
       <div class="access-account-heading">
         <div><span class="mini-label">{{ access_account_category_label(account.category) }} · {{ access_environment_label(account.environment) }}</span><h3>{{ account.label }}</h3></div>
         <details class="item-actions">
-          <summary aria-label="編輯或刪除 {{ account.label }}">•••</summary>
+          <summary aria-label="{{ t("編輯或刪除") }} {{ account.label }}">•••</summary>
           <div class="action-popover">
             <form method="post" action="/accounts/{{ account.id }}/edit">
-              <label>帳號／服務名稱<input name="label" required value="{{ account.label }}"></label>
+              <label>{{ t("帳號／服務名稱") }}<input name="label" required value="{{ account.label }}"></label>
               <div class="form-grid two-columns">
-                <label>類型<select name="category">{% for value, label in access_account_categories %}<option value="{{ value }}" {% if account.category == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-                <label>環境<select name="environment">{% for value, label in access_environments %}<option value="{{ value }}" {% if account.environment == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+                <label>{{ t("類型") }}<select name="category">{% for value, label in access_account_categories %}<option value="{{ value }}" {% if account.category == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+                <label>{{ t("環境") }}<select name="environment">{% for value, label in access_environments %}<option value="{{ value }}" {% if account.environment == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
               </div>
-              <label>主機／登入網址<input name="endpoint" value="{{ account.endpoint }}"></label>
-              <label>資料庫名稱<input name="database_name" value="{{ account.database_name }}"></label>
-              <label>登入帳號<input name="username" value="{{ account.username }}" autocomplete="off"></label>
-              <label>權限範圍<input name="role_scope" value="{{ account.role_scope }}"></label>
-              <label>用途說明<input name="purpose" value="{{ account.purpose }}"></label>
-              <label>負責人／聯絡人<input name="owner" value="{{ account.owner }}"></label>
-              <label>密碼保管位置（選填）<input name="secret_reference" value="{{ account.secret_reference }}"></label>
-              {% if vault_unlocked %}<label>更換密碼（留白表示不變）<input type="password" name="secret_value" maxlength="4096" autocomplete="new-password"></label>{% elif account.has_secret %}<p class="muted">若要更換密碼，請先解鎖保管庫。</p>{% endif %}
-              {% if account.has_secret %}<label class="checkbox-label"><input type="checkbox" name="delete_secret" value="true">刪除已保存密碼</label>{% endif %}
-              <button class="button button-primary" type="submit">儲存帳號資料</button>
+              <label>{{ t("主機／登入網址") }}<input name="endpoint" value="{{ account.endpoint }}"></label>
+              <label>{{ t("資料庫名稱") }}<input name="database_name" value="{{ account.database_name }}"></label>
+              <label>{{ t("登入帳號") }}<input name="username" value="{{ account.username }}" autocomplete="off"></label>
+              <label>{{ t("權限範圍") }}<input name="role_scope" value="{{ account.role_scope }}"></label>
+              <label>{{ t("用途說明") }}<input name="purpose" value="{{ account.purpose }}"></label>
+              <label>{{ t("負責人／聯絡人") }}<input name="owner" value="{{ account.owner }}"></label>
+              <label>{{ t("密碼保管位置（選填）") }}<input name="secret_reference" value="{{ account.secret_reference }}"></label>
+              {% if vault_unlocked %}<label>{{ t("更換密碼（留白表示不變）") }}<input type="password" name="secret_value" maxlength="4096" autocomplete="new-password"></label>{% elif account.has_secret %}<p class="muted">{{ t("若要更換密碼，請先解鎖保管庫。") }}</p>{% endif %}
+              {% if account.has_secret %}<label class="checkbox-label"><input type="checkbox" name="delete_secret" value="true">{{ t("刪除已保存密碼") }}</label>{% endif %}
+              <button class="button button-primary" type="submit">{{ t("儲存帳號資料") }}</button>
             </form>
-            <form class="delete-form" method="post" action="/accounts/{{ account.id }}/delete" onsubmit="return confirm('確定刪除此帳號資料與已加密密碼？')"><button class="button button-danger" type="submit">刪除帳號資料</button></form>
+            <form class="delete-form" method="post" action="/accounts/{{ account.id }}/delete" onsubmit="return confirm({{ t("確定刪除此帳號資料與已加密密碼？")|tojson|forceescape }})"><button class="button button-danger" type="submit">{{ t("刪除帳號資料") }}</button></form>
           </div>
         </details>
       </div>
       {% if account.endpoint %}<p class="access-account-endpoint">{{ account.endpoint }}</p>{% endif %}
       <dl class="access-account-meta">
-        {% if account.database_name %}<div><dt>資料庫</dt><dd>{{ account.database_name }}</dd></div>{% endif %}
-        {% if account.username %}<div><dt>登入帳號</dt><dd>{{ account.username }}</dd></div>{% endif %}
-        {% if account.role_scope %}<div><dt>權限</dt><dd>{{ account.role_scope }}</dd></div>{% endif %}
-        {% if account.purpose %}<div><dt>用途</dt><dd>{{ account.purpose }}</dd></div>{% endif %}
-        {% if account.owner %}<div><dt>負責人</dt><dd>{{ account.owner }}</dd></div>{% endif %}
-        {% if account.secret_reference %}<div><dt>保管位置</dt><dd>{{ account.secret_reference }}</dd></div>{% endif %}
+        {% if account.database_name %}<div><dt>{{ t("資料庫") }}</dt><dd>{{ account.database_name }}</dd></div>{% endif %}
+        {% if account.username %}<div><dt>{{ t("登入帳號") }}</dt><dd>{{ account.username }}</dd></div>{% endif %}
+        {% if account.role_scope %}<div><dt>{{ t("權限") }}</dt><dd>{{ account.role_scope }}</dd></div>{% endif %}
+        {% if account.purpose %}<div><dt>{{ t("用途") }}</dt><dd>{{ account.purpose }}</dd></div>{% endif %}
+        {% if account.owner %}<div><dt>{{ t("負責人") }}</dt><dd>{{ account.owner }}</dd></div>{% endif %}
+        {% if account.secret_reference %}<div><dt>{{ t("保管位置") }}</dt><dd>{{ account.secret_reference }}</dd></div>{% endif %}
       </dl>
       <div class="secret-row">
         {% if account.has_secret %}
-        <span class="secret-badge">已加密保存密碼</span>
+        <span class="secret-badge">{{ t("已加密保存密碼") }}</span>
         <span class="secret-output" data-secret-output="{{ account.id }}" aria-live="off">••••••••••</span>
-        {% if vault_unlocked %}<button class="button button-ghost secret-reveal" type="button" data-account-id="{{ account.id }}" data-reveal-url="/accounts/{{ account.id }}/reveal">顯示 15 秒</button>{% else %}<span class="muted">解鎖後可查看</span>{% endif %}
-        {% elif account.secret_reference %}<span class="muted">實際密碼保存在指定位置</span>
-        {% else %}<span class="muted">尚未保存密碼</span>{% endif %}
+        {% if vault_unlocked %}<button class="button button-ghost secret-reveal" type="button" data-account-id="{{ account.id }}" data-reveal-url="/accounts/{{ account.id }}/reveal">{{ t("顯示 15 秒") }}</button>{% else %}<span class="muted">{{ t("解鎖後可查看") }}</span>{% endif %}
+        {% elif account.secret_reference %}<span class="muted">{{ t("實際密碼保存在指定位置") }}</span>
+        {% else %}<span class="muted">{{ t("尚未保存密碼") }}</span>{% endif %}
       </div>
     </article>
     {% endfor %}
   </div>
   {% else %}
-  <div class="empty-inline"><span class="empty-icon" aria-hidden="true">⌑</span><div><strong>尚未建立帳號紀錄</strong><p>新增一筆資料庫、測試網站或主機帳號，並註明環境與權限。</p></div></div>
+  <div class="empty-inline"><span class="empty-icon" aria-hidden="true">⌑</span><div><strong>{{ t("尚未建立帳號紀錄") }}</strong><p>{{ t("新增一筆資料庫、測試網站或主機帳號，並註明環境與權限。") }}</p></div></div>
   {% endif %}
 
   {% if allow_secret_export %}
     {% if vault_unlocked %}
     <details class="sensitive-export">
-      <summary>敏感匯出選項（可含實際密碼）</summary>
-      <p class="security-warning">匯出檔將包含實際密碼。只有在接收者與傳送管道都安全時才使用；一般 Markdown／PDF 匯出仍不含密碼。</p>
-      <label class="checkbox-label sensitive-confirm"><input form="sensitive-export-form" type="checkbox" name="confirm_sensitive_export" value="true" required>我確認此檔案包含實際密碼，並會安全傳送與清除副本。</label>
-      <form id="sensitive-export-form" method="post" action="/projects/{{ project.id }}/export-with-secrets" onsubmit="return confirm('這份檔案會包含實際密碼。確定繼續？')">
-        <button class="button button-danger" name="export_format" value="markdown" type="submit">匯出含密碼 Markdown</button>
-        <button class="button button-danger" name="export_format" value="pdf" type="submit">匯出含密碼 PDF</button>
+      <summary>{{ t("敏感匯出選項（可含實際密碼）") }}</summary>
+      <p class="security-warning">{{ t("匯出檔將包含實際密碼。只有在接收者與傳送管道都安全時才使用；一般 Markdown／PDF 匯出仍不含密碼。") }}</p>
+      <label class="checkbox-label sensitive-confirm"><input form="sensitive-export-form" type="checkbox" name="confirm_sensitive_export" value="true" required>{{ t("我確認此檔案包含實際密碼，並會安全傳送與清除副本。") }}</label>
+      <form id="sensitive-export-form" method="post" action="/projects/{{ project.id }}/export-with-secrets" onsubmit="return confirm({{ t("這份檔案會包含實際密碼。確定繼續？")|tojson|forceescape }})">
+        <button class="button button-danger" name="export_format" value="markdown" type="submit">{{ t("匯出含密碼 Markdown") }}</button>
+        <button class="button button-danger" name="export_format" value="pdf" type="submit">{{ t("匯出含密碼 PDF") }}</button>
       </form>
     </details>
-    {% else %}<p class="muted export-policy-note">已允許敏感匯出；解鎖保管庫後才會顯示含密碼匯出選項。</p>{% endif %}
+    {% else %}<p class="muted export-policy-note">{{ t("已允許敏感匯出；解鎖保管庫後才會顯示含密碼匯出選項。") }}</p>{% endif %}
   {% else %}
-  <p class="muted export-policy-note">一般匯出永遠遮蔽密碼。若確有需要，可在<a href="/settings/vault">保管庫設定</a>啟用額外的敏感匯出功能。</p>
+  <p class="muted export-policy-note">{{ t("一般匯出永遠遮蔽密碼。若確有需要，可在") }}<a href="/settings/vault">{{ t("保管庫設定") }}</a>{{ t("啟用額外的敏感匯出功能。") }}</p>
   {% endif %}
 
   <details class="add-form">
-    <summary><span aria-hidden="true">＋</span> 新增帳號／存取資料</summary>
+    <summary><span aria-hidden="true">＋</span> {{ t("新增帳號／存取資料") }}</summary>
     <form method="post" action="/projects/{{ project.id }}/accounts">
-      <label>帳號／服務名稱<input name="label" required placeholder="例如：測試環境 PostgreSQL"></label>
+      <label>{{ t("帳號／服務名稱") }}<input name="label" required placeholder="{{ t("例如：測試環境 PostgreSQL") }}"></label>
       <div class="form-grid two-columns">
-        <label>類型<select name="category">{% for value, label in access_account_categories %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label>
-        <label>環境<select name="environment">{% for value, label in access_environments %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label>
+        <label>{{ t("類型") }}<select name="category">{% for value, label in access_account_categories %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label>
+        <label>{{ t("環境") }}<select name="environment">{% for value, label in access_environments %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label>
       </div>
-      <label>主機／登入網址<input name="endpoint" placeholder="主機名稱、IP:Port 或登入 URL"></label>
-      <label>資料庫名稱<input name="database_name" placeholder="資料庫帳號適用"></label>
-      <label>登入帳號<input name="username" autocomplete="off"></label>
-      <label>權限範圍<input name="role_scope" placeholder="例如：測試資料讀寫，無管理權限"></label>
-      <label>用途說明<input name="purpose"></label>
-      <label>負責人／聯絡人<input name="owner"></label>
-      <label>密碼保管位置（選填）<input name="secret_reference" placeholder="例如：公司密碼庫的項目名稱"></label>
-      {% if vault_unlocked %}<label>實際密碼（選填；加密保存）<input type="password" name="secret_value" maxlength="4096" autocomplete="new-password"></label>{% else %}<p class="muted">目前可先保存帳號資料；要保存實際密碼，請先設定並解鎖保管庫。</p>{% endif %}
-      <button class="button button-primary" type="submit">新增帳號資料</button>
+      <label>{{ t("主機／登入網址") }}<input name="endpoint" placeholder="{{ t("主機名稱、IP:Port 或登入 URL") }}"></label>
+      <label>{{ t("資料庫名稱") }}<input name="database_name" placeholder="{{ t("資料庫帳號適用") }}"></label>
+      <label>{{ t("登入帳號") }}<input name="username" autocomplete="off"></label>
+      <label>{{ t("權限範圍") }}<input name="role_scope" placeholder="{{ t("例如：測試資料讀寫，無管理權限") }}"></label>
+      <label>{{ t("用途說明") }}<input name="purpose"></label>
+      <label>{{ t("負責人／聯絡人") }}<input name="owner"></label>
+      <label>{{ t("密碼保管位置（選填）") }}<input name="secret_reference" placeholder="{{ t("例如：公司密碼庫的項目名稱") }}"></label>
+      {% if vault_unlocked %}<label>{{ t("實際密碼（選填；加密保存）") }}<input type="password" name="secret_value" maxlength="4096" autocomplete="new-password"></label>{% else %}<p class="muted">{{ t("目前可先保存帳號資料；要保存實際密碼，請先設定並解鎖保管庫。") }}</p>{% endif %}
+      <button class="button button-primary" type="submit">{{ t("新增帳號資料") }}</button>
     </form>
   </details>
 </section>
-<script src="/static/vault.js?v=20261013" defer></script>
+<script type="application/json" id="vault-messages">{{ {
+  'show': t('顯示 15 秒'), 'pending': t('解密中…'), 'hide': t('立即遮蔽'),
+  'retry': t('顯示失敗，重試'), 'readError': t('無法讀取密碼，請確認保管庫仍為解鎖狀態。'),
+  'formatError': t('密碼回應格式錯誤。'), 'genericError': t('無法讀取密碼')
+}|tojson }}</script>
+<script src="/static/vault.js?v=20261012-i18n" defer></script>

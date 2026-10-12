@@ -5,7 +5,7 @@ import sqlite3
 from contextlib import asynccontextmanager
 from datetime import datetime
 from math import ceil
-from urllib.parse import quote, urlencode
+from urllib.parse import quote, unquote, urlencode, urlsplit
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
@@ -25,6 +25,7 @@ from .backup import (
     save_uploaded_backup,
 )
 from .db import database_path, db_session, init_db
+from .i18n import LANGUAGE_COOKIE, LANGUAGES, get_language, translate_error, translator
 from .pdf_export import PDFExportError, generate_project_pdf
 from .vault import (
     InvalidMasterPassword,
@@ -108,19 +109,77 @@ app = FastAPI(title="ProjMemo", version="0.1.0", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
 
+@app.exception_handler(HTTPException)
+async def localized_http_error(request: Request, error: HTTPException) -> JSONResponse:
+    detail = (
+        translate_error(error.detail, get_language(request))
+        if isinstance(error.detail, str) else error.detail
+    )
+    return JSONResponse({"detail": detail}, status_code=error.status_code, headers=error.headers)
+
+
+@app.post("/settings/language")
+def change_language(
+    request: Request,
+    language: str = Form(...),
+    return_to: str = Form("/"),
+) -> RedirectResponse:
+    if language not in LANGUAGES:
+        raise HTTPException(status_code=400, detail="不支援的介面語言")
+    try:
+        destination = urlsplit(return_to)
+    except ValueError:
+        return_to = "/"
+        destination = urlsplit(return_to)
+    decoded_path = unquote(destination.path)
+    if (
+        not return_to.startswith("/")
+        or destination.scheme
+        or destination.netloc
+        or unquote(return_to).startswith("//")
+        or decoded_path.startswith("//")
+        or "\\" in decoded_path
+        or any(ord(character) < 32 for character in unquote(return_to))
+    ):
+        return_to = "/"
+    response = RedirectResponse(return_to, status_code=303)
+    response.set_cookie(
+        LANGUAGE_COOKIE, language, max_age=365 * 24 * 60 * 60,
+        httponly=True, secure=request.url.scheme == "https", samesite="strict", path="/",
+    )
+    return response
+
+
 def page_context(request: Request, **values: object) -> dict[str, object]:
-    return {
+    language = get_language(request)
+    t = translator(request)
+    option_groups = {
+        "status_options": (STATUS_OPTIONS, "status_label"),
+        "url_types": (URL_TYPES, "url_type_label"),
+        "note_categories": (NOTE_CATEGORIES, "note_category_label"),
+        "priorities": (PRIORITIES, "priority_label"),
+        "checklist_categories": (CHECKLIST_CATEGORIES, "checklist_category_label"),
+        "environments": (ENVIRONMENTS, "environment_label"),
+        "access_account_categories": (ACCESS_ACCOUNT_CATEGORIES, "access_account_category_label"),
+        "access_environments": (ACCESS_ENVIRONMENTS, "access_environment_label"),
+    }
+    context = {
         "request": request,
-        "status_options": STATUS_OPTIONS,
-        "url_types": URL_TYPES,
-        "note_categories": NOTE_CATEGORIES,
-        "priorities": PRIORITIES,
-        "checklist_categories": CHECKLIST_CATEGORIES,
-        "environments": ENVIRONMENTS,
-        "access_account_categories": ACCESS_ACCOUNT_CATEGORIES,
-        "access_environments": ACCESS_ENVIRONMENTS,
+        "language": language,
+        "t": t,
+        "return_to": request.url.path + (f"?{request.url.query}" if request.url.query else ""),
         **values,
     }
+    for name, (options, label_function) in option_groups.items():
+        localized = [(value, t(label)) for value, label in options]
+        context[name] = localized
+        labels = dict(localized)
+        context[label_function] = lambda value, labels=labels: labels.get(value, value)
+    if "form_title" in values:
+        context["form_title"] = t(str(values["form_title"]))
+    if "error" in values:
+        context["error"] = translate_error(str(values["error"]), language)
+    return context
 
 
 def get_project(connection: sqlite3.Connection, project_id: int) -> sqlite3.Row:

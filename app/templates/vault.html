@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}密碼保管庫｜ProjMemo{% endblock %}
+{% block title %}{{ t("密碼保管庫｜ProjMemo") }}{% endblock %}
 {% block content %}
 <section class="page-hero vault-hero">
   <div>
-    <nav class="breadcrumb" aria-label="breadcrumb"><a href="/">專案列表</a><span aria-hidden="true">/</span><span>密碼保管庫</span></nav>
-    <p class="eyebrow">LOCAL CREDENTIAL VAULT</p>
-    <h1>密碼保管庫</h1>
-    <p class="hero-copy">資料庫與測試帳號的實際密碼以主密碼加密保護；主密碼只用來解鎖，不會存入 ProjMemo。</p>
+    <nav class="breadcrumb" aria-label="{{ t('頁面路徑') }}"><a href="/">{{ t("專案列表") }}</a><span aria-hidden="true">/</span><span>{{ t("密碼保管庫") }}</span></nav>
+    <p class="eyebrow">{{ t("本機密碼保管庫") }}</p>
+    <h1>{{ t("密碼保管庫") }}</h1>
+    <p class="hero-copy">{{ t("資料庫與測試帳號的實際密碼以主密碼加密保護；主密碼只用來解鎖，不會存入 ProjMemo。") }}</p>
   </div>
 </section>
 
@@ -14,25 +14,25 @@
 
 <section class="panel form-panel vault-panel">
   <div class="section-heading">
-    <div><p class="eyebrow">VAULT STATUS</p><h2>{% if not vault_configured %}開始設定{% elif vault_unlocked %}保管庫已解鎖{% else %}保管庫已鎖定{% endif %}</h2></div>
-    {% if vault_configured and vault_unlocked %}<span class="vault-state vault-state-open">已解鎖</span>{% elif vault_configured %}<span class="vault-state">已鎖定</span>{% else %}<span class="vault-state">未設定</span>{% endif %}
+    <div><p class="eyebrow">{{ t("保管庫狀態") }}</p><h2>{% if not vault_configured %}{{ t("開始設定") }}{% elif vault_unlocked %}{{ t("保管庫已解鎖") }}{% else %}{{ t("保管庫已鎖定") }}{% endif %}</h2></div>
+    {% if vault_configured and vault_unlocked %}<span class="vault-state vault-state-open">{{ t("已解鎖") }}</span>{% elif vault_configured %}<span class="vault-state">{{ t("已鎖定") }}</span>{% else %}<span class="vault-state">{{ t("未設定") }}</span>{% endif %}
   </div>
 
   {% if not vault_configured %}
-  <p>設定一次主密碼後，ProjMemo 會用 Argon2id 派生加密金鑰，再以 AES-GCM 加密每筆密碼。請使用長且唯一的密碼短語，至少 16 個字元。</p>
+  <p>{{ t("設定一次主密碼後，ProjMemo 會用 Argon2id 派生加密金鑰，再以 AES-GCM 加密每筆密碼。請使用長且唯一的密碼短語，至少 16 個字元。") }}</p>
   <form method="post" action="/settings/vault/setup" class="vault-form">
-    <label>主密碼<input type="password" name="master_password" minlength="16" maxlength="1024" required autocomplete="new-password"></label>
-    <label>再次輸入主密碼<input type="password" name="confirm_password" minlength="16" maxlength="1024" required autocomplete="new-password"></label>
-    <button class="button button-primary" type="submit">建立加密保管庫</button>
+    <label>{{ t("主密碼") }}<input type="password" name="master_password" minlength="16" maxlength="1024" required autocomplete="new-password"></label>
+    <label>{{ t("再次輸入主密碼") }}<input type="password" name="confirm_password" minlength="16" maxlength="1024" required autocomplete="new-password"></label>
+    <button class="button button-primary" type="submit">{{ t("建立加密保管庫") }}</button>
   </form>
   {% elif vault_unlocked %}
-  <p>保管庫已在此瀏覽器解鎖，閒置 15 分鐘或重新啟動 ProjMemo 後會自動鎖定。</p>
-  <form method="post" action="/settings/vault/lock"><button class="button button-ghost" type="submit">立即鎖定</button></form>
+  <p>{{ t("保管庫已在此瀏覽器解鎖，解鎖滿 15 分鐘或重新啟動 ProjMemo 後會自動鎖定。") }}</p>
+  <form method="post" action="/settings/vault/lock"><button class="button button-ghost" type="submit">{{ t("立即鎖定") }}</button></form>
   {% else %}
-  <p>輸入主密碼以查看或保存實際密碼。連續輸入錯誤過多次時，解鎖會暫停一段時間。</p>
+  <p>{{ t("輸入主密碼以查看或保存實際密碼。連續輸入錯誤過多次時，解鎖會暫停一段時間。") }}</p>
   <form method="post" action="/settings/vault/unlock" class="vault-form">
-    <label>主密碼<input type="password" name="master_password" maxlength="1024" required autocomplete="current-password" autofocus></label>
-    <button class="button button-primary" type="submit">解鎖保管庫</button>
+    <label>{{ t("主密碼") }}<input type="password" name="master_password" maxlength="1024" required autocomplete="current-password" autofocus></label>
+    <button class="button button-primary" type="submit">{{ t("解鎖保管庫") }}</button>
   </form>
   {% endif %}
 </section>
@@ -40,27 +40,27 @@
 {% if vault_configured %}
 <section class="panel form-panel vault-panel export-vault-panel">
   <div class="section-heading">
-    <div><p class="eyebrow">EXPORT POLICY</p><h2>匯出保護</h2></div>
-    <span class="vault-state {% if allow_secret_export %}vault-state-warning{% endif %}">{% if allow_secret_export %}允許敏感匯出{% else %}預設安全{% endif %}</span>
+    <div><p class="eyebrow">{{ t("匯出規則") }}</p><h2>{{ t("匯出保護") }}</h2></div>
+    <span class="vault-state {% if allow_secret_export %}vault-state-warning{% endif %}">{% if allow_secret_export %}{{ t("允許敏感匯出") }}{% else %}{{ t("預設安全") }}{% endif %}</span>
   </div>
-  <p>一般 Markdown／PDF 匯出永遠不包含實際密碼。啟用下方選項後，專案頁才會額外提供「含密碼匯出」；仍需解鎖保管庫、勾選確認並再次確認，才會產生含密碼的檔案。</p>
-  <div class="security-warning">敏感匯出檔可被轉寄或留存在下載資料夾。只在必要時開啟，完成後建議立即關閉，並安全傳送及清除檔案副本。</div>
+  <p>{{ t("一般 Markdown／PDF 匯出永遠不包含實際密碼。啟用下方選項後，專案頁才會額外提供「含密碼匯出」；仍需解鎖保管庫、勾選確認並再次確認，才會產生含密碼的檔案。") }}</p>
+  <div class="security-warning">{{ t("敏感匯出檔可被轉寄或留存在下載資料夾。只在必要時開啟，完成後建議立即關閉，並安全傳送及清除檔案副本。") }}</div>
   <form method="post" action="/settings/vault/export-policy" class="export-policy-form">
-    <label class="checkbox-label"><input type="checkbox" name="allow_secret_export" value="true" {% if allow_secret_export %}checked{% endif %}>允許產生含實際密碼的 Markdown／PDF（預設關閉）</label>
-    <button class="button {% if allow_secret_export %}button-danger{% else %}button-primary{% endif %}" type="submit">儲存匯出設定</button>
+    <label class="checkbox-label"><input type="checkbox" name="allow_secret_export" value="true" {% if allow_secret_export %}checked{% endif %}>{{ t("允許產生含實際密碼的 Markdown／PDF（預設關閉）") }}</label>
+    <button class="button {% if allow_secret_export %}button-danger{% else %}button-primary{% endif %}" type="submit">{{ t("儲存匯出設定") }}</button>
   </form>
 </section>
 {% endif %}
 
 <section class="panel form-panel vault-notice">
-  <p class="eyebrow">IMPORTANT</p>
-  <h2>備份與復原注意事項</h2>
+  <p class="eyebrow">{{ t("重要提醒") }}</p>
+  <h2>{{ t("備份與復原注意事項") }}</h2>
   <ul>
-    <li>只有實際密碼欄位會加密；SQLite 中的專案、帳號、主機、登入名稱及其他備註仍是一般資料。備份會包含密文，但不包含主密碼或解密金鑰；匯入備份後仍需使用原主密碼。</li>
-    <li>忘記主密碼就無法還原已保存的實際密碼。ProjMemo 不提供密碼重設或後門。</li>
-    <li>解鎖期間，能使用這台電腦與本機 ProjMemo 的人可能查看密碼；請在離開時鎖定保管庫。</li>
-    <li>ProjMemo 目前沒有登入與多使用者權限，請只在本機使用，不要把服務公開到區域網路或網際網路。</li>
-    <li>不要把生產環境的高權限密碼當一般交接附件傳送；優先使用組織的密碼管理工具與授權交接流程。</li>
+    <li>{{ t("只有實際密碼欄位會加密；SQLite 中的專案、帳號、主機、登入名稱及其他備註仍是一般資料。備份會包含密文，但不包含主密碼或解密金鑰；匯入備份後仍需使用原主密碼。") }}</li>
+    <li>{{ t("忘記主密碼就無法還原已保存的實際密碼。ProjMemo 不提供密碼重設或後門。") }}</li>
+    <li>{{ t("解鎖期間，能使用這台電腦與本機 ProjMemo 的人可能查看密碼；請在離開時鎖定保管庫。") }}</li>
+    <li>{{ t("ProjMemo 目前沒有登入與多使用者權限，請只在本機使用，不要把服務公開到區域網路或網際網路。") }}</li>
+    <li>{{ t("不要把生產環境的高權限密碼當一般交接附件傳送；優先使用組織的密碼管理工具與授權交接流程。") }}</li>
   </ul>
 </section>
 {% endblock %}

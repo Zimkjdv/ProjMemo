@@ -2,6 +2,8 @@
 
 ProjMemo 是一個以本機 Python `.venv` 執行的個人專案備註與交接清單管理工具，用來集中保存專案 URL、注意事項、已知問題、環境設定說明與交接資訊；Docker 化安排在功能接近完成後。
 
+目前定位為個人部署、桌面使用。介面提供繁體中文與英文，可在右上角切換；瀏覽器會記住選擇，並保留目前頁面、篩選條件與內容捷徑位置。英文版沿用 `PROJECT OVERVIEW`、`REFERENCE`、`HANDOVER` 等區塊小標。專案名稱、說明、備註與標籤等使用者資料不會自動翻譯；目前 Markdown／PDF 的文件標題仍使用原本格式。
+
 ## GitHub Repository 建議
 
 - **Repository name**：`projmemo`
