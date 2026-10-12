@@ -18,12 +18,26 @@
     <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
     {% endfor %}
   </select></label>
+  <label class="filter-select page-size-select"><span>每頁</span><select name="page_size" aria-label="每頁顯示數量">
+    {% for option in page_size_options %}
+    <option value="{{ option }}" {% if page_size == option %}selected{% endif %}>{{ option }} 筆</option>
+    {% endfor %}
+  </select></label>
+  <input type="hidden" name="view" value="{{ view_mode }}">
+  <input type="hidden" name="page" value="1">
   <button class="button button-secondary" type="submit">套用篩選</button>
 </form>
 
-{% if projects %}
-<div class="list-caption"><h2>所有專案</h2><span>{{ projects|length }} 個專案</span></div>
-<section class="project-grid">
+<div class="results-toolbar">
+  <div class="list-caption"><h2>所有專案</h2><span class="project-count">{% if q or selected_status %}符合條件{% endif %} {{ total_count }} 個專案</span></div>
+  <div class="view-switch" role="group" aria-label="專案顯示方式">
+    <a class="view-switch-button {% if view_mode == 'cards' %}active{% endif %}" href="{{ card_view_url }}" {% if view_mode == 'cards' %}aria-current="page"{% endif %} aria-label="卡片檢視"><span aria-hidden="true">▦</span> 卡片</a>
+    <a class="view-switch-button {% if view_mode == 'list' %}active{% endif %}" href="{{ list_view_url }}" {% if view_mode == 'list' %}aria-current="page"{% endif %} aria-label="明細清單檢視"><span aria-hidden="true">☷</span> 清單</a>
+  </div>
+</div>
+
+{% if projects and view_mode == 'cards' %}
+<section class="project-grid" aria-label="專案卡片列表">
   {% for project in projects %}
   <a class="project-card" href="/projects/{{ project.id }}">
     <div class="project-card-top"><span class="project-card-icon" aria-hidden="true">{{ project.name[:1]|upper }}</span><span class="status status-{{ project.status }}">{{ status_label(project.status) }}</span></div>
@@ -34,11 +48,44 @@
   </a>
   {% endfor %}
 </section>
+{% elif projects %}
+<div class="project-table-container" role="region" aria-label="專案明細列表" tabindex="0">
+  <table class="project-list">
+    <thead><tr><th scope="col">專案</th><th scope="col">狀態</th><th scope="col">標籤</th><th scope="col">負責人</th><th scope="col">最後更新</th><th scope="col"><span class="visually-hidden">開啟</span></th></tr></thead>
+    <tbody>
+      {% for project in projects %}
+      <tr class="project-list-row">
+        <td class="project-list-main"><a href="/projects/{{ project.id }}">{{ project.name }}</a><span>{{ project.description or '尚未填寫專案描述' }}</span></td>
+        <td><span class="status status-{{ project.status }}">{{ status_label(project.status) }}</span></td>
+        <td>{% if project.tags %}<div class="tag-list">{% for tag in project.tags.split(',') %}<span class="tag">{{ tag.strip() }}</span>{% endfor %}</div>{% else %}<span class="muted">—</span>{% endif %}</td>
+        <td>{{ project.owner or '未指定' }}</td>
+        <td class="project-list-updated">{{ project.updated_at }}</td>
+        <td><a class="project-list-open" href="/projects/{{ project.id }}" aria-label="開啟 {{ project.name }}">→</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% else %}
 <section class="empty-state">
   <span class="empty-icon" aria-hidden="true">▤</span>
   {% if q or selected_status %}<h2>沒有符合條件的專案</h2><p>試試其他關鍵字或狀態篩選。</p><a class="button button-ghost" href="/">清除篩選</a>
   {% else %}<h2>開始整理第一個專案</h2><p>把常用連結、注意事項與交接資訊集中在一起。</p><a class="button button-primary" href="/projects/new">建立第一個專案</a>{% endif %}
 </section>
+{% endif %}
+
+{% if total_count %}
+<nav class="pagination" aria-label="專案分頁">
+  <span class="pagination-summary">顯示 {{ first_result }}–{{ last_result }} 筆，共 {{ total_count }} 個專案</span>
+  {% if page_count > 1 %}
+  <div class="pagination-controls">
+    {% if previous_url %}<a class="pagination-arrow" href="{{ previous_url }}" aria-label="上一頁">‹ <span>上一頁</span></a>{% else %}<span class="pagination-arrow disabled" aria-disabled="true">‹ <span>上一頁</span></span>{% endif %}
+    {% for item in pagination_pages %}
+    <a class="pagination-page {% if item.current %}active{% endif %}" href="{{ item.url }}" {% if item.current %}aria-current="page"{% endif %}>{{ item.number }}</a>
+    {% endfor %}
+    {% if next_url %}<a class="pagination-arrow" href="{{ next_url }}" aria-label="下一頁"><span>下一頁</span> ›</a>{% else %}<span class="pagination-arrow disabled" aria-disabled="true"><span>下一頁</span> ›</span>{% endif %}
+  </div>
+  {% endif %}
+</nav>
 {% endif %}
 {% endblock %}

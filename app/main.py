@@ -4,7 +4,8 @@ from pathlib import Path
 import sqlite3
 from contextlib import asynccontextmanager
 from datetime import datetime
-from urllib.parse import quote
+from math import ceil
+from urllib.parse import quote, urlencode
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
@@ -271,24 +272,98 @@ def download_recovery_backup(filename: str) -> FileResponse:
     )
 
 
+def project_list_url(
+    q: str,
+    status: str,
+    view_mode: str,
+    page_size: int,
+    page: int,
+) -> str:
+    params = {
+        "view": view_mode,
+        "page_size": page_size,
+        "page": page,
+    }
+    if q:
+        params["q"] = q
+    if status:
+        params["status"] = status
+    return f"/?{urlencode(params)}"
+
+
 @app.get("/", response_class=HTMLResponse)
-def index(request: Request, q: str = "", status: str = "") -> HTMLResponse:
-    query = "SELECT * FROM projects WHERE 1 = 1"
+def index(
+    request: Request,
+    q: str = "",
+    status: str = "",
+    view: str = "cards",
+    page_size: int = 10,
+    page: int = 1,
+) -> HTMLResponse:
+    q = q.strip()
+    selected_status = status if status in {value for value, _ in STATUS_OPTIONS} else ""
+    view_mode = view if view in {"cards", "list"} else "cards"
+    page_size = page_size if page_size in {10, 20, 50} else 10
     params: list[str] = []
+    filters: list[str] = []
     if q.strip():
-        query += " AND (name LIKE ? OR description LIKE ? OR tags LIKE ?)"
-        search = f"%{q.strip()}%"
+        filters.append("(name LIKE ? OR description LIKE ? OR tags LIKE ?)")
+        search = f"%{q}%"
         params.extend([search, search, search])
-    if status in {value for value, _ in STATUS_OPTIONS}:
-        query += " AND status = ?"
-        params.append(status)
-    query += " ORDER BY updated_at DESC, id DESC"
+    if selected_status:
+        filters.append("status = ?")
+        params.append(selected_status)
+    where_clause = f" WHERE {' AND '.join(filters)}" if filters else ""
     with db_session() as connection:
-        projects = connection.execute(query, params).fetchall()
+        total_count = connection.execute(
+            f"SELECT COUNT(*) FROM projects{where_clause}", params
+        ).fetchone()[0]
+        page_count = ceil(total_count / page_size) if total_count else 0
+        page = min(max(page, 1), page_count) if page_count else 1
+        projects = connection.execute(
+            f"SELECT * FROM projects{where_clause} "
+            "ORDER BY updated_at DESC, id DESC LIMIT ? OFFSET ?",
+            [*params, page_size, (page - 1) * page_size],
+        ).fetchall()
+
+    first_page = max(1, min(page - 2, page_count - 4)) if page_count else 0
+    last_page = min(page_count, first_page + 4) if page_count else 0
+    pagination_pages = [
+        {
+            "number": page_number,
+            "url": project_list_url(q, selected_status, view_mode, page_size, page_number),
+            "current": page_number == page,
+        }
+        for page_number in range(first_page, last_page + 1)
+    ]
     return templates.TemplateResponse(
         request,
         "index.html",
-        page_context(request, projects=projects, q=q, selected_status=status),
+        page_context(
+            request,
+            projects=projects,
+            q=q,
+            selected_status=selected_status,
+            view_mode=view_mode,
+            page_size=page_size,
+            page_size_options=(10, 20, 50),
+            page=page,
+            page_count=page_count,
+            total_count=total_count,
+            first_result=(page - 1) * page_size + 1 if total_count else 0,
+            last_result=min(page * page_size, total_count),
+            pagination_pages=pagination_pages,
+            previous_url=(
+                project_list_url(q, selected_status, view_mode, page_size, page - 1)
+                if page > 1 else ""
+            ),
+            next_url=(
+                project_list_url(q, selected_status, view_mode, page_size, page + 1)
+                if page < page_count else ""
+            ),
+            card_view_url=project_list_url(q, selected_status, "cards", page_size, page),
+            list_view_url=project_list_url(q, selected_status, "list", page_size, page),
+        ),
     )
 
 

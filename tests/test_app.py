@@ -151,3 +151,59 @@ def test_project_lifecycle(tmp_path: Path, monkeypatch) -> None:
                 "SELECT name FROM projects WHERE name = ?", ("還原後應消失的專案",)
             ).fetchone()
             assert restored_backup_name == ("還原後應消失的專案",)
+
+
+def test_project_list_views_filters_and_pagination(tmp_path: Path, monkeypatch) -> None:
+    database_path = tmp_path / "list-test.db"
+    monkeypatch.setenv("PROJMEMO_DB_PATH", str(database_path))
+
+    from app.main import app
+    from app.db import db_session
+
+    with TestClient(app, follow_redirects=False) as client:
+        for project_number in range(1, 24):
+            response = client.post(
+                "/projects/new",
+                data={
+                    "name": f"Project {project_number:02d}",
+                    "description": f"Pagination fixture {project_number:02d}",
+                    "status": "completed" if project_number % 2 == 0 else "maintenance",
+                    "owner": f"Owner {project_number:02d}",
+                    "tags": "Python, web",
+                },
+            )
+            assert response.status_code == 303
+
+        with db_session() as connection:
+            connection.execute("UPDATE projects SET updated_at = '2026-01-01 00:00:00'")
+
+        cards_page = client.get("/")
+        assert cards_page.status_code == 200
+        assert cards_page.text.count('class="project-card"') == 10
+        assert "Project 23" in cards_page.text
+        assert "Project 13" not in cards_page.text
+        assert "顯示 1–10 筆，共 23 個專案" in cards_page.text
+
+        second_cards_page = client.get("/?page=2")
+        assert second_cards_page.text.count('class="project-card"') == 10
+        assert "Project 13" in second_cards_page.text
+        assert "Project 04" in second_cards_page.text
+        assert "Project 03" not in second_cards_page.text
+
+        list_page = client.get("/?view=list&page_size=20&page=2&q=Project")
+        assert list_page.status_code == 200
+        assert list_page.text.count('class="project-list-row"') == 3
+        assert "Project 03" in list_page.text
+        assert "Project 04" not in list_page.text
+        assert "顯示 21–23 筆，共 23 個專案" in list_page.text
+        assert 'href="/?view=cards&amp;page_size=20&amp;page=2&amp;q=Project"' in list_page.text
+        assert 'href="/?view=list&amp;page_size=20&amp;page=1&amp;q=Project"' in list_page.text
+
+        all_projects_page = client.get("/?view=list&page_size=50")
+        assert all_projects_page.text.count('class="project-list-row"') == 23
+        assert "顯示 1–23 筆，共 23 個專案" in all_projects_page.text
+
+        filtered_page = client.get("/?view=list&page_size=10&page=2&status=completed")
+        assert filtered_page.text.count('class="project-list-row"') == 1
+        assert "符合條件 11 個專案" in filtered_page.text
+        assert 'href="/?view=list&amp;page_size=10&amp;page=1&amp;status=completed"' in filtered_page.text
