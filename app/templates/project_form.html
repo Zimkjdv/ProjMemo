@@ -1,29 +1,116 @@
 {% extends "base.html" %}
 {% block title %}{{ form_title }}｜ProjMemo{% endblock %}
 {% block content %}
-<div class="section-heading">
-  <div>
-    <nav class="breadcrumb" aria-label="{{ t('頁面路徑') }}"><a href="/">{{ t("專案列表") }}</a>{% if project %}<span aria-hidden="true">/</span><a href="/projects/{{ project.id }}">{{ project.name }}</a>{% endif %}</nav>
-    <p class="eyebrow">{{ t("專案設定") }}</p>
-    <h1>{{ form_title }}</h1>
-    <p class="form-intro">{{ t("基本資訊能幫你日後快速辨識專案，也會出現在專案匯出文件中。") }}</p>
-  </div>
-  <a class="button button-ghost" href="{% if project %}/projects/{{ project.id }}{% else %}/{% endif %}">{{ t("取消") }}</a>
-</div>
+<nav class="breadcrumb" aria-label="{{ t('頁面路徑') }}">
+  <a href="/">{{ t('專案列表') }}</a>
+  <span aria-hidden="true">/</span>
+  {% if project %}<a href="/projects/{{ project.id }}">{{ project.name }}</a><span aria-hidden="true">/</span>{% endif %}
+  <span>{{ form_title }}</span>
+</nav>
 
-<form class="panel form-panel" method="post" action="{% if project %}/projects/{{ project.id }}/edit{% else %}/projects/new{% endif %}">
-  <div class="form-section-heading"><span class="form-section-icon" aria-hidden="true">01</span><div><h2>{{ t("專案基本資料") }}</h2><p>{{ t("名稱、目前狀態與相關負責人。") }}</p></div></div>
-  <label>{{ t("專案名稱") }} <span class="required">*</span><input name="name" required value="{{ project.name if project else '' }}" placeholder="{{ t("例如：客戶入口網站") }}"></label>
-  <label>{{ t("專案描述") }}<textarea name="description" rows="4" placeholder="{{ t("簡單說明專案用途、範圍或目前進度") }}">{{ project.description if project else '' }}</textarea></label>
-  <div class="form-grid two-columns">
-    <label>{{ t("專案狀態") }}
-      <select name="status">
-        {% for value, label in status_options %}<option value="{{ value }}" {% if (project.status if project else 'maintenance') == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
-      </select>
-    </label>
-    <label>{{ t("負責人") }}<input name="owner" value="{{ project.owner if project else '' }}" placeholder="{{ t("姓名或團隊") }}"></label>
-  </div>
-  <label>{{ t("標籤") }} <span class="field-help">{{ t("用逗號分隔，方便之後搜尋，例如：Python, API, legacy") }}</span><input name="tags" value="{{ project.tags if project else '' }}" placeholder="Python, API"></label>
-  <div class="form-actions"><a class="button button-ghost" href="{% if project %}/projects/{{ project.id }}{% else %}/{% endif %}">{{ t("取消") }}</a><button class="button button-primary" type="submit">{{ t("儲存專案") }}</button></div>
-</form>
+<header class="project-editor-heading">
+  <p class="eyebrow">{{ t('專案設定') }}</p>
+  <h1>{{ form_title }}</h1>
+  <p class="form-intro">{{ t('調整專案基本資訊，右側可即時預覽更新後的顯示。') if project else t('先填寫基本資訊，連結、備註與交接內容可在建立後補充。') }}</p>
+</header>
+
+<div class="project-editor-layout">
+  <form class="panel project-editor-form" id="project-editor" method="post" action="{% if project %}/projects/{{ project.id }}/edit{% else %}/projects/new{% endif %}">
+    <section class="editor-section" aria-labelledby="basic-info-heading">
+      <div class="editor-section-heading">
+        <span class="form-section-icon" aria-hidden="true">01</span>
+        <div><h2 id="basic-info-heading">{{ t('專案基本資料') }}</h2><p>{{ t('專案名稱為必填，其餘資料可稍後補充。') }}</p></div>
+      </div>
+      <div class="editor-primary-fields">
+        <label for="project-name">{{ t('專案名稱') }} <span class="required" aria-hidden="true">*</span>
+          <input id="project-name" name="name" required value="{{ project.name if project else '' }}" placeholder="{{ t('例如：客戶入口網站') }}" autofocus>
+        </label>
+        <label for="project-status">{{ t('專案狀態') }}
+          <select id="project-status" name="status">
+            {% for value, label in status_options %}<option value="{{ value }}" {% if (project.status if project else 'maintenance') == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+          </select>
+        </label>
+      </div>
+      <label class="editor-description-field" for="project-description">{{ t('專案描述') }} <span class="editor-optional">{{ t('選填') }}</span>
+        <textarea id="project-description" name="description" rows="3" placeholder="{{ t('簡單說明專案用途、範圍或目前進度') }}">{{ project.description if project else '' }}</textarea>
+      </label>
+    </section>
+
+    <section class="editor-section" aria-labelledby="classification-heading">
+      <div class="editor-section-heading">
+        <span class="form-section-icon" aria-hidden="true">02</span>
+        <div><h2 id="classification-heading">{{ t('分類與負責人') }}</h2><p>{{ t('方便辨識專案、搜尋與安排後續交接。') }}</p></div>
+      </div>
+      <div class="editor-classification-fields">
+        <div class="token-field" data-token-field="owner">
+          <label for="project-owner">{{ t('負責人') }} <span class="editor-optional">{{ t('選填') }}</span></label>
+          <div class="token-control">
+            <span class="token-values"></span>
+            <input id="project-owner" name="owner" value="{{ project.owner if project else '' }}" placeholder="{{ t('姓名或團隊') }}" aria-describedby="owner-help" autocomplete="off">
+          </div>
+          <p class="editor-field-help" id="owner-help">{{ t('輸入後按 Enter，或用逗號分隔多位負責人。') }}</p>
+        </div>
+        <div class="token-field" data-token-field="tags">
+          <label for="project-tags">{{ t('標籤') }} <span class="editor-optional">{{ t('選填') }}</span></label>
+          <div class="token-control">
+            <span class="token-values"></span>
+            <input id="project-tags" name="tags" value="{{ project.tags if project else '' }}" placeholder="Python, API" aria-describedby="tags-help" autocomplete="off">
+          </div>
+          <p class="editor-field-help" id="tags-help">{{ t('輸入後按 Enter，或用逗號分隔標籤。') }}</p>
+          <div class="tag-suggestions" hidden>
+            <span>{{ t('常用標籤') }}</span>
+            {% for tag in ['Web', 'Python', 'API'] %}<button type="button" data-token-value="{{ tag }}">＋ {{ tag }}</button>{% endfor %}
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="editor-actions">
+      <span class="editor-field-help">{{ t('必填欄位') }} <span class="required">*</span></span>
+      <div class="button-row">
+        <a class="button button-ghost" href="{% if project %}/projects/{{ project.id }}{% else %}/{% endif %}">{{ t('取消') }}</a>
+        <button class="button button-primary" type="submit">{% if project %}{{ t('儲存專案') }}{% else %}<span aria-hidden="true">＋</span> {{ t('建立專案') }}{% endif %}</button>
+      </div>
+    </div>
+  </form>
+
+  <aside class="project-editor-sidebar" aria-label="{{ t('專案預覽與提示') }}">
+    <section class="project-preview-panel" aria-labelledby="preview-heading">
+      <div class="editor-preview-heading"><h2 id="preview-heading">{{ t('即時預覽') }}</h2><span>{{ t('尚未儲存') }}</span></div>
+      <article class="project-card project-draft-card" aria-label="{{ t('專案卡片預覽') }}">
+        <div class="project-card-top">
+          <span class="project-card-icon" aria-hidden="true" data-preview-icon>{{ project.name[:1]|upper if project else 'P' }}</span>
+          <span class="status status-{{ project.status if project else 'maintenance' }}" data-preview-status>{{ status_label(project.status if project else 'maintenance') }}</span>
+        </div>
+        <h3 data-preview-name>{{ project.name if project else t('專案名稱') }}</h3>
+        <p class="draft-description" data-preview-description>{{ project.description if project and project.description else t('在左側填寫資料，即時查看專案卡片。') }}</p>
+        {% set preview_owners = project.owner.replace('，', ',').replace('、', ',').split(',') if project else [] %}
+        {% set preview_tags = project.tags.split(',') if project else [] %}
+        <div class="draft-meta"><span class="project-field-label">{{ t('負責人') }}</span><div class="tag-list" data-preview-owners>
+          {% for owner in preview_owners if owner.strip() %}<span class="tag">{{ owner.strip() }}</span>{% else %}<span class="meta-empty">{{ t('尚未設定') }}</span>{% endfor %}
+        </div></div>
+        <div class="draft-meta"><span class="project-field-label">{{ t('標籤') }}</span><div class="tag-list" data-preview-tags>
+          {% for tag in preview_tags if tag.strip() %}<span class="tag">{{ tag.strip() }}</span>{% else %}<span class="meta-empty">{{ t('尚未設定標籤') }}</span>{% endfor %}
+        </div></div>
+        <div class="draft-footer">{{ t('預覽不會儲存資料，請使用左側的儲存按鈕。') if project else t('預覽不會儲存資料，請按「建立專案」完成。') }}</div>
+      </article>
+    </section>
+    {% if not project %}
+    <section class="editor-next-steps">
+      <h3>{{ t('建立後可以繼續整理') }}</h3>
+      <ul>
+        <li><span aria-hidden="true">↗</span>{{ t('加入重要 URL 與 Markdown 備註') }}</li>
+        <li><span aria-hidden="true">☑</span>{{ t('整理帳號權限、環境設定與交接清單') }}</li>
+        <li><span aria-hidden="true">↓</span>{{ t('匯出 Markdown／PDF，方便交接') }}</li>
+      </ul>
+    </section>
+    {% endif %}
+  </aside>
+</div>
+<script type="application/json" id="project-form-messages">{{ {
+  'name': t('專案名稱'), 'description': t('在左側填寫資料，即時查看專案卡片。'),
+  'ownerEmpty': t('尚未設定'), 'tagsEmpty': t('尚未設定標籤'),
+  'remove': t('移除 {value}', value='{value}'), 'nameRequired': t('專案名稱不可為空白')
+}|tojson }}</script>
+<script src="/static/project-form.js?v=20261012" defer></script>
 {% endblock %}
