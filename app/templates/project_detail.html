@@ -32,7 +32,14 @@
       </div>
     </div>
     <dl class="project-meta">
-      <div class="project-owner"><dt>{{ t("負責人") }}</dt><dd{% if not project.owner %} class="meta-empty"{% endif %}>{{ project.owner or t('尚未設定') }}</dd></div>
+      {% set owners = project.owner.replace('，', ',').replace('、', ',').split(',')|map('trim')|reject('equalto', '')|list %}
+      <div class="project-owner">
+        <dt>{{ t("負責人") }}</dt>
+        <dd class="tag-list">
+          {% for owner in owners %}<span class="tag owner-badge">{{ owner }}</span>
+          {% else %}<span class="meta-empty">{{ t('尚未設定') }}</span>{% endfor %}
+        </dd>
+      </div>
       <div class="project-tags">
         <dt>{{ t("專案標籤") }}</dt>
         <dd class="tag-list">

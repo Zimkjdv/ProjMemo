@@ -37,7 +37,7 @@ def test_language_switch_localizes_pages_but_preserves_project_data(tmp_path: Pa
         assert "In maintenance" in detail.text
         assert "這是使用者的說明" in detail.text
         assert "<h1>專案名稱</h1>" in detail.text
-        assert '<dd>負責人</dd>' in detail.text
+        assert 'class="tag owner-badge">負責人</span>' in detail.text
         assert ">維護中</span>" in detail.text
         assert "Delete this URL?" in detail.text
 

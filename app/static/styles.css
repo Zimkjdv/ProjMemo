@@ -158,8 +158,8 @@ label input, label select, label textarea { display: block; margin-top: 6px; }
 .project-meta > div { min-width: 0; }
 .project-meta dd { margin: 0; color: #344054; font-size: .88rem; font-weight: 600; overflow-wrap: anywhere; }
 .project-owner { padding-right: 24px; border-right: 1px solid var(--line); }
-.project-tags .tag-list { gap: 7px; }
-.project-tags .tag { gap: 5px; padding: 5px 10px; border: 1px solid #d8e0ff; border-radius: 7px; color: #344fbd; background: #eef2ff; font-size: .79rem; font-weight: 600; }
+.project-meta .tag-list { gap: 7px; }
+.project-meta .tag { max-width: 100%; gap: 5px; padding: 5px 10px; border: 1px solid #d8e0ff; border-radius: 7px; color: #344fbd; background: #eef2ff; font-size: .79rem; font-weight: 600; }
 .tag-prefix { color: #6078cf; }
 .project-meta .meta-empty, .project-summary.meta-empty { color: var(--muted); font-weight: 400; }
 .project-actions { display: flex; flex-shrink: 0; align-items: flex-start; gap: 9px; padding-top: 3px; }
