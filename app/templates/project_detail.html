@@ -31,6 +31,7 @@
   <a href="#project-notes"><span class="jump-count">{{ notes|length }}</span><span class="jump-name">備註</span><span class="jump-arrow" aria-hidden="true">↘</span></a>
   <a href="#handover"><span class="jump-count">{{ checklist|length }}</span><span class="jump-name">交接項目</span><span class="jump-arrow" aria-hidden="true">↘</span></a>
   <a href="#environment"><span class="jump-count">{{ environment_variables|length }}</span><span class="jump-name">環境設定</span><span class="jump-arrow" aria-hidden="true">↘</span></a>
+  <a href="#access-accounts"><span class="jump-count">{{ access_accounts|length }}</span><span class="jump-name">帳號與權限</span><span class="jump-arrow" aria-hidden="true">↘</span></a>
 </nav>
 
 <div class="detail-layout">
@@ -95,6 +96,7 @@
       {% endif %}
       <details class="add-form"><summary><span aria-hidden="true">＋</span> 新增 Markdown 備註</summary><form method="post" action="/projects/{{ project.id }}/notes"><div class="form-grid two-columns"><label>類型<select name="category">{% for value, label in note_categories %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label><label>優先級<select name="priority">{% for value, label in priorities %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label></div><label>標題<input name="title" required placeholder="例如：第一次部署前注意事項"></label><label>Markdown 內容<textarea name="content_markdown" rows="9" required placeholder="支援 Markdown、程式碼區塊與表格"></textarea></label><button class="button button-primary" type="submit">新增備註</button></form></details>
     </section>
+    {% include "access_accounts.html" %}
   </div>
 
   <aside class="detail-side">

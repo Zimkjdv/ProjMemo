@@ -316,3 +316,53 @@ label input, label select, label textarea { display: block; margin-top: 6px; }
   .pagination-page, .pagination-arrow { min-width: 31px; padding-right: 6px; padding-left: 6px; }
   .pagination-arrow span { display: none; }
 }
+
+/* Encrypted credential vault */
+.vault-hero { margin-bottom: 20px; }
+.vault-panel, .vault-notice { max-width: 900px; margin-bottom: 16px; }
+.vault-panel > p { max-width: 760px; color: #475467; font-size: .88rem; }
+.vault-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; gap: 0 14px; }
+.vault-form button { justify-self: start; margin-bottom: 16px; }
+.vault-state { display: inline-flex; align-items: center; padding: 5px 10px; border: 1px solid var(--line); border-radius: 999px; color: #475467; background: #f8fafc; font-size: .75rem; font-weight: 700; white-space: nowrap; }
+.vault-state-open { border-color: #abefc6; color: #027a48; background: #ecfdf3; }
+.vault-state-warning { border-color: #fedf89; color: #b54708; background: #fffaeb; }
+.export-vault-panel .security-warning { margin: 0 0 16px; }
+.export-policy-form { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.export-policy-form .checkbox-label { margin: 0; }
+.security-warning { padding: 11px 13px; border: 1px solid #fedf89; border-radius: 9px; color: #7a2e0e; background: #fffaeb; font-size: .82rem; }
+.vault-notice h2 { margin-bottom: 12px; }
+.vault-notice ul { margin: 0; padding-left: 20px; color: #475467; font-size: .84rem; }
+.vault-notice li + li { margin-top: 7px; }
+.alert-error { max-width: 900px; margin-bottom: 16px; padding: 12px 14px; border: 1px solid #fecdca; border-radius: 9px; color: #912018; background: #fef3f2; }
+.vault-inline-status { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 16px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; color: #475467; background: #f8fafc; font-size: .8rem; }
+.vault-inline-status form { margin: 0; }
+.vault-inline-status .button { min-height: 34px; font-size: .78rem; }
+.access-account-list { display: grid; gap: 12px; }
+.access-account-card { padding: 15px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+.access-account-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.access-account-heading h3 { margin: 6px 0 0; overflow-wrap: anywhere; }
+.access-account-endpoint { margin: 8px 0; color: var(--primary); font-size: .8rem; overflow-wrap: anywhere; }
+.access-account-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 14px; margin: 12px 0; }
+.access-account-meta div { min-width: 0; }
+.access-account-meta dt { color: var(--muted); font-size: .7rem; }
+.access-account-meta dd { margin: 2px 0 0; color: #344054; font-size: .82rem; overflow-wrap: anywhere; }
+.secret-row { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; margin-top: 12px; padding-top: 11px; border-top: 1px solid #f0f1f4; }
+.secret-badge { padding: 3px 8px; border-radius: 6px; color: #027a48 !important; background: #ecfdf3; font-size: .72rem; }
+.secret-output { min-width: 110px; color: #344054; font-family: ui-monospace, Consolas, monospace; font-size: .82rem; overflow-wrap: anywhere; }
+.secret-reveal { min-height: 33px; padding: 5px 9px; font-size: .76rem; }
+.secret-reveal:disabled { cursor: wait; opacity: .7; }
+.sensitive-export { margin-top: 16px; padding: 13px; border: 1px solid #fecdca; border-radius: 10px; background: #fffafa; }
+.sensitive-export > summary { color: #b42318; cursor: pointer; font-size: .86rem; font-weight: 700; }
+.sensitive-export > p { margin: 12px 0; }
+.sensitive-export form { display: flex; gap: 9px; flex-wrap: wrap; }
+.sensitive-confirm { margin-bottom: 12px; font-size: .8rem; }
+.export-policy-note { margin-top: 14px; font-size: .78rem; }
+
+@media (max-width: 650px) {
+  .vault-form { grid-template-columns: minmax(0, 1fr); }
+  .vault-form button { margin-top: 0; }
+  .export-policy-form { align-items: stretch; flex-direction: column; }
+  .export-policy-form .button { align-self: flex-start; }
+  .access-account-meta { grid-template-columns: minmax(0, 1fr); }
+  .vault-inline-status { align-items: flex-start; flex-direction: column; }
+}

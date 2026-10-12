@@ -103,5 +103,43 @@ def init_db() -> None:
                 updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
             );
+
+            CREATE TABLE IF NOT EXISTS access_accounts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                project_id INTEGER NOT NULL,
+                label TEXT NOT NULL,
+                category TEXT NOT NULL DEFAULT 'website',
+                environment TEXT NOT NULL DEFAULT 'test',
+                endpoint TEXT NOT NULL DEFAULT '',
+                database_name TEXT NOT NULL DEFAULT '',
+                username TEXT NOT NULL DEFAULT '',
+                role_scope TEXT NOT NULL DEFAULT '',
+                purpose TEXT NOT NULL DEFAULT '',
+                owner TEXT NOT NULL DEFAULT '',
+                secret_reference TEXT NOT NULL DEFAULT '',
+                secret_ciphertext BLOB,
+                secret_nonce BLOB,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS vault_config (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                salt BLOB NOT NULL,
+                verifier_nonce BLOB NOT NULL,
+                verifier_ciphertext BLOB NOT NULL,
+                kdf_memory_cost INTEGER NOT NULL,
+                kdf_iterations INTEGER NOT NULL,
+                kdf_lanes INTEGER NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS app_settings (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                allow_secret_export INTEGER NOT NULL DEFAULT 0
+            );
+
+            INSERT OR IGNORE INTO app_settings (id, allow_secret_export) VALUES (1, 0);
             """
         )

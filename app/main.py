@@ -8,10 +8,11 @@ from math import ceil
 from urllib.parse import quote, urlencode
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markdown import markdown as render_markdown
+import nh3
 from starlette.background import BackgroundTask
 
 from .backup import (
@@ -25,6 +26,20 @@ from .backup import (
 )
 from .db import database_path, db_session, init_db
 from .pdf_export import PDFExportError, generate_project_pdf
+from .vault import (
+    InvalidMasterPassword,
+    UnlockAttemptLimiter,
+    VaultAlreadyInitialized,
+    VaultError,
+    VaultNotInitialized,
+    VaultRateLimited,
+    VaultSessions,
+    create_vault,
+    decrypt_secret,
+    encrypt_secret,
+    unlock_vault,
+    validate_master_password,
+)
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -62,6 +77,25 @@ ENVIRONMENTS = [
     ("staging", "Staging"),
     ("production", "Production"),
 ]
+ACCESS_ACCOUNT_CATEGORIES = [
+    ("database", "資料庫帳號"),
+    ("website", "網站／測試帳號"),
+    ("server", "主機／SSH"),
+    ("cloud", "雲端／IAM"),
+    ("service", "第三方服務"),
+    ("other", "其他"),
+]
+ACCESS_ENVIRONMENTS = [
+    ("local", "Local"),
+    ("development", "開發"),
+    ("test", "測試"),
+    ("staging", "Staging"),
+    ("production", "Production"),
+    ("other", "其他"),
+]
+VAULT_COOKIE_NAME = "projmemo_vault"
+vault_sessions = VaultSessions()
+unlock_attempt_limiter = UnlockAttemptLimiter()
 
 
 @asynccontextmanager
@@ -83,6 +117,8 @@ def page_context(request: Request, **values: object) -> dict[str, object]:
         "priorities": PRIORITIES,
         "checklist_categories": CHECKLIST_CATEGORIES,
         "environments": ENVIRONMENTS,
+        "access_account_categories": ACCESS_ACCOUNT_CATEGORIES,
+        "access_environments": ACCESS_ENVIRONMENTS,
         **values,
     }
 
@@ -121,6 +157,20 @@ def project_detail(connection: sqlite3.Connection, project_id: int) -> dict[str,
             """,
             (project_id,),
         ).fetchall(),
+        "access_accounts": [dict(row) for row in connection.execute(
+            """
+            SELECT id, project_id, label, category, environment, endpoint,
+                   database_name, username, role_scope, purpose, owner,
+                   secret_reference, secret_ciphertext IS NOT NULL AS has_secret,
+                   created_at, updated_at
+            FROM access_accounts
+            WHERE project_id = ?
+            ORDER BY CASE environment
+                WHEN 'production' THEN 1 WHEN 'staging' THEN 2 ELSE 3
+            END, label COLLATE NOCASE
+            """,
+            (project_id,),
+        ).fetchall()],
     }
 
 
@@ -128,11 +178,84 @@ def redirect_to_project(project_id: int) -> RedirectResponse:
     return RedirectResponse(url=f"/projects/{project_id}", status_code=303)
 
 
+def current_vault_key(request: Request) -> bytes | None:
+    return vault_sessions.get_key(request.cookies.get(VAULT_COOKIE_NAME))
+
+
+def require_vault_key(request: Request) -> bytes:
+    key = current_vault_key(request)
+    if key is None:
+        raise HTTPException(status_code=423, detail="保管庫已鎖定，請先解鎖")
+    return key
+
+
+def vault_page(
+    request: Request,
+    *,
+    error: str = "",
+    status_code: int = 200,
+) -> HTMLResponse:
+    with db_session() as connection:
+        configured = connection.execute(
+            "SELECT 1 FROM vault_config WHERE id = 1"
+        ).fetchone() is not None
+        settings = connection.execute(
+            "SELECT allow_secret_export FROM app_settings WHERE id = 1"
+        ).fetchone()
+    response = templates.TemplateResponse(
+        request,
+        "vault.html",
+        page_context(
+            request,
+            vault_configured=configured,
+            vault_unlocked=current_vault_key(request) is not None,
+            allow_secret_export=bool(settings["allow_secret_export"]) if settings else False,
+            error=error,
+        ),
+        status_code=status_code,
+    )
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    return response
+
+
+def vault_session_response(request: Request, key: bytes) -> RedirectResponse:
+    token = vault_sessions.issue(key)
+    response = RedirectResponse(url="/settings/vault", status_code=303)
+    response.set_cookie(
+        VAULT_COOKIE_NAME,
+        token,
+        max_age=15 * 60,
+        httponly=True,
+        secure=request.url.scheme == "https",
+        samesite="strict",
+        path="/",
+    )
+    response.headers["Cache-Control"] = "no-store"
+    response.headers["Referrer-Policy"] = "no-referrer"
+    return response
+
+
+MARKDOWN_ALLOWED_TAGS = {
+    "a", "blockquote", "br", "code", "del", "em", "h1", "h2", "h3", "h4",
+    "h5", "h6", "hr", "li", "ol", "p", "pre", "strong", "table", "tbody",
+    "td", "th", "thead", "tr", "ul",
+}
+MARKDOWN_SANITIZER = nh3.Cleaner(
+    tags=MARKDOWN_ALLOWED_TAGS,
+    attributes={"a": {"href", "title"}, "td": {"align"}, "th": {"align"}},
+    url_schemes={"http", "https", "mailto"},
+    strip_comments=True,
+)
+
+
 def markdown_filter(value: str) -> str:
-    return render_markdown(
+    rendered_html = render_markdown(
         value or "",
         extensions=["fenced_code", "tables", "nl2br"],
     )
+    return MARKDOWN_SANITIZER.clean(rendered_html)
 
 
 templates.env.filters["markdown"] = markdown_filter
@@ -205,6 +328,79 @@ def backup_settings(
     return _backup_page(request, restored=restored, recovery_filename=recovery)
 
 
+@app.get("/settings/vault", response_class=HTMLResponse)
+def credential_vault_settings(request: Request, error: str = "") -> HTMLResponse:
+    return vault_page(request, error=error)
+
+
+@app.post("/settings/vault/setup")
+def setup_credential_vault(
+    request: Request,
+    master_password: str = Form(...),
+    confirm_password: str = Form(...),
+) -> Response:
+    if master_password != confirm_password:
+        return vault_page(request, error="兩次輸入的主密碼不一致", status_code=400)
+    try:
+        with db_session() as connection:
+            key = create_vault(connection, master_password)
+    except VaultAlreadyInitialized:
+        return vault_page(request, error="保管庫已設定，請直接解鎖", status_code=409)
+    except VaultError as error:
+        return vault_page(request, error=str(error), status_code=400)
+    unlock_attempt_limiter.record_success()
+    return vault_session_response(request, key)
+
+
+@app.post("/settings/vault/unlock")
+def unlock_credential_vault(
+    request: Request,
+    master_password: str = Form(...),
+) -> Response:
+    try:
+        unlock_attempt_limiter.check_allowed()
+        with db_session() as connection:
+            key = unlock_vault(connection, master_password)
+    except InvalidMasterPassword:
+        unlock_attempt_limiter.record_failure()
+        return vault_page(request, error="主密碼錯誤，請確認後再試", status_code=401)
+    except VaultRateLimited as error:
+        return vault_page(request, error=str(error), status_code=429)
+    except VaultNotInitialized:
+        return vault_page(request, error="尚未設定保管庫", status_code=409)
+    unlock_attempt_limiter.record_success()
+    return vault_session_response(request, key)
+
+
+@app.post("/settings/vault/lock")
+def lock_credential_vault(request: Request) -> RedirectResponse:
+    vault_sessions.revoke(request.cookies.get(VAULT_COOKIE_NAME))
+    response = RedirectResponse(url="/settings/vault", status_code=303)
+    response.delete_cookie(VAULT_COOKIE_NAME, path="/", samesite="strict")
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
+@app.post("/settings/vault/export-policy")
+def update_vault_export_policy(
+    request: Request,
+    allow_secret_export: bool = Form(False),
+) -> Response:
+    if allow_secret_export and current_vault_key(request) is None:
+        return vault_page(request, error="請先解鎖保管庫，再開啟含密碼匯出", status_code=423)
+    with db_session() as connection:
+        configured = connection.execute(
+            "SELECT 1 FROM vault_config WHERE id = 1"
+        ).fetchone() is not None
+        if allow_secret_export and not configured:
+            return vault_page(request, error="請先設定保管庫，再開啟含密碼匯出", status_code=400)
+        connection.execute(
+            "UPDATE app_settings SET allow_secret_export = ? WHERE id = 1",
+            (int(allow_secret_export),),
+        )
+    return RedirectResponse(url="/settings/vault", status_code=303)
+
+
 @app.get("/settings/backup/download")
 def download_database_backup() -> FileResponse:
     backup_path = create_temporary_backup(database_path())
@@ -226,6 +422,8 @@ def restore_database_backup(
     try:
         uploaded_path = save_uploaded_backup(backup_file.file, database_path().parent)
         recovery_path = restore_database(uploaded_path, database_path())
+        vault_sessions.clear()
+        init_db()
     except BackupValidationError as error:
         return _backup_page(request, error=str(error), status_code=400)
     except BackupRestoreError as error:
@@ -404,6 +602,17 @@ def create_project(
 def show_project(request: Request, project_id: int) -> HTMLResponse:
     with db_session() as connection:
         values = project_detail(connection, project_id)
+        vault_configured = connection.execute(
+            "SELECT 1 FROM vault_config WHERE id = 1"
+        ).fetchone() is not None
+        settings = connection.execute(
+            "SELECT allow_secret_export FROM app_settings WHERE id = 1"
+        ).fetchone()
+    values.update(
+        vault_configured=vault_configured,
+        vault_unlocked=current_vault_key(request) is not None,
+        allow_secret_export=bool(settings["allow_secret_export"]) if settings else False,
+    )
     return templates.TemplateResponse(request, "project_detail.html", page_context(request, **values))
 
 
@@ -800,6 +1009,180 @@ def delete_environment_variable(variable_id: int) -> RedirectResponse:
     return redirect_to_project(int(project_id))
 
 
+@app.post("/projects/{project_id}/accounts")
+def add_access_account(
+    request: Request,
+    project_id: int,
+    label: str = Form(...),
+    category: str = Form("website"),
+    environment: str = Form("test"),
+    endpoint: str = Form(""),
+    database_name: str = Form(""),
+    username: str = Form(""),
+    role_scope: str = Form(""),
+    purpose: str = Form(""),
+    owner: str = Form(""),
+    secret_reference: str = Form(""),
+    secret_value: str = Form(""),
+) -> RedirectResponse:
+    if not label.strip():
+        raise HTTPException(status_code=400, detail="帳號或服務名稱不可為空白")
+    if category not in {value for value, _ in ACCESS_ACCOUNT_CATEGORIES}:
+        category = "other"
+    if environment not in {value for value, _ in ACCESS_ENVIRONMENTS}:
+        environment = "other"
+    if len(secret_value) > 4096:
+        raise HTTPException(status_code=400, detail="密碼欄位不可超過 4096 個字元")
+    key = current_vault_key(request) if secret_value else None
+    if secret_value and key is None:
+        raise HTTPException(status_code=423, detail="請先解鎖保管庫再保存實際密碼")
+
+    with db_session() as connection:
+        get_project(connection, project_id)
+        cursor = connection.execute(
+            """
+            INSERT INTO access_accounts
+                (project_id, label, category, environment, endpoint, database_name,
+                 username, role_scope, purpose, owner, secret_reference)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (project_id, label.strip(), category, environment, endpoint.strip(),
+             database_name.strip(), username.strip(), role_scope.strip(), purpose.strip(),
+             owner.strip(), secret_reference.strip()),
+        )
+        account_id = int(cursor.lastrowid)
+        if secret_value and key is not None:
+            ciphertext, nonce = encrypt_secret(key, project_id, account_id, secret_value)
+            connection.execute(
+                "UPDATE access_accounts SET secret_ciphertext = ?, secret_nonce = ? WHERE id = ?",
+                (ciphertext, nonce, account_id),
+            )
+        connection.execute(
+            "UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = ?", (project_id,)
+        )
+    return redirect_to_project(project_id)
+
+
+@app.post("/accounts/{account_id}/edit")
+def update_access_account(
+    request: Request,
+    account_id: int,
+    label: str = Form(...),
+    category: str = Form("website"),
+    environment: str = Form("test"),
+    endpoint: str = Form(""),
+    database_name: str = Form(""),
+    username: str = Form(""),
+    role_scope: str = Form(""),
+    purpose: str = Form(""),
+    owner: str = Form(""),
+    secret_reference: str = Form(""),
+    secret_value: str = Form(""),
+    delete_secret: bool = Form(False),
+) -> RedirectResponse:
+    if not label.strip():
+        raise HTTPException(status_code=400, detail="帳號或服務名稱不可為空白")
+    if category not in {value for value, _ in ACCESS_ACCOUNT_CATEGORIES}:
+        category = "other"
+    if environment not in {value for value, _ in ACCESS_ENVIRONMENTS}:
+        environment = "other"
+    if len(secret_value) > 4096:
+        raise HTTPException(status_code=400, detail="密碼欄位不可超過 4096 個字元")
+    if delete_secret and secret_value:
+        raise HTTPException(status_code=400, detail="不能同時刪除並更新密碼")
+    key = current_vault_key(request) if secret_value else None
+    if secret_value and key is None:
+        raise HTTPException(status_code=423, detail="請先解鎖保管庫再更新實際密碼")
+
+    with db_session() as connection:
+        item = connection.execute(
+            "SELECT project_id FROM access_accounts WHERE id = ?", (account_id,)
+        ).fetchone()
+        if item is None:
+            raise HTTPException(status_code=404, detail="找不到此帳號資料")
+        project_id = int(item["project_id"])
+        connection.execute(
+            """
+            UPDATE access_accounts
+            SET label = ?, category = ?, environment = ?, endpoint = ?, database_name = ?,
+                username = ?, role_scope = ?, purpose = ?, owner = ?, secret_reference = ?,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            """,
+            (label.strip(), category, environment, endpoint.strip(), database_name.strip(),
+             username.strip(), role_scope.strip(), purpose.strip(), owner.strip(),
+             secret_reference.strip(), account_id),
+        )
+        if delete_secret:
+            connection.execute(
+                "UPDATE access_accounts SET secret_ciphertext = NULL, secret_nonce = NULL WHERE id = ?",
+                (account_id,),
+            )
+        elif secret_value and key is not None:
+            ciphertext, nonce = encrypt_secret(key, project_id, account_id, secret_value)
+            connection.execute(
+                "UPDATE access_accounts SET secret_ciphertext = ?, secret_nonce = ? WHERE id = ?",
+                (ciphertext, nonce, account_id),
+            )
+        connection.execute(
+            "UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = ?", (project_id,)
+        )
+    return redirect_to_project(project_id)
+
+
+@app.post("/accounts/{account_id}/delete")
+def delete_access_account(account_id: int) -> RedirectResponse:
+    with db_session() as connection:
+        item = connection.execute(
+            "SELECT project_id FROM access_accounts WHERE id = ?", (account_id,)
+        ).fetchone()
+        if item is None:
+            raise HTTPException(status_code=404, detail="找不到此帳號資料")
+        project_id = int(item["project_id"])
+        connection.execute("DELETE FROM access_accounts WHERE id = ?", (account_id,))
+        connection.execute(
+            "UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = ?", (project_id,)
+        )
+    return redirect_to_project(project_id)
+
+
+@app.post("/accounts/{account_id}/reveal")
+def reveal_access_account_secret(request: Request, account_id: int) -> JSONResponse:
+    key = require_vault_key(request)
+    with db_session() as connection:
+        item = connection.execute(
+            """
+            SELECT project_id, secret_ciphertext, secret_nonce
+            FROM access_accounts WHERE id = ?
+            """,
+            (account_id,),
+        ).fetchone()
+    if item is None:
+        raise HTTPException(status_code=404, detail="找不到此帳號資料")
+    if item["secret_ciphertext"] is None or item["secret_nonce"] is None:
+        raise HTTPException(status_code=404, detail="此帳號沒有保存密碼")
+    try:
+        secret_value = decrypt_secret(
+            key,
+            int(item["project_id"]),
+            account_id,
+            bytes(item["secret_ciphertext"]),
+            bytes(item["secret_nonce"]),
+        )
+    except VaultError as error:
+        raise HTTPException(status_code=500, detail=str(error)) from error
+    response = JSONResponse({"secret": secret_value})
+    response.headers.update(
+        {
+            "Cache-Control": "no-store, no-cache, must-revalidate, private",
+            "Pragma": "no-cache",
+            "X-Content-Type-Options": "nosniff",
+            "Referrer-Policy": "no-referrer",
+        }
+    )
+    return response
+
+
 def status_label(status: str) -> str:
     return dict(STATUS_OPTIONS).get(status, status)
 
@@ -824,6 +1207,20 @@ def environment_label(environment: str) -> str:
     return dict(ENVIRONMENTS).get(environment, environment)
 
 
+def access_environment_label(environment: str) -> str:
+    return dict(ACCESS_ENVIRONMENTS).get(environment, environment)
+
+
+def access_account_category_label(category: str) -> str:
+    return dict(ACCESS_ACCOUNT_CATEGORIES).get(category, category)
+
+
+templates.env.globals.update(
+    access_environment_label=access_environment_label,
+    access_account_category_label=access_account_category_label,
+)
+
+
 def markdown_table_cell(value: str) -> str:
     return (value or "—").replace("\r", " ").replace("\n", " ").replace("|", "\\|")
 
@@ -844,6 +1241,9 @@ def build_markdown(
     notes: list[sqlite3.Row],
     checklist: list[sqlite3.Row],
     environment_variables: list[sqlite3.Row],
+    access_accounts: list[dict[str, object]] | None = None,
+    *,
+    include_secrets: bool = False,
 ) -> str:
     lines = [
         f"# {project['name']}",
@@ -856,9 +1256,13 @@ def build_markdown(
         "",
         project["description"] or "尚未填寫。",
         "",
+    ]
+    if include_secrets:
+        lines.extend(["> ⚠️ 此匯出檔包含實際密碼，請使用安全管道傳送並在交接後刪除暫存副本。", ""])
+    lines.extend([
         "## 重要 URL",
         "",
-    ]
+    ])
     if urls:
         for item in urls:
             lines.append(f"- [{url_type_label(item['type'])}] [{item['title']}]({item['url']})")
@@ -895,6 +1299,43 @@ def build_markdown(
             )
     else:
         lines.append("尚未建立環境變數說明。")
+    lines.extend(["## 帳號與存取資料", ""])
+    if access_accounts:
+        for account in access_accounts:
+            lines.extend([
+                f"### {account['label']}",
+                "",
+                f"- 類型：{access_account_category_label(str(account['category']))}",
+                f"- 環境：{access_environment_label(str(account['environment']))}",
+            ])
+            if account["endpoint"]:
+                lines.append(f"- 端點／登入網址：{account['endpoint']}")
+            if account["database_name"]:
+                lines.append(f"- 資料庫：{account['database_name']}")
+            if account["username"]:
+                lines.append(f"- 帳號：{account['username']}")
+            if account["role_scope"]:
+                lines.append(f"- 權限：{account['role_scope']}")
+            if account["purpose"]:
+                lines.append(f"- 用途：{account['purpose']}")
+            if account["owner"]:
+                lines.append(f"- 負責人：{account['owner']}")
+            if include_secrets and account.get("secret_value") is not None:
+                secret_text = str(account["secret_value"])
+                fence = "```"
+                while fence in secret_text:
+                    fence += "`"
+                lines.extend(["- 密碼（敏感）：", "", f"{fence}text", secret_text, fence])
+            elif account["has_secret"]:
+                lines.append("- 密碼：已保存於 ProjMemo 保管庫（未匯出）")
+            elif account["secret_reference"]:
+                lines.append(f"- 密碼保管位置：{account['secret_reference']}")
+            else:
+                lines.append("- 密碼：未保存")
+            lines.append("")
+    else:
+        lines.append("尚未建立帳號與存取資料。")
+    lines.append("")
     lines.extend(["## Handover Checklist", ""])
     if checklist:
         for item in checklist:
@@ -923,6 +1364,7 @@ def export_pdf(project_id: int) -> Response:
             values["notes"],
             values["checklist"],
             values["environment_variables"],
+            values["access_accounts"],
         )
     except PDFExportError as error:
         raise HTTPException(status_code=503, detail=str(error)) from error
@@ -935,7 +1377,9 @@ def export_pdf(project_id: int) -> Response:
             "Content-Disposition": (
                 f'attachment; filename="projmemo-{project_id}.pdf"; '
                 f"filename*=UTF-8''{quote(filename)}"
-            )
+            ),
+            "Cache-Control": "no-store, private",
+            "Pragma": "no-cache",
         },
     )
 
@@ -951,6 +1395,7 @@ def export_markdown(project_id: int) -> Response:
         values["notes"],
         values["checklist"],
         values["environment_variables"],
+        values["access_accounts"],
     )
     filename = f"{project['name']}.md".replace("/", "-").replace("\\", "-")
     return Response(
@@ -960,6 +1405,117 @@ def export_markdown(project_id: int) -> Response:
             "Content-Disposition": (
                 f'attachment; filename="projmemo-{project_id}.md"; '
                 f"filename*=UTF-8''{quote(filename)}"
+            ),
+            "Cache-Control": "no-store, private",
+            "Pragma": "no-cache",
+        },
+    )
+
+
+def _sensitive_export_accounts(
+    connection: sqlite3.Connection,
+    project_id: int,
+    key: bytes,
+) -> list[dict[str, object]]:
+    rows = connection.execute(
+        """
+        SELECT id, project_id, label, category, environment, endpoint, database_name,
+               username, role_scope, purpose, owner, secret_reference,
+               secret_ciphertext, secret_nonce
+        FROM access_accounts WHERE project_id = ?
+        ORDER BY label COLLATE NOCASE
+        """,
+        (project_id,),
+    ).fetchall()
+    accounts: list[dict[str, object]] = []
+    for row in rows:
+        account = {
+            name: row[name]
+            for name in (
+                "label", "category", "environment", "endpoint", "database_name",
+                "username", "role_scope", "purpose", "owner", "secret_reference",
             )
+        }
+        ciphertext = row["secret_ciphertext"]
+        nonce = row["secret_nonce"]
+        account["has_secret"] = ciphertext is not None and nonce is not None
+        account["secret_value"] = (
+            decrypt_secret(key, int(row["project_id"]), int(row["id"]), bytes(ciphertext), bytes(nonce))
+            if ciphertext is not None and nonce is not None else None
+        )
+        accounts.append(account)
+    return accounts
+
+
+@app.post("/projects/{project_id}/export-with-secrets")
+def export_project_with_secrets(
+    request: Request,
+    project_id: int,
+    export_format: str = Form(...),
+    confirm_sensitive_export: bool = Form(False),
+) -> Response:
+    if export_format not in {"markdown", "pdf"}:
+        raise HTTPException(status_code=400, detail="不支援的匯出格式")
+    if not confirm_sensitive_export:
+        raise HTTPException(status_code=400, detail="請先確認此檔案包含實際密碼")
+    key = require_vault_key(request)
+    with db_session() as connection:
+        setting = connection.execute(
+            "SELECT allow_secret_export FROM app_settings WHERE id = 1"
+        ).fetchone()
+        if setting is None or not setting["allow_secret_export"]:
+            raise HTTPException(status_code=403, detail="尚未在保管庫設定中允許含密碼匯出")
+        values = project_detail(connection, project_id)
+        access_accounts = _sensitive_export_accounts(connection, project_id, key)
+    project = values["project"]
+    if export_format == "markdown":
+        content = build_markdown(
+            project,
+            values["urls"],
+            values["notes"],
+            values["checklist"],
+            values["environment_variables"],
+            access_accounts,
+            include_secrets=True,
+        )
+        filename = f"{project['name']}.md".replace("/", "-").replace("\\", "-")
+        return Response(
+            content=content,
+            media_type="text/markdown; charset=utf-8",
+            headers={
+                "Content-Disposition": (
+                    f'attachment; filename="projmemo-{project_id}-sensitive.md"; '
+                    f"filename*=UTF-8''{quote(filename)}"
+                ),
+                "Cache-Control": "no-store, private",
+                "Pragma": "no-cache",
+                "Referrer-Policy": "no-referrer",
+            },
+        )
+
+    try:
+        content = generate_project_pdf(
+            project,
+            values["urls"],
+            values["notes"],
+            values["checklist"],
+            values["environment_variables"],
+            access_accounts,
+            include_secrets=True,
+        )
+    except PDFExportError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+    filename = f"{project['name']}.pdf".replace("/", "-").replace("\\", "-")
+    return Response(
+        content=content,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="projmemo-{project_id}-sensitive.pdf"; '
+                f"filename*=UTF-8''{quote(filename)}"
+            ),
+            "Cache-Control": "no-store, private",
+            "Pragma": "no-cache",
+            "Referrer-Policy": "no-referrer",
         },
     )

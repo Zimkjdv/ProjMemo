@@ -402,6 +402,9 @@ def generate_project_pdf(
     notes: list[Any],
     checklist: list[Any],
     environment_variables: list[Any],
+    access_accounts: list[Any] | None = None,
+    *,
+    include_secrets: bool = False,
 ) -> bytes:
     """Return the project's current handover contents as an A4 PDF."""
     regular_font, _ = _register_cjk_fonts()
@@ -494,6 +497,61 @@ def generate_project_pdf(
         story.append(_make_table(rows, [38 * mm, 26 * mm, 58 * mm, 51 * mm]))
     else:
         story.append(Paragraph("尚未建立環境變數說明。", styles["small"]))
+
+    story.extend(_section_heading("帳號與存取資料", styles))
+    if include_secrets:
+        story.append(Paragraph(
+            "【敏感資料】此 PDF 包含實際密碼，請使用安全管道傳送並在交接後刪除暫存副本。",
+            styles["small"],
+        ))
+    if access_accounts:
+        rows = [[Paragraph(label, styles["table_header"]) for label in ("帳號／類型", "環境／端點／用途", "使用者／權限／密碼")]]
+        category_labels = {
+            "database": "資料庫帳號", "website": "網站／測試帳號", "server": "主機／SSH",
+            "cloud": "雲端／IAM", "service": "第三方服務", "other": "其他",
+        }
+        access_environment_labels = {
+            "local": "Local", "development": "開發", "test": "測試",
+            "staging": "Staging", "production": "Production", "other": "其他",
+        }
+        for account in access_accounts:
+            identity = (
+                f"<b>{escape(str(account['label']))}</b><br/>"
+                f"{escape(category_labels.get(str(account['category']), str(account['category'])))}"
+            )
+            endpoint_lines = [
+                escape(access_environment_labels.get(str(account["environment"]), str(account["environment"])))
+            ]
+            if account["endpoint"]:
+                endpoint_lines.append(escape(str(account["endpoint"])))
+            if account["database_name"]:
+                endpoint_lines.append(f"資料庫：{escape(str(account['database_name']))}")
+            if account["purpose"]:
+                endpoint_lines.append(f"用途：{escape(str(account['purpose']))}")
+            identity_lines = []
+            if account["username"]:
+                identity_lines.append(f"帳號：{escape(str(account['username']))}")
+            if account["role_scope"]:
+                identity_lines.append(f"權限：{escape(str(account['role_scope']))}")
+            if account["owner"]:
+                identity_lines.append(f"負責人：{escape(str(account['owner']))}")
+            if include_secrets and account.get("secret_value") is not None:
+                secret_text = escape(str(account["secret_value"])).replace("\n", "<br/>")
+                identity_lines.append(f"密碼：{secret_text}")
+            elif account["has_secret"]:
+                identity_lines.append("密碼：已保存於 ProjMemo 保管庫（未匯出）")
+            elif account["secret_reference"]:
+                identity_lines.append(f"密碼保管位置：{escape(str(account['secret_reference']))}")
+            else:
+                identity_lines.append("密碼：未保存")
+            rows.append([
+                Paragraph(identity, styles["table"]),
+                Paragraph("<br/>".join(endpoint_lines) or "—", styles["table"]),
+                Paragraph("<br/>".join(identity_lines) or "—", styles["table"]),
+            ])
+        story.append(_make_table(rows, [42 * mm, 64 * mm, 67 * mm]))
+    else:
+        story.append(Paragraph("尚未建立帳號與存取資料。", styles["small"]))
 
     story.extend(_section_heading("交接清單", styles))
     if checklist:
