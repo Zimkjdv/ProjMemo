@@ -139,6 +139,10 @@ class LocalRequestSecurityMiddleware:
                 response_headers["Referrer-Policy"] = "no-referrer"
                 response_headers["X-Frame-Options"] = "DENY"
                 if response_headers.get("content-type", "").startswith("text/html"):
+                    # no-referrer turns native form POST Origin into "null".
+                    # Keep same-origin form origins; never disclose referrers
+                    # to external destinations. JSON/downloads stay no-referrer.
+                    response_headers["Referrer-Policy"] = "same-origin"
                     response_headers["Cache-Control"] = "no-store, private"
                     if token != cookie:
                         response = Response()

@@ -217,3 +217,33 @@ def test_invalid_host_and_cookie_rejected_without_consuming_request_body():
             await LocalRequestSecurityMiddleware(forbidden)(scope, forbidden, send)
             assert sent[0]["status"] == expected
     asyncio.run(run())
+
+
+def test_html_policy_preserves_native_form_origins_and_download_privacy(client):
+    csrf = token(client)
+    assert client.post("/projects/new", data={"name": "policy fixture", "csrf_token": csrf}).status_code == 303
+    for path in ("/", "/projects/new", "/projects/1", "/projects/1/edit", "/settings/vault", "/settings/backup"):
+        page = client.get(path)
+        assert page.status_code == 200, path
+        assert page.headers["referrer-policy"] == "same-origin", path
+        assert '<meta name="referrer" content="same-origin">' in page.text, path
+        assert '<meta name="referrer" content="no-referrer">' not in page.text, path
+        assert "no-store" in page.headers["cache-control"]
+    download = client.get("/settings/backup/download")
+    assert download.headers["referrer-policy"] == "no-referrer"
+    rejected = client.post("/settings/language", data={"language": "en", "csrf_token": csrf},
+                           headers={"Origin": "null"})
+    assert rejected.status_code == 403
+
+
+def test_language_switch_after_same_origin_page_preserves_return_path(client):
+    csrf = token(client)
+    destination = "/?view=list&page_size=20&q=fixture#home-intro-title"
+    for language in ("en", "zh-Hant"):
+        switched = client.post("/settings/language",
+                               data={"language": language, "return_to": destination, "csrf_token": csrf},
+                               headers={"Origin": "http://127.0.0.1:8123", "Sec-Fetch-Site": "same-origin"})
+        assert switched.status_code == 303
+        assert switched.headers["location"] == destination
+        assert client.get(destination).headers["referrer-policy"] == "same-origin"
+        assert f'<html lang="{language}">' in client.get(destination).text

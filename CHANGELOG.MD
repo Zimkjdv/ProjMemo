@@ -4,6 +4,9 @@
 
 ## 2026-10-13
 
+- 修正切換語言／原生表單被來源保護拒絕：HTML 的 referrer header 與 meta 統一為 `same-origin`，避免 `no-referrer` 使正常 POST 的 Origin 變成 `null`；保留 CSRF、跨來源／null 拒絕與非 HTML 回應的 `no-referrer`。
+- 更正早先將此現象歸因於內嵌瀏覽器限制的說明。瀏覽器實際 EN／繁中切換成功，保留清單模式、每頁 20 筆及 anchor；建立專案草稿切語言後仍保留，原生提交可成功建立。新增來源政策／返回路徑回歸，Python 71 項通過。
+
 - 首頁介紹區字體層次：中文標題 21px、英文全大寫標題 17px、說明 15px、功能標籤 14px；加入 Windows 中文字型 fallback、調整行距與標籤留白，維持精簡區塊高度，不恢復已移除的大標語。
 - 「個人專案知識庫」及英文標題加入淡藍漸層底色、靛藍文字與漸淡底線，以靜態 CSS 強調標題；保留原有語意標題與雙語內容。
 - 首頁／雙語 5 項回歸通過，1280px 桌面繁中／英文視覺確認無溢出；樣式限定首頁介紹區。
@@ -11,7 +14,7 @@
 - P0 第三項：新增本機 Host 白名單、同來源 Origin／Referer／Fetch Metadata 檢查與簽章 CSRF cookie；所有 POST 路由使用共同驗證，25 個模板表單位置附隱藏 token，密碼 reveal 請求附頁面 token。
 - token cookie 使用 HttpOnly／SameSite=Strict，HTTPS 下 Secure；重新啟動會使舊 token 失效。缺少有效 cookie／header 的請求在解析 body 前拒絕；未知或跨來源（含 `Origin: null`）拒絕。
 - 備份與復原檔禁止快取，HTML 含 token 的頁面也禁止快取；加入 nosniff／no-referrer／禁止 framing 回應標頭，Windows 啟動腳本明確綁定 127.0.0.1。
-- 實際隔離 HTTP 驗證：同來源表單 303、跨 port 403；瀏覽器跨 port 提交也拒絕，專案未寫入。內嵌瀏覽器的正常表單會送 `Origin: null`，依規則拒絕；正常同來源流程由 HTTP／回歸測試驗證，標準桌面瀏覽器完整互動另留 R08。
+- 初次隔離 HTTP 驗證：同來源表單 303、跨 port 403；瀏覽器跨 port 提交也拒絕，專案未寫入。當時正常表單被 `Origin: null` 拒絕的原因為頁面 `no-referrer` 設定，已在本日後續修正並實測中英文切換。
 - 第三項驗收：Python 69 項、Node 6 項通過，包含 27 項新增伺服器安全案例及 1 項前端 CSRF 案例；沿用隔離資料，測試伺服器已停止。
 
 - P0 第二項：還原後初始化與可用性驗證移入回復流程；複製或初始化失敗會恢復原資料，自動回復失敗則阻止一般資料操作，仍可開啟備份頁及下載復原檔。
