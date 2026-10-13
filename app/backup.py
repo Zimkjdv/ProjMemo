@@ -6,9 +6,10 @@ from pathlib import Path
 import re
 import sqlite3
 import tempfile
-from typing import BinaryIO
+from typing import BinaryIO, Callable
 
-from .db import SCHEMA_VERSION
+from .db import SCHEMA_VERSION, init_db
+from .database_access import access_for
 from .vault import VaultError, validate_vault_metadata
 
 
@@ -238,7 +239,8 @@ def create_database_backup(source_path: Path, destination_path: Path) -> None:
     if source_path.resolve() == destination_path.resolve():
         raise ValueError("來源與備份目的地不可相同。")
     destination_path.parent.mkdir(parents=True, exist_ok=True)
-    _copy_database(source_path, destination_path)
+    with access_for(source_path).operation():
+        _copy_database(source_path, destination_path)
 
 
 def create_temporary_backup(database_file: Path) -> Path:
@@ -254,32 +256,41 @@ def create_temporary_backup(database_file: Path) -> Path:
     return temporary_path
 
 
-def restore_database(uploaded_path: Path, database_file: Path) -> Path:
+def restore_database(
+    uploaded_path: Path, database_file: Path, *,
+    initialize: Callable[[Path], None] = init_db,
+    on_replace: Callable[[], None] = lambda: None,
+) -> Path:
     """Restore a validated backup, retaining a rollback snapshot before replacement."""
     validate_backup(uploaded_path)
-    backups = recovery_directory(database_file)
-    backups.mkdir(parents=True, exist_ok=True)
-    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
-    recovery_path = backups / f"projmemo-pre-restore-{timestamp}.sqlite3"
-    create_database_backup(database_file, recovery_path)
+    access = access_for(database_file)
+    with access.maintenance():
+        backups = recovery_directory(database_file)
+        backups.mkdir(parents=True, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+        recovery_path = backups / f"projmemo-pre-restore-{timestamp}.sqlite3"
+        create_database_backup(database_file, recovery_path)
 
-    try:
-        _copy_database(uploaded_path, database_file)
-        validate_backup(database_file)
-    except Exception as error:
         try:
-            _copy_database(recovery_path, database_file)
+            on_replace()
+            _copy_database(uploaded_path, database_file)
+            initialize(database_file)
             validate_backup(database_file)
-        except Exception as recovery_error:
+        except Exception as error:
+            try:
+                _copy_database(recovery_path, database_file)
+                validate_backup(database_file)
+            except Exception as recovery_error:
+                access.require_recovery()
+                raise BackupRestoreError(
+                    "還原失敗，且自動回復未能完成。請保留並下載還原前備份。",
+                    recovery_path.name,
+                    recovered=False,
+                ) from recovery_error
             raise BackupRestoreError(
-                "還原失敗，且自動回復未能完成。請保留並下載還原前備份。",
+                "還原失敗，已使用還原前備份回復原有資料。",
                 recovery_path.name,
-                recovered=False,
-            ) from recovery_error
-        raise BackupRestoreError(
-            "還原失敗，已使用還原前備份回復原有資料。",
-            recovery_path.name,
-            recovered=True,
-        ) from error
+                recovered=True,
+            ) from error
 
     return recovery_path

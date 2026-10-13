@@ -6,6 +6,8 @@ from pathlib import Path
 import sqlite3
 from typing import Iterator
 
+from .database_access import access_for
+
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_DB_PATH = BASE_DIR / "data" / "projmemo.db"
@@ -20,28 +22,30 @@ def database_path() -> Path:
     return path
 
 
-def connect() -> sqlite3.Connection:
-    connection = sqlite3.connect(database_path())
+def connect(path: Path | None = None) -> sqlite3.Connection:
+    connection = sqlite3.connect(path or database_path())
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
     return connection
 
 
 @contextmanager
-def db_session() -> Iterator[sqlite3.Connection]:
-    connection = connect()
-    try:
-        yield connection
-        connection.commit()
-    except Exception:
-        connection.rollback()
-        raise
-    finally:
-        connection.close()
+def db_session(path: Path | None = None) -> Iterator[sqlite3.Connection]:
+    path = path or database_path()
+    with access_for(path).operation():
+        connection = connect(path)
+        try:
+            yield connection
+            connection.commit()
+        except Exception:
+            connection.rollback()
+            raise
+        finally:
+            connection.close()
 
 
-def init_db() -> None:
-    with db_session() as connection:
+def init_db(path: Path | None = None) -> None:
+    with db_session(path) as connection:
         version = connection.execute("PRAGMA user_version").fetchone()[0]
         if version not in (0, SCHEMA_VERSION):
             raise sqlite3.DatabaseError("Unsupported ProjMemo schema version")

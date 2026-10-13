@@ -25,6 +25,7 @@ from .backup import (
     save_uploaded_backup,
 )
 from .db import database_path, db_session, init_db
+from .database_access import DatabaseAccessMiddleware, DatabaseBusyError
 from .i18n import LANGUAGE_COOKIE, LANGUAGES, get_language, translate_error, translator
 from .pdf_export import PDFExportError, generate_project_pdf
 from .vault import (
@@ -106,6 +107,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="ProjMemo", version="0.1.0", lifespan=lifespan)
+app.add_middleware(DatabaseAccessMiddleware)
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
 
@@ -116,6 +118,14 @@ async def localized_http_error(request: Request, error: HTTPException) -> JSONRe
         if isinstance(error.detail, str) else error.detail
     )
     return JSONResponse({"detail": detail}, status_code=error.status_code, headers=error.headers)
+
+
+@app.exception_handler(DatabaseBusyError)
+async def database_busy_error(request: Request, error: DatabaseBusyError) -> JSONResponse:
+    return JSONResponse(
+        {"detail": translate_error(str(error), get_language(request))},
+        status_code=503, headers={"Retry-After": "1", "Cache-Control": "no-store"},
+    )
 
 
 @app.post("/settings/language")
@@ -331,7 +341,7 @@ def _backup_page(
     try:
         with db_session() as connection:
             project_count = connection.execute("SELECT COUNT(*) FROM projects").fetchone()[0]
-    except sqlite3.Error:
+    except (sqlite3.Error, DatabaseBusyError):
         project_count = None
 
     backup_directory = recovery_directory(database_path())
@@ -482,9 +492,9 @@ def restore_database_backup(
     uploaded_path: Path | None = None
     try:
         uploaded_path = save_uploaded_backup(backup_file.file, database_path().parent)
-        recovery_path = restore_database(uploaded_path, database_path())
-        vault_sessions.clear()
-        init_db()
+        recovery_path = restore_database(
+            uploaded_path, database_path(), initialize=init_db, on_replace=vault_sessions.clear,
+        )
     except BackupValidationError as error:
         return _backup_page(request, error=str(error), status_code=400)
     except BackupRestoreError as error:

@@ -375,5 +375,9 @@
   "備份檔含有格式錯誤的資料，無法還原。": "The backup contains invalid data and cannot be restored.",
   "備份檔的保管庫設定不完整或不相容，無法還原。": "The backup has incomplete or incompatible vault settings and cannot be restored.",
   "備份檔的匯出設定不相容，無法還原。": "The backup has incompatible export settings and cannot be restored.",
-  "備份檔的加密密碼資料不完整，無法還原。": "The backup has incomplete encrypted password data and cannot be restored."
+  "備份檔的加密密碼資料不完整，無法還原。": "The backup has incomplete encrypted password data and cannot be restored.",
+  "資料庫需要復原，請下載還原前備份並停止程式後復原。": "The database needs recovery. Download the pre-restore backup and stop the app before recovering it.",
+  "資料還原中，請稍後再試。": "A restore is in progress. Please try again later.",
+  "資料庫忙碌或需要復原，請先確認還原狀態。": "The database is busy or needs recovery. Check the restore status first.",
+  "資料庫仍有作業進行中，請稍後再還原。": "Database operations are still running. Try restoring again later."
 }
