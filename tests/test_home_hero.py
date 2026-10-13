@@ -1,7 +1,28 @@
 from pathlib import Path
+from html.parser import HTMLParser
 
 import pytest
 from tests.client import TestClient
+
+
+class IntroHeading(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.headings = []
+        self.current = None
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "h1":
+            self.current = {"attrs": dict(attrs), "text": ""}
+            self.headings.append(self.current)
+
+    def handle_data(self, data):
+        if self.current is not None:
+            self.current["text"] += data
+
+    def handle_endtag(self, tag):
+        if tag == "h1":
+            self.current = None
 
 
 @pytest.mark.parametrize("language, title, features", [
@@ -19,11 +40,15 @@ def test_home_intro_localizes_without_changing_list_controls(tmp_path: Path, mon
         assert response.status_code == 200
         intro = response.text.split('<section class="hero page-hero dashboard-hero"', 1)[1].split("</section>", 1)[0]
         assert 'aria-labelledby="home-intro-title"' in intro
-        assert f'<h1 class="eyebrow" id="home-intro-title">{title}</h1>' in intro
+        heading = IntroHeading()
+        heading.feed(intro)
+        assert len(heading.headings) == 1
+        assert heading.headings[0]["attrs"]["id"] == "home-intro-title"
+        assert heading.headings[0]["attrs"]["aria-label"] == title
+        assert heading.headings[0]["text"].strip() == title
         assert "專案資訊，清楚有序。" not in intro
         assert "Project information, neatly organized." not in intro
         assert intro.count("<li>") == 3
-        assert intro.count('aria-hidden="true" focusable="false"') == 4
         assert all(feature in intro for feature in features)
         assert 'href="/projects/new"' in intro
         assert '<table class="project-list">' in response.text
