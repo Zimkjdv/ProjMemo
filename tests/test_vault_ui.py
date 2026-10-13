@@ -53,6 +53,9 @@ def test_vault_ui_preserves_state_forms_and_security_contract(tmp_path: Path, mo
         assert "no-store" in {directive.strip() for directive in response.headers["cache-control"].split(",")}
         assert MASTER_PASSWORD not in response.text
         page = VaultPage(response.text)
+        assert not any(tag == "nav" and "breadcrumb" in attrs.get("class", "").split() for tag, attrs in page.elements)
+        main_navigation = "主要導覽" if language == "zh-Hant" else "Main navigation"
+        assert any(tag == "nav" and attrs.get("aria-label") == main_navigation for tag, attrs in page.elements)
         visible_state = "setup" if state == "setup" else "locked" if state.startswith("locked") else "unlocked"
         assert any(attrs.get("data-vault-state") == visible_state for _, attrs in page.elements)
         ids = [attrs["id"] for _, attrs in page.elements if "id" in attrs]

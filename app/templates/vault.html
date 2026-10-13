@@ -15,7 +15,6 @@
 {%- endmacro %}
 {% block content %}
 <div class="vault-page" data-vault-state="{{ 'setup' if not vault_configured else 'unlocked' if vault_unlocked else 'locked' }}">
-<nav class="breadcrumb" aria-label="{{ t('頁面路徑') }}"><a href="/">{{ t("專案列表") }}</a><span aria-hidden="true">/</span><span>{{ t("密碼保管庫") }}</span></nav>
 <section class="page-hero vault-hero" aria-labelledby="vault-title">
   <div class="vault-hero-copy">
     <span class="vault-emblem">{{ vault_icon('shield') }}</span>
