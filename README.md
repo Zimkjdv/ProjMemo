@@ -23,6 +23,8 @@ ProjMemo 是一個以本機 Python `.venv` 執行的個人專案備註與交接�
 
 目前已提供 URL、Markdown 備註、交接清單、環境變數說明，以及 Markdown/PDF 匯出。專案列表可切換卡片或明細清單檢視，並支援每頁 10、20 或 50 筆。
 
+專案內容頁也可切換卡片或明細清單，瀏覽器會記住此選擇（與首頁檢視方式分開）。明細模式依五個分類全寬排列，備註與帳號補充資料可展開；切換不會清除未送出的新增／編輯欄位，也不會自動儲存。空白分類使用精簡提示，帳號安全說明可展開閱讀。切換檢視時會立即遮蔽已顯示的密碼，並阻止尚未完成的解密請求重新顯示；既有保管庫與匯出保護保持不變。未啟用 JavaScript 時仍可使用卡片與原有表單。
+
 建立／編輯專案採桌面雙欄排版，右側即時預覽專案卡片。負責人與標籤可用 Enter 或逗號建立徽章，支援移除與合併重複項目；未按 Enter 的最後一筆也會在送出時保存。切換繁中／英文時，會保留目前分頁的未送出欄位；正式資料仍須按「建立專案」或「儲存專案」才會寫入。
 
 ### 1. Project Basic Info
@@ -185,6 +187,10 @@ python -m uvicorn app.main:app --reload
 $env:PROJMEMO_PORT = "8123"
 python -m uvicorn app.main:app --reload --port $env:PROJMEMO_PORT
 ```
+
+## 測試
+
+Python 回歸測試可執行 `.\.venv\Scripts\python.exe -m pytest tests -q`。若有安裝 Node.js，前端檢視切換與密碼遮蔽測試可執行 `node --test tests/js/detail_views.test.cjs`；Node.js 只用於開發測試，並非應用程式執行需求。
 
 ## 安全原則
 

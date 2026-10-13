@@ -3,6 +3,7 @@
   if (!messageElement) return;
   const messages = JSON.parse(messageElement.textContent);
   const visibleSecrets = new Map();
+  let revealGeneration = 0;
 
   const mask = (output, button) => {
     const timer = visibleSecrets.get(output);
@@ -28,6 +29,7 @@
 
       button.disabled = true;
       button.textContent = messages.pending;
+      const generation = revealGeneration;
       try {
         const response = await fetch(button.dataset.revealUrl, {
           method: "POST",
@@ -39,6 +41,10 @@
         const payload = await response.json();
         if (typeof payload.secret !== "string") throw new Error(messages.formatError);
 
+        if (generation !== revealGeneration) {
+          payload.secret = "";
+          return;
+        }
         if (document.visibilityState !== "visible") {
           payload.secret = "";
           mask(output, button);
@@ -52,6 +58,7 @@
         visibleSecrets.set(output, timer);
         payload.secret = "";
       } catch (error) {
+        if (generation !== revealGeneration) return;
         button.disabled = false;
         button.textContent = messages.retry;
         button.title = error instanceof Error ? error.message : messages.genericError;
@@ -59,20 +66,16 @@
     });
   });
 
-  document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState !== "visible") {
-      document.querySelectorAll(".secret-reveal").forEach((button) => {
-        const accountId = button.dataset.accountId;
-        const output = document.querySelector(`[data-secret-output="${accountId}"]`);
-        if (output && visibleSecrets.has(output)) mask(output, button);
-      });
-    }
-  });
-
-  window.addEventListener("pagehide", () => {
+  const maskAll = () => {
+    revealGeneration += 1;
     document.querySelectorAll(".secret-reveal").forEach((button) => {
       const output = document.querySelector(`[data-secret-output="${button.dataset.accountId}"]`);
-      if (output && visibleSecrets.has(output)) mask(output, button);
+      if (output) mask(output, button);
     });
+  };
+  document.addEventListener("projmemo:detail-view-change", maskAll);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible") maskAll();
   });
+  window.addEventListener("pagehide", maskAll);
 })();
