@@ -42,7 +42,7 @@
     <div class="backup-notice backup-warning">
       {{ t("還原會以備份內容取代目前所有專案資料。系統會先自動保存目前資料，完成後可下載該份還原前備份。") }}
     </div>
-    <form class="backup-restore-form" method="post" action="/settings/backup/restore" enctype="multipart/form-data" onsubmit="return confirm({{ t("確定以所選備份取代目前所有專案資料？系統會先自動保存目前資料。")|tojson|forceescape }})">
+    <form class="backup-restore-form" method="post" action="/settings/backup/restore" enctype="multipart/form-data" onsubmit="return confirm({{ t("確定以所選備份取代目前所有專案資料？系統會先自動保存目前資料。")|tojson|forceescape }})">{{ csrf_input() }}
       <label for="backup-file">{{ t("選擇 ProjMemo SQLite 備份") }}
         <input id="backup-file" name="backup_file" type="file" accept=".sqlite3,.sqlite,.db,application/vnd.sqlite3" required>
       </label>

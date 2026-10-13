@@ -4,6 +4,12 @@
 
 ## 2026-10-13
 
+- P0 第三項：新增本機 Host 白名單、同來源 Origin／Referer／Fetch Metadata 檢查與簽章 CSRF cookie；所有 POST 路由使用共同驗證，25 個模板表單位置附隱藏 token，密碼 reveal 請求附頁面 token。
+- token cookie 使用 HttpOnly／SameSite=Strict，HTTPS 下 Secure；重新啟動會使舊 token 失效。缺少有效 cookie／header 的請求在解析 body 前拒絕；未知或跨來源（含 `Origin: null`）拒絕。
+- 備份與復原檔禁止快取，HTML 含 token 的頁面也禁止快取；加入 nosniff／no-referrer／禁止 framing 回應標頭，Windows 啟動腳本明確綁定 127.0.0.1。
+- 實際隔離 HTTP 驗證：同來源表單 303、跨 port 403；瀏覽器跨 port 提交也拒絕，專案未寫入。內嵌瀏覽器的正常表單會送 `Origin: null`，依規則拒絕；正常同來源流程由 HTTP／回歸測試驗證，標準桌面瀏覽器完整互動另留 R08。
+- 第三項驗收：Python 69 項、Node 6 項通過，包含 27 項新增伺服器安全案例及 1 項前端 CSRF 案例；沿用隔離資料，測試伺服器已停止。
+
 - P0 第二項：還原後初始化與可用性驗證移入回復流程；複製或初始化失敗會恢復原資料，自動回復失敗則阻止一般資料操作，仍可開啟備份頁及下載復原檔。
 - 單程序資料操作保護：等既有請求／交易完成後才拍快照，還原期間拒絕新資料請求及第二次還原，提供 503／Retry-After；替換前清除所有保管庫 session。
 - 新增 7 項測試，覆蓋初始化／初始化後驗證失敗、部分複製失敗、回復失敗、並發排除、既有交易與快照順序，以及快照建立失敗。

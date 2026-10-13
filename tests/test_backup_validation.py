@@ -1,7 +1,7 @@
 from pathlib import Path
 import sqlite3
 
-from fastapi.testclient import TestClient
+from tests.client import TestClient
 import pytest
 
 from app.backup import BackupValidationError, validate_backup

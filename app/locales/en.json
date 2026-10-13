@@ -379,5 +379,8 @@
   "資料庫需要復原，請下載還原前備份並停止程式後復原。": "The database needs recovery. Download the pre-restore backup and stop the app before recovering it.",
   "資料還原中，請稍後再試。": "A restore is in progress. Please try again later.",
   "資料庫忙碌或需要復原，請先確認還原狀態。": "The database is busy or needs recovery. Check the restore status first.",
-  "資料庫仍有作業進行中，請稍後再還原。": "Database operations are still running. Try restoring again later."
+  "資料庫仍有作業進行中，請稍後再還原。": "Database operations are still running. Try restoring again later.",
+  "頁面驗證已失效，請重新整理後再試。": "Page verification has expired. Refresh the page and try again.",
+  "僅允許透過本機網址存取 ProjMemo。": "ProjMemo only allows access through local addresses.",
+  "請從同一個 ProjMemo 頁面執行此操作。": "Perform this action from the same ProjMemo origin."
 }

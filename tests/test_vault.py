@@ -1,7 +1,7 @@
 from pathlib import Path
 import sqlite3
 
-from fastapi.testclient import TestClient
+from tests.client import TestClient
 
 
 MASTER_PASSWORD = "correct horse battery staple"

@@ -3,7 +3,7 @@ from pathlib import Path
 import sqlite3
 import threading
 
-from fastapi.testclient import TestClient
+from tests.client import TestClient
 import pytest
 
 from app import backup as backups

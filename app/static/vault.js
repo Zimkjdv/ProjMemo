@@ -35,7 +35,10 @@
           method: "POST",
           credentials: "same-origin",
           cache: "no-store",
-          headers: { Accept: "application/json" },
+          headers: {
+            Accept: "application/json",
+            "X-CSRF-Token": document.querySelector('meta[name="csrf-token"]')?.content || "",
+          },
         });
         if (!response.ok) throw new Error(messages.readError);
         const payload = await response.json();

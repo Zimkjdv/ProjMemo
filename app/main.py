@@ -7,7 +7,7 @@ from datetime import datetime
 from math import ceil
 from urllib.parse import quote, unquote, urlencode, urlsplit
 
-from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -26,6 +26,7 @@ from .backup import (
 )
 from .db import database_path, db_session, init_db
 from .database_access import DatabaseAccessMiddleware, DatabaseBusyError
+from .web_security import LocalRequestSecurityMiddleware, NO_STORE_HEADERS, csrf_input, require_csrf
 from .i18n import LANGUAGE_COOKIE, LANGUAGES, get_language, translate_error, translator
 from .pdf_export import PDFExportError, generate_project_pdf
 from .vault import (
@@ -46,6 +47,7 @@ from .vault import (
 
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+templates.env.globals["csrf_input"] = csrf_input
 
 STATUS_OPTIONS = [
     ("maintenance", "維護中"),
@@ -106,8 +108,9 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="ProjMemo", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="ProjMemo", version="0.1.0", lifespan=lifespan, dependencies=[Depends(require_csrf)])
 app.add_middleware(DatabaseAccessMiddleware)
+app.add_middleware(LocalRequestSecurityMiddleware)
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
 
@@ -117,7 +120,8 @@ async def localized_http_error(request: Request, error: HTTPException) -> JSONRe
         translate_error(error.detail, get_language(request))
         if isinstance(error.detail, str) else error.detail
     )
-    return JSONResponse({"detail": detail}, status_code=error.status_code, headers=error.headers)
+    return JSONResponse({"detail": detail}, status_code=error.status_code,
+                        headers={**NO_STORE_HEADERS, **(error.headers or {})})
 
 
 @app.exception_handler(DatabaseBusyError)
@@ -177,6 +181,7 @@ def page_context(request: Request, **values: object) -> dict[str, object]:
         "request": request,
         "language": language,
         "t": t,
+        "csrf_token": request.state.csrf_token,
         "return_to": request.url.path + (f"?{request.url.query}" if request.url.query else ""),
         **values,
     }
@@ -481,6 +486,7 @@ def download_database_backup() -> FileResponse:
         media_type="application/vnd.sqlite3",
         filename=filename,
         background=BackgroundTask(_remove_temporary_backup, backup_path),
+        headers=NO_STORE_HEADERS,
     )
 
 
@@ -538,6 +544,7 @@ def download_recovery_backup(filename: str) -> FileResponse:
         backup_path,
         media_type="application/vnd.sqlite3",
         filename=filename,
+        headers=NO_STORE_HEADERS,
     )
 
 

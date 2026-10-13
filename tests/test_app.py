@@ -1,7 +1,7 @@
 from pathlib import Path
 import sqlite3
 
-from fastapi.testclient import TestClient
+from tests.client import TestClient
 
 
 def test_project_lifecycle(tmp_path: Path, monkeypatch) -> None:

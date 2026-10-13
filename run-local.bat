@@ -15,4 +15,4 @@ if "%PROJMEMO_PORT%"=="" (
 )
 
 echo Starting ProjMemo on http://127.0.0.1:%PROJMEMO_PORT%/
-python -m uvicorn app.main:app --reload --port %PROJMEMO_PORT%
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port %PROJMEMO_PORT%

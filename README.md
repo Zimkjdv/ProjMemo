@@ -10,6 +10,7 @@ ProjMemo 是一個以本機 Python `.venv` 執行的個人專案備註與交接�
 - [ROADMAP.MD](ROADMAP.MD)：待辦、已知缺口、優先級與驗收標準。
 - [CHANGELOG.MD](CHANGELOG.MD)：依日期整理的已完成進度。
 - [保管庫安全說明](docs/vault-security.md)：主密碼、salt、加密金鑰及 session 的關係。
+- [本機請求保護](docs/local-web-security.md)：Host、來源、CSRF 與程式呼叫方式。
 
 ## 主要目標
 
@@ -222,4 +223,4 @@ Python 回歸測試可執行 `.\.venv\Scripts\python.exe -m pytest tests -q`。�
 
 已完成的階段紀錄移至 [CHANGELOG.MD](CHANGELOG.MD)，未完成項目統一維護於 [ROADMAP.MD](ROADMAP.MD)。目前專案本身支援新增、檢視與編輯，尚未提供整個專案刪除；標籤可透過搜尋文字比對，尚無獨立標籤篩選器。
 
-下一階段優先補強備份／還原驗證、本機請求保護及日常操作可靠性。Docker 待本機功能穩定後再進行；多人協作與手機排版不屬於目前個人版範圍。
+P0 的完整備份驗證、還原回復與寫入保護、本機請求及下載保護已完成。下一階段優先整理架構、保管庫 session 生命週期與表單回饋。Docker 待本機功能穩定後再進行；多人協作與手機排版不屬於目前個人版範圍。

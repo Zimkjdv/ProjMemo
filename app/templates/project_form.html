@@ -15,7 +15,7 @@
 </header>
 
 <div class="project-editor-layout">
-  <form class="panel project-editor-form" id="project-editor" method="post" action="{% if project %}/projects/{{ project.id }}/edit{% else %}/projects/new{% endif %}">
+  <form class="panel project-editor-form" id="project-editor" method="post" action="{% if project %}/projects/{{ project.id }}/edit{% else %}/projects/new{% endif %}">{{ csrf_input() }}
     <section class="editor-section" aria-labelledby="basic-info-heading">
       <div class="editor-section-heading">
         <span class="form-section-icon" aria-hidden="true">01</span>

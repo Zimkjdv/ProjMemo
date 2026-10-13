@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}ProjMemo{% endblock %}</title>
     <meta name="referrer" content="no-referrer">
+    <meta name="csrf-token" content="{{ csrf_token }}">
     <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}?v=20261013-home-compact">
   </head>
   <body>
@@ -15,7 +16,7 @@
           <a class="nav-link" href="/">{{ t("我的專案") }}</a>
           <a class="nav-link" href="/settings/vault">{{ t("密碼保管庫") }}</a>
           <a class="nav-link backup-nav-link" href="/settings/backup">{{ t("資料備份") }}</a>
-          <form class="language-switch" method="post" action="/settings/language" aria-label="{{ t('介面語言') }}">
+          <form class="language-switch" method="post" action="/settings/language" aria-label="{{ t('介面語言') }}">{{ csrf_input() }}
             <input type="hidden" name="return_to" value="{{ return_to }}">
             <button type="submit" name="language" value="zh-Hant" class="{% if language == 'zh-Hant' %}active{% endif %}" aria-pressed="{{ 'true' if language == 'zh-Hant' else 'false' }}" lang="zh-Hant">繁中</button>
             <button type="submit" name="language" value="en" class="{% if language == 'en' %}active{% endif %}" aria-pressed="{{ 'true' if language == 'en' else 'false' }}" lang="en">EN</button>

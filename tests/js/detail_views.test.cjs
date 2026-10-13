@@ -83,10 +83,12 @@ function vaultHarness() {
   const document = {
     visibilityState: "visible",
     getElementById: () => ({ textContent: JSON.stringify(messages) }),
-    querySelectorAll: () => [button], querySelector: () => output,
+    querySelectorAll: () => [button],
+    querySelector: (selector) => selector === 'meta[name="csrf-token"]' ? { content: "fixture-csrf-token" } : output,
     addEventListener: (name, handler) => { handlers[name] = handler; },
   };
   const pending = [];
+  const requests = [];
   const timers = new Map();
   let nextTimer = 0;
   const window = {
@@ -95,11 +97,23 @@ function vaultHarness() {
     addEventListener: (name, handler) => { handlers[name] = handler; },
   };
   vm.runInNewContext(source("vault.js"), {
-    document, window, fetch: () => new Promise((resolve) => pending.push(resolve)),
+    document, window, fetch: (url, options) => {
+      requests.push({ url, options });
+      return new Promise((resolve) => pending.push(resolve));
+    },
   });
   const resolve = (index, secret = "fixture-secret") => pending[index]({ ok: true, json: async () => ({ secret }) });
-  return { handlers, output, button, document, resolve, timers };
+  return { handlers, output, button, document, resolve, timers, requests };
 }
+
+test("password reveals submit the page CSRF token with same-origin credentials", async () => {
+  const page = vaultHarness();
+  const reveal = page.handlers.reveal();
+  assert.equal(page.requests[0].options.headers["X-CSRF-Token"], "fixture-csrf-token");
+  assert.equal(page.requests[0].options.credentials, "same-origin");
+  page.resolve(0);
+  await reveal;
+});
 
 test("view changes immediately mask revealed passwords and cancel their timers", async () => {
   const page = vaultHarness();

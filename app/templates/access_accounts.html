@@ -5,7 +5,7 @@
   <div class="security-hint security-summary"><span>{{ t("只有實際密碼欄位加密；一般匯出不含密碼。") }}</span><details><summary>{{ t("詳細說明") }}</summary><p>{{ t("整理資料庫、網站測試、主機及第三方服務帳號。只有「實際密碼」欄位會加密；帳號、主機、登入名稱、權限與用途等資料仍以一般 SQLite 欄位保存，請勿把密碼填在其他欄位。密碼不會出現在本頁 HTML 或一般匯出檔。") }}</p></details></div>
   {% if vault_configured %}
     {% if vault_unlocked %}
-    <div class="vault-inline-status"><span>{{ t("保管庫已解鎖；15 分鐘後自動鎖定。") }}</span><form method="post" action="/settings/vault/lock"><button class="button button-ghost" type="submit">{{ t("立即鎖定") }}</button></form></div>
+    <div class="vault-inline-status"><span>{{ t("保管庫已解鎖；15 分鐘後自動鎖定。") }}</span><form method="post" action="/settings/vault/lock">{{ csrf_input() }}<button class="button button-ghost" type="submit">{{ t("立即鎖定") }}</button></form></div>
     {% else %}
     <div class="vault-inline-status"><span>{{ t("保管庫目前鎖定。") }}</span><a class="button button-secondary" href="/settings/vault">{{ t("解鎖保管庫") }}</a></div>
     {% endif %}
@@ -23,7 +23,7 @@
         <details class="item-actions">
           <summary aria-label="{{ t("編輯或刪除") }} {{ account.label }}">•••</summary>
           <div class="action-popover">
-            <form method="post" action="/accounts/{{ account.id }}/edit">
+            <form method="post" action="/accounts/{{ account.id }}/edit">{{ csrf_input() }}
               <label>{{ t("帳號／服務名稱") }}<input name="label" required value="{{ account.label }}"></label>
               <div class="form-grid two-columns">
                 <label>{{ t("類型") }}<select name="category">{% for value, label in access_account_categories %}<option value="{{ value }}" {% if account.category == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
@@ -40,7 +40,7 @@
               {% if account.has_secret %}<label class="checkbox-label"><input type="checkbox" name="delete_secret" value="true">{{ t("刪除已保存密碼") }}</label>{% endif %}
               <button class="button button-primary" type="submit">{{ t("儲存帳號資料") }}</button>
             </form>
-            <form class="delete-form" method="post" action="/accounts/{{ account.id }}/delete" onsubmit="return confirm({{ t("確定刪除此帳號資料與已加密密碼？")|tojson|forceescape }})"><button class="button button-danger" type="submit">{{ t("刪除帳號資料") }}</button></form>
+            <form class="delete-form" method="post" action="/accounts/{{ account.id }}/delete" onsubmit="return confirm({{ t("確定刪除此帳號資料與已加密密碼？")|tojson|forceescape }})">{{ csrf_input() }}<button class="button button-danger" type="submit">{{ t("刪除帳號資料") }}</button></form>
           </div>
         </details>
       </div>
@@ -78,7 +78,7 @@
       <summary>{{ t("敏感匯出選項（可含實際密碼）") }}</summary>
       <p class="security-warning">{{ t("匯出檔將包含實際密碼。只有在接收者與傳送管道都安全時才使用；一般 Markdown／PDF 匯出仍不含密碼。") }}</p>
       <label class="checkbox-label sensitive-confirm"><input form="sensitive-export-form" type="checkbox" name="confirm_sensitive_export" value="true" required>{{ t("我確認此檔案包含實際密碼，並會安全傳送與清除副本。") }}</label>
-      <form id="sensitive-export-form" method="post" action="/projects/{{ project.id }}/export-with-secrets" onsubmit="return confirm({{ t("這份檔案會包含實際密碼。確定繼續？")|tojson|forceescape }})">
+      <form id="sensitive-export-form" method="post" action="/projects/{{ project.id }}/export-with-secrets" onsubmit="return confirm({{ t("這份檔案會包含實際密碼。確定繼續？")|tojson|forceescape }})">{{ csrf_input() }}
         <button class="button button-danger" name="export_format" value="markdown" type="submit">{{ t("匯出含密碼 Markdown") }}</button>
         <button class="button button-danger" name="export_format" value="pdf" type="submit">{{ t("匯出含密碼 PDF") }}</button>
       </form>
@@ -90,7 +90,7 @@
 
   <details class="add-form">
     <summary><span aria-hidden="true">＋</span> {{ t("新增帳號／存取資料") }}</summary>
-    <form method="post" action="/projects/{{ project.id }}/accounts">
+    <form method="post" action="/projects/{{ project.id }}/accounts">{{ csrf_input() }}
       <label>{{ t("帳號／服務名稱") }}<input name="label" required placeholder="{{ t("例如：測試環境 PostgreSQL") }}"></label>
       <div class="form-grid two-columns">
         <label>{{ t("類型") }}<select name="category">{% for value, label in access_account_categories %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label>
@@ -113,4 +113,4 @@
   'retry': t('顯示失敗，重試'), 'readError': t('無法讀取密碼，請確認保管庫仍為解鎖狀態。'),
   'formatError': t('密碼回應格式錯誤。'), 'genericError': t('無法讀取密碼')
 }|tojson }}</script>
-<script src="/static/vault.js?v=20261013-views" defer></script>
+<script src="/static/vault.js?v=20261013-csrf" defer></script>

@@ -2,7 +2,7 @@ from pathlib import Path
 import re
 from string import Formatter
 
-from fastapi.testclient import TestClient
+from tests.client import TestClient
 from jinja2 import Environment, nodes
 
 

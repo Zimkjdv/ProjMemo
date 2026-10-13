@@ -20,17 +20,17 @@
 
   {% if not vault_configured %}
   <p>{{ t("設定一次主密碼後，ProjMemo 會用 Argon2id 派生加密金鑰，再以 AES-GCM 加密每筆密碼。請使用長且唯一的密碼短語，至少 16 個字元。") }}</p>
-  <form method="post" action="/settings/vault/setup" class="vault-form">
+  <form method="post" action="/settings/vault/setup" class="vault-form">{{ csrf_input() }}
     <label>{{ t("主密碼") }}<input type="password" name="master_password" minlength="16" maxlength="1024" required autocomplete="new-password"></label>
     <label>{{ t("再次輸入主密碼") }}<input type="password" name="confirm_password" minlength="16" maxlength="1024" required autocomplete="new-password"></label>
     <button class="button button-primary" type="submit">{{ t("建立加密保管庫") }}</button>
   </form>
   {% elif vault_unlocked %}
   <p>{{ t("保管庫已在此瀏覽器解鎖，解鎖滿 15 分鐘或重新啟動 ProjMemo 後會自動鎖定。") }}</p>
-  <form method="post" action="/settings/vault/lock"><button class="button button-ghost" type="submit">{{ t("立即鎖定") }}</button></form>
+  <form method="post" action="/settings/vault/lock">{{ csrf_input() }}<button class="button button-ghost" type="submit">{{ t("立即鎖定") }}</button></form>
   {% else %}
   <p>{{ t("輸入主密碼以查看或保存實際密碼。連續輸入錯誤過多次時，解鎖會暫停一段時間。") }}</p>
-  <form method="post" action="/settings/vault/unlock" class="vault-form">
+  <form method="post" action="/settings/vault/unlock" class="vault-form">{{ csrf_input() }}
     <label>{{ t("主密碼") }}<input type="password" name="master_password" maxlength="1024" required autocomplete="current-password" autofocus></label>
     <button class="button button-primary" type="submit">{{ t("解鎖保管庫") }}</button>
   </form>
@@ -45,7 +45,7 @@
   </div>
   <p>{{ t("一般 Markdown／PDF 匯出永遠不包含實際密碼。啟用下方選項後，專案頁才會額外提供「含密碼匯出」；仍需解鎖保管庫、勾選確認並再次確認，才會產生含密碼的檔案。") }}</p>
   <div class="security-warning">{{ t("敏感匯出檔可被轉寄或留存在下載資料夾。只在必要時開啟，完成後建議立即關閉，並安全傳送及清除檔案副本。") }}</div>
-  <form method="post" action="/settings/vault/export-policy" class="export-policy-form">
+  <form method="post" action="/settings/vault/export-policy" class="export-policy-form">{{ csrf_input() }}
     <label class="checkbox-label"><input type="checkbox" name="allow_secret_export" value="true" {% if allow_secret_export %}checked{% endif %}>{{ t("允許產生含實際密碼的 Markdown／PDF（預設關閉）") }}</label>
     <button class="button {% if allow_secret_export %}button-danger{% else %}button-primary{% endif %}" type="submit">{{ t("儲存匯出設定") }}</button>
   </form>

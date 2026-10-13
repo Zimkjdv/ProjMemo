@@ -1,7 +1,7 @@
 from html.parser import HTMLParser
 from pathlib import Path
 
-from fastapi.testclient import TestClient
+from tests.client import TestClient
 
 
 class PageElements(HTMLParser):
