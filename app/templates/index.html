@@ -1,13 +1,29 @@
 {% extends "base.html" %}
 {% block title %}{{ t("專案列表｜ProjMemo") }}{% endblock %}
 {% block content %}
-<section class="hero page-hero">
+<section class="hero page-hero dashboard-hero" aria-labelledby="home-intro-title">
   <div class="hero-copy-block">
     <p class="eyebrow">{{ t("個人專案知識庫") }}</p>
-    <h1>{{ t("專案資訊，清楚有序。") }}</h1>
-    <p class="hero-copy">{{ t("保存重要連結、實用備註與交接事項，讓每個專案的關鍵資訊都找得到。") }}</p>
+    <h1 id="home-intro-title">{{ t("專案資訊，清楚有序。") }}</h1>
+    <p class="hero-copy">{{ t("集中整理連結、備註與交接事項，讓專案資訊隨手可查。") }}</p>
+    <ul class="hero-features" aria-label="{{ t('專案整理功能') }}">
+      <li><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-2 2M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l2-2"/></svg>{{ t("重要 URL") }}</li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9l-6-6Zm0 0v6h6M8 13h8M8 17h5"/></svg>{{ t("Markdown 備註") }}</li>
+      <li><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 6 2 2 4-4M12 6h9M3 13l2 2 4-4M12 13h9M4 20h4M12 20h9"/></svg>{{ t("交接清單") }}</li>
+    </ul>
   </div>
-  <a class="button button-primary hero-action" href="/projects/new"><span aria-hidden="true">＋</span> {{ t("建立專案") }}</a>
+  <div class="hero-workspace">
+    <svg class="hero-workspace-art" viewBox="0 0 180 112" aria-hidden="true" focusable="false">
+      <rect class="hero-art-sheet" x="81" y="14" width="53" height="72" rx="9" transform="rotate(9 81 14)"/>
+      <rect class="hero-art-sheet" x="53" y="9" width="53" height="72" rx="9" transform="rotate(-8 53 9)"/>
+      <path class="hero-art-folder" d="M28 45a9 9 0 0 1 9-9h32l11 10h61a9 9 0 0 1 9 9v39a9 9 0 0 1-9 9H37a9 9 0 0 1-9-9Z"/>
+      <rect class="hero-art-front" x="28" y="55" width="122" height="48" rx="9"/>
+      <path class="hero-art-line" d="M66 27h20M66 35h14M96 33h20M96 41h14M46 76h40M46 85h25"/>
+      <circle class="hero-art-mark" cx="127" cy="79" r="12"/>
+      <path class="hero-art-check" d="m122 79 3 3 6-6"/>
+    </svg>
+    <a class="button button-primary hero-action" href="/projects/new"><span class="hero-action-icon" aria-hidden="true">＋</span> {{ t("建立專案") }}</a>
+  </div>
 </section>
 
 <form class="filter-bar" method="get" action="/">

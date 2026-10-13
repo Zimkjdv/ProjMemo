@@ -78,6 +78,28 @@ label input, label select, label textarea { display: block; margin-top: 6px; }
 .page-hero h1 { font-size: clamp(1.8rem, 3vw, 2.35rem); }
 .hero-copy { max-width: 630px; margin: 0; color: var(--muted); }
 .hero-action { flex-shrink: 0; }
+/* Homepage introduction: scoped so backup and vault headers retain their layout. */
+.dashboard-hero { position: relative; isolation: isolate; gap: 32px; padding: 26px 32px; border-color: #dfe5f2; background: radial-gradient(ellipse at 100% 35%, #eaf0ff, transparent 58%), linear-gradient(110deg, #fff, #fafbff); }
+.dashboard-hero::before { position: absolute; top: 28px; bottom: 28px; left: 0; width: 3px; border-radius: 0 3px 3px 0; background: #7087e8; content: ""; }
+.dashboard-hero .hero-copy-block { flex: 1; min-width: 0; }
+.dashboard-hero .eyebrow { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 11px; padding: 4px 9px; border: 1px solid #e2e8ff; border-radius: 6px; background: rgba(238, 242, 255, .72); font-size: .66rem; letter-spacing: .08em; }
+.dashboard-hero .eyebrow::before { width: 5px; height: 5px; flex-shrink: 0; border-radius: 50%; background: var(--primary); content: ""; }
+.dashboard-hero h1 { margin-bottom: 9px; font-size: clamp(1.85rem, 2.8vw, 2.2rem); line-height: 1.28; letter-spacing: -.035em; text-wrap: balance; }
+.dashboard-hero .hero-copy { max-width: 700px; color: #596579; font-size: .86rem; line-height: 1.65; }
+.hero-features { display: flex; flex-wrap: wrap; gap: 8px; margin: 17px 0 0; padding: 0; list-style: none; }
+.hero-features li { display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border: 1px solid #e5e9f2; border-radius: 7px; color: #475467; background: rgba(255, 255, 255, .8); font-size: .74rem; font-weight: 500; }
+.hero-features svg { width: 15px; height: 15px; flex-shrink: 0; fill: none; stroke: #627bd8; stroke-width: 1.65; stroke-linecap: round; stroke-linejoin: round; }
+.hero-workspace { display: flex; width: 180px; flex-shrink: 0; flex-direction: column; align-items: center; gap: 9px; padding-left: 20px; border-left: 1px solid rgba(207, 218, 247, .65); }
+.hero-workspace-art { width: 144px; height: 90px; overflow: visible; }
+.hero-art-sheet { fill: #fff; stroke: #c8d4f7; stroke-width: 1.5; }
+.hero-art-folder { fill: #e2eaff; stroke: #b5c6f1; stroke-width: 1.5; }
+.hero-art-front { fill: #eff3ff; stroke: #b5c6f1; stroke-width: 1.5; }
+.hero-art-line { fill: none; stroke: #a6b8e9; stroke-width: 2.5; stroke-linecap: round; }
+.hero-art-mark { fill: #5c76d9; }
+.hero-art-check { fill: none; stroke: white; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.dashboard-hero .hero-action { min-height: 43px; gap: 9px; padding: 8px 15px; white-space: nowrap; box-shadow: 0 4px 10px rgba(56, 87, 214, .18); }
+.hero-action-icon { display: inline-grid; width: 21px; height: 21px; place-items: center; border-radius: 6px; background: rgba(255, 255, 255, .15); font-size: 1rem; line-height: 1; }
+.dashboard-hero .hero-action:focus-visible { outline: 3px solid #a8b9f7; outline-offset: 4px; }
 .filter-bar { display: flex; align-items: center; gap: 10px; margin: 0 0 24px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); }
 .search-field { position: relative; flex: 1; margin: 0; }
 .search-field input { padding-left: 38px; border-color: transparent; background: #f8f9fb; }
