@@ -85,7 +85,9 @@ label input, label select, label textarea { display: block; margin-top: 6px; }
 .dashboard-hero .hero-title-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 .dashboard-hero .hero-title-badge { display: grid; width: 44px; height: 44px; flex-shrink: 0; place-items: center; border-radius: 12px; color: #fff; background: linear-gradient(135deg, #6a7bff, #8f6bff); box-shadow: 0 6px 16px rgba(106, 123, 255, .35); }
 .dashboard-hero .hero-title-badge svg { width: 22px; height: 22px; }
-.dashboard-hero .hero-title { min-width: 0; margin: 0; color: #1f2a6b; font-size: 1.625rem; font-weight: 800; letter-spacing: .06em; line-height: 1.25; }
+.dashboard-hero .hero-title { min-width: 0; margin: 0; color: #1f2a6b; font-size: 1.625rem; font-weight: 900; letter-spacing: .06em; line-height: 1.25; }
+/* Keep the heavier title visible even when Windows CJK fonts share a bold face. */
+.dashboard-hero .hero-title, .dashboard-hero .hero-title-accent { -webkit-text-stroke: .3px currentColor; }
 .dashboard-hero .hero-title-accent { color: #5468ff; }
 .dashboard-hero .hero-copy { max-width: 760px; color: #657189; font-size: .9375rem; line-height: 1.75; letter-spacing: .01em; }
 .dashboard-hero .hero-features { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0 0; padding: 0; list-style: none; }
