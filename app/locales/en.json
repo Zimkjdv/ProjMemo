@@ -384,5 +384,21 @@
   "資料庫仍有作業進行中，請稍後再還原。": "Database operations are still running. Try restoring again later.",
   "頁面驗證已失效，請重新整理後再試。": "Page verification has expired. Refresh the page and try again.",
   "僅允許透過本機網址存取 ProjMemo。": "ProjMemo only allows access through local addresses.",
-  "請從同一個 ProjMemo 頁面執行此操作。": "Perform this action from the same ProjMemo origin."
+  "請從同一個 ProjMemo 頁面執行此操作。": "Perform this action from the same ProjMemo origin.",
+  "主密碼不會保存": "Your master password is not stored",
+  "安全摘要": "Security at a glance",
+  "加密方式": "Encryption",
+  "解鎖時效": "Unlock duration",
+  "15 分鐘": "15 minutes",
+  "加密範圍": "Encrypted fields",
+  "僅實際密碼": "Passwords only",
+  "儲存後才會生效": "Changes take effect after saving",
+  "開啟敏感匯出前，請先解鎖保管庫。": "Unlock the vault before enabling exports with passwords.",
+  "保管庫設定完成後，一般 Markdown／PDF 匯出仍不包含實際密碼；只有明確開啟敏感匯出並完成確認，才會產生含密碼的檔案。": "After setup, regular Markdown/PDF exports still exclude passwords. Files with passwords require explicitly enabling sensitive exports and completing confirmation.",
+  "設定完成後即可管理匯出規則。": "Set up the vault to manage export rules.",
+  "前往資料備份": "Go to backups",
+  "密文備份": "Encrypted password backups",
+  "主密碼無法重設": "No master password reset",
+  "離開時記得鎖定": "Lock before stepping away",
+  "僅限本機使用": "Local use only"
 }
