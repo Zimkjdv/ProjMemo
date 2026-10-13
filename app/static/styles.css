@@ -86,14 +86,15 @@ label input, label select, label textarea { display: block; margin-top: 6px; }
 .dashboard-hero .hero-title-badge { display: grid; width: 44px; height: 44px; flex-shrink: 0; place-items: center; border-radius: 12px; color: #fff; background: linear-gradient(135deg, #6a7bff, #8f6bff); box-shadow: 0 6px 16px rgba(106, 123, 255, .35); }
 .dashboard-hero .hero-title-badge svg { width: 22px; height: 22px; }
 .dashboard-hero .hero-title { min-width: 0; margin: 0; color: #1f2a6b; font-size: 1.625rem; font-weight: 900; letter-spacing: .06em; line-height: 1.25; }
-/* Keep the heavier title visible even when Windows CJK fonts share a bold face. */
-.dashboard-hero .hero-title, .dashboard-hero .hero-title-accent { -webkit-text-stroke: .3px currentColor; }
+/* Prefer a real Black face for the Chinese title rather than thickening a lighter font. */
+html[lang="zh-Hant"] .dashboard-hero .hero-title { font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif; }
 .dashboard-hero .hero-title-accent { color: #5468ff; }
 .dashboard-hero .hero-copy { max-width: 760px; color: #657189; font-size: .9375rem; line-height: 1.75; letter-spacing: .01em; }
 .dashboard-hero .hero-features { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0 0; padding: 0; list-style: none; }
 .dashboard-hero .hero-features li { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border: 1px solid #e1e7f6; border-radius: 8px; color: #42516b; background: #f4f6fd; font-size: .875rem; font-weight: 600; line-height: 1.5; }
 .dashboard-hero .hero-features svg { width: 17px; height: 17px; flex-shrink: 0; fill: none; stroke: #5b73cf; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 html[lang="en"] .dashboard-hero .hero-title { font-size: 1.375rem; letter-spacing: .025em; }
+html[lang="en"] .dashboard-hero .hero-title, html[lang="en"] .dashboard-hero .hero-title-accent { -webkit-text-stroke: .3px currentColor; }
 .hero-workspace { display: flex; width: 180px; flex-shrink: 0; flex-direction: column; align-items: center; gap: 9px; padding-left: 20px; border-left: 1px solid rgba(207, 218, 247, .65); }
 .hero-workspace-art { width: 120px; height: 75px; overflow: visible; }
 .hero-art-sheet { fill: #fff; stroke: #c8d4f7; stroke-width: 1.5; }
