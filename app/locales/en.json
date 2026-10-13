@@ -400,5 +400,19 @@
   "密文備份": "Encrypted password backups",
   "主密碼無法重設": "No master password reset",
   "離開時記得鎖定": "Lock before stepping away",
-  "僅限本機使用": "Local use only"
+  "僅限本機使用": "Local use only",
+  "備份格式": "Backup format",
+  "備份範圍": "Backup scope",
+  "所有專案與設定": "All projects and settings",
+  "密碼資料": "Password data",
+  "密碼仍為密文": "Passwords stay encrypted",
+  "備份與還原注意事項": "Backup and restore notes",
+  "還原會取代資料": "Restoring replaces data",
+  "請確認備份日期與內容，再執行還原；還原後會以檔案中的資料取代目前資料。": "Check the backup date and contents before restoring. The file's data will replace your current data.",
+  "保留原主密碼": "Keep the original master password",
+  "還原後，仍須使用備份所屬的原主密碼解鎖密碼保管庫；備份不包含主密碼或解密金鑰。": "After restoring, unlock the vault with the backup's original master password. Backups contain neither the master password nor the decryption key.",
+  "自動建立復原點": "Automatic recovery snapshots",
+  "備份驗證通過後，系統才會在還原前建立自動備份。復原清單列出最近 10 份，檔案不會自動刪除。": "After validation, an automatic snapshot is created before restoring. The list shows the latest 10 snapshots; files are not automatically deleted.",
+  "妥善保管備份檔": "Keep backup files secure",
+  "只有實際密碼是密文，其餘專案與帳號資料仍可讀取。請把備份放在安全位置，不要公開或隨意轉寄。": "Only passwords are encrypted; other project and account data remain readable. Store backups securely and do not publish or casually forward them."
 }
