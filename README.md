@@ -4,22 +4,23 @@ ProjMemo 是一個以本機 Python `.venv` 執行的個人專案備註與交接�
 
 目前定位為個人部署、桌面使用。介面提供繁體中文與英文，可在右上角切換；瀏覽器會記住選擇，並保留目前頁面、篩選條件與內容捷徑位置。英文版沿用 `PROJECT OVERVIEW`、`REFERENCE`、`HANDOVER` 等區塊小標。專案名稱、說明、備註與標籤等使用者資料不會自動翻譯；目前 Markdown／PDF 的文件標題仍使用原本格式。
 
-## GitHub Repository 建議
+## 專案與文件
 
-- **Repository name**：`projmemo`
-- **Description**：`A personal project knowledge base and handover checklist manager with Markdown and PDF export.`
-- **中文描述**：個人專案備註與交接清單管理工具，支援重要 URL、Markdown 備註、環境設定說明及 Markdown/PDF 匯出。
+- [GitHub：Zimkjdv/ProjMemo](https://github.com/Zimkjdv/ProjMemo)
+- [ROADMAP.MD](ROADMAP.MD)：待辦、已知缺口、優先級與驗收標準。
+- [CHANGELOG.MD](CHANGELOG.MD)：依日期整理的已完成進度。
+- [保管庫安全說明](docs/vault-security.md)：主密碼、salt、加密金鑰及 session 的關係。
 
 ## 主要目標
 
-- 集中管理個人或團隊專案資訊
+- 集中管理個人負責的專案資訊
 - 快速記錄重要 URL 與專案注意事項
 - 保存 Known Issues 與 Workarounds
 - 將專案內容整理成交接清單
 - 一鍵匯出 Markdown 或 PDF，方便交接與寄送
 - 下載 SQLite 備份，並在還原前自動保留目前資料
 
-## 預計功能
+## 目前功能
 
 目前已提供 URL、Markdown 備註、交接清單、環境變數說明，以及 Markdown/PDF 匯出。專案列表可切換卡片或明細清單檢視，並支援每頁 10、20 或 50 筆。
 
@@ -53,7 +54,6 @@ ProjMemo 是一個以本機 Python `.venv` 執行的個人專案備註與交接�
 - 可記錄一般備註、注意事項、Known Issues 與 Workarounds
 - 可設定備註優先等級
 - 可編輯與刪除備註
-- 規劃支援 Mermaid，方便記錄架構圖與流程圖
 
 ### 3. Handover Checklist
 
@@ -83,7 +83,7 @@ ProjMemo 是一個以本機 Python `.venv` 執行的個人專案備註與交接�
 
 - 從「資料備份」頁面下載完整 `.sqlite3` 資料庫快照
 - 可還原先前下載的 ProjMemo 備份；還原前會檢查 SQLite 完整性、必要資料表、欄位及關聯資料
-- 不接受不相容或損毀的備份；驗證失敗時不會更動目前資料
+- 替換前會驗證八張資料表的結構、型別、關聯與保管庫參數；兼容沒有保管庫表的舊版備份，拒絕不完整的保管庫結構與未知資料版本。還原後初始化回復仍需補強，詳見 Roadmap R01
 - 每次還原前會自動保留一份可下載的還原前備份
 - 還原上傳限制為 100 MB
 - 還原前備份保存在目前資料庫所在目錄的 `backups/` 子目錄，最多顯示最近 10 份且不會自動刪除
@@ -94,15 +94,15 @@ ProjMemo 是一個以本機 Python `.venv` 執行的個人專案備註與交接�
 - 實際密碼以主密碼派生的金鑰使用 AES-GCM 加密後存入 SQLite；資料庫不保存明文密碼或主密碼
 - 只有實際密碼欄位加密；帳號名稱、登入名稱、主機、用途、專案備註等一般資料不加密
 - 主密碼至少 16 個字元；忘記主密碼後無法解密既有密碼，也沒有重設或後門
-- 解鎖金鑰只暫存在應用程式記憶體，15 分鐘後或應用程式重新啟動時鎖定
+- 解鎖金鑰暫存在應用程式記憶體，session 有效期限為 15 分鐘，重啟後失效；這不等於到期瞬間即保證安全抹除記憶體，詳見保管庫安全說明
 - 密碼只有在使用者主動解鎖後才可短暫顯示；切換離開瀏覽器分頁會立即遮蔽
 - 一般 Markdown／PDF 匯出永遠不含實際密碼；保管庫設定預設禁止敏感匯出
 - 如確有需要，可在設定中允許額外的含密碼匯出；每次仍須解鎖並勾選確認，產生的文件會標示為敏感資料
-- SQLite 備份只會帶有密文，但仍應妥善保管備份檔；還原密碼資料必須使用原主密碼
+- SQLite 備份中的實際密碼為密文，其他專案及帳號欄位仍為明文；還原密碼資料必須使用原主密碼
 - 此保管庫是本機個人用途的便利功能，不應取代組織核准的密碼管理工具；避免保存高權限正式環境密碼
 - ProjMemo 目前沒有登入與多使用者權限，請勿將服務公開到區域網路或網際網路
 
-## 初步資料模型
+## 目前資料模型
 
 ### Project
 
@@ -148,6 +148,14 @@ ProjMemo 是一個以本機 Python `.venv` 執行的個人專案備註與交接�
 
 環境變數區只記錄設定用途、套用環境及 Secret 的存放位置或負責人，不提供 Secret 值欄位。帳號與登入密碼請另存於加密保管庫。重要 URL 與環境變數也可編輯或刪除。
 
+### AccessAccount、VaultConfig、AppSettings
+
+- `access_accounts`：所屬專案、類別、環境、端點、資料庫名稱、登入名稱、權限、用途、負責人、保管位置及密碼密文／nonce。
+- `vault_config`：salt、加密驗證資料及 Argon2id 參數；不保存主密碼或解密金鑰。
+- `app_settings`：是否允許額外的敏感匯出，預設關閉。
+
+實際 schema 以 `app/db.py` 為準。`PRAGMA user_version` 標記目前格式為 1，未標記的舊備份為 0；目前以啟動時建立缺少的表為主，通用版本化遷移仍在規劃。
+
 ## 技術方向
 
 - Backend：FastAPI
@@ -174,12 +182,16 @@ run-local.bat
 
 ```powershell
 py -3 -m venv .venv
-.\\.venv\\Scripts\\Activate.ps1
+.\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 python -m uvicorn app.main:app --reload
 ```
 
-啟動時會從 `8000` 開始自動尋找可用 port；如果 `8000` 被其他程式使用，會依序改用 `8001`、`8002` 等。終端機會顯示實際網址。本機 SQLite 資料會建立在 `data/projmemo.db`，此資料目錄已加入 `.gitignore`。
+`run-local.bat` 會從 `8000` 開始探測可用 port；若被占用則依序嘗試 `8001`、`8002` 等，終端機會顯示實際網址。手動執行 Uvicorn 不會自動換 port，需自行指定 `--port`。本機 SQLite 預設建立在 `data/projmemo.db`，此資料目錄已加入 `.gitignore`。
+
+請從專案根目錄啟動。目前保管庫 session 存於單一程序記憶體，請使用單 worker 並保持本機存取；`--reload` 是開發模式，重載會使解鎖失效。
+
+可用 `PROJMEMO_DB_PATH` 指定另一個 SQLite 路徑；PDF 字型可由 `PROJMEMO_PDF_FONT`、`PROJMEMO_PDF_BOLD_FONT` 指定。更換資料庫前請先停止程式並備份。
 
 若要手動指定 port：
 
@@ -204,39 +216,8 @@ Python 回歸測試可執行 `.\.venv\Scripts\python.exe -m pytest tests -q`。�
 
 如使用帳號與密碼保管庫，請使用唯一且難以猜測的主密碼並妥善保存；任何拿到 SQLite 檔案的人都能看到非密碼專案資料及密文，密碼內容則仍需要正確主密碼才能解密。敏感匯出可能留下可讀取密碼的檔案副本，預設不啟用。
 
-## 開發階段
+## 開發進度
 
-### Phase 1：基本專案管理
+已完成的階段紀錄移至 [CHANGELOG.MD](CHANGELOG.MD)，未完成項目統一維護於 [ROADMAP.MD](ROADMAP.MD)。目前專案本身支援新增、檢視與編輯，尚未提供整個專案刪除；標籤可透過搜尋文字比對，尚無獨立標籤篩選器。
 
-- [x] 專案 CRUD
-- [x] Project Basic Info
-- [x] 重要 URL（含編輯與刪除）
-- [x] Markdown 備註（含編輯與刪除）
-
-### Phase 2：交接資訊
-
-- [x] Handover Checklist（含編輯、刪除與完成狀態）
-- [x] 環境變數說明
-- [x] Known Issues 與 Workarounds
-
-### Phase 3：匯出與搜尋
-
-- [x] Markdown 匯出（包含環境變數說明）
-- [x] PDF 匯出（包含繁體中文字型、表格與頁碼）
-- [x] 專案搜尋
-- [x] 標籤與狀態篩選
-- [x] 卡片／明細清單檢視切換
-- [x] 每頁 10／20／50 筆分頁，保留搜尋與篩選條件
-
-### Phase 4：延伸功能
-
-- [x] SQLite 備份與還原（含驗證及還原前自動備份）
-- 登入與權限
-- 多使用者
-- Git 同步或版本紀錄
-
-## 後續 Docker 化方向
-
-預計以 Docker Compose 啟動應用程式，並將 SQLite 資料庫掛載至 named volume 或指定資料目錄，確保容器重建後資料仍然保留。
-
-開發環境應保留 hot reload，讓程式修改不需要每次重新建立 Docker image。
+下一階段優先補強備份／還原驗證、本機請求保護及日常操作可靠性。Docker 待本機功能穩定後再進行；多人協作與手機排版不屬於目前個人版範圍。

@@ -9,6 +9,7 @@ from typing import Iterator
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DEFAULT_DB_PATH = BASE_DIR / "data" / "projmemo.db"
+SCHEMA_VERSION = 1
 
 
 def database_path() -> Path:
@@ -41,6 +42,9 @@ def db_session() -> Iterator[sqlite3.Connection]:
 
 def init_db() -> None:
     with db_session() as connection:
+        version = connection.execute("PRAGMA user_version").fetchone()[0]
+        if version not in (0, SCHEMA_VERSION):
+            raise sqlite3.DatabaseError("Unsupported ProjMemo schema version")
         connection.executescript(
             """
             CREATE TABLE IF NOT EXISTS projects (
@@ -143,3 +147,4 @@ def init_db() -> None:
             INSERT OR IGNORE INTO app_settings (id, allow_secret_export) VALUES (1, 0);
             """
         )
+        connection.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")

@@ -427,6 +427,8 @@ def unlock_credential_vault(
         return vault_page(request, error=str(error), status_code=429)
     except VaultNotInitialized:
         return vault_page(request, error="尚未設定保管庫", status_code=409)
+    except VaultError as error:
+        return vault_page(request, error=str(error), status_code=400)
     unlock_attempt_limiter.record_success()
     return vault_session_response(request, key)
 

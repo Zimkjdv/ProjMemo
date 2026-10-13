@@ -48,6 +48,25 @@ def validate_master_password(password: str) -> None:
         raise VaultError(f"主密碼至少需要 {MASTER_PASSWORD_MIN_LENGTH} 個字元")
 
 
+def validate_vault_metadata(row: Any) -> None:
+    """Validate untrusted database values before allocating Argon2 memory."""
+    message = "保管庫設定格式錯誤或參數不受支援，請使用完整且相容的備份。"
+    try:
+        for name, length in (("salt", 16), ("verifier_nonce", 12),
+                             ("verifier_ciphertext", len(_VERIFIER) + 16)):
+            value = row[name]
+            if not isinstance(value, bytes) or len(value) != length:
+                raise VaultError(message)
+        memory, iterations, lanes = (row[name] for name in
+                                    ("kdf_memory_cost", "kdf_iterations", "kdf_lanes"))
+        if (any(type(value) is not int for value in (memory, iterations, lanes))
+                or not 32 * 1024 <= memory <= 128 * 1024
+                or not 1 <= iterations <= 4 or not 1 <= lanes <= 8):
+            raise VaultError(message)
+    except (KeyError, IndexError, TypeError) as error:
+        raise VaultError(message) from error
+
+
 def _derive_key(password: str, salt: bytes, *, memory_cost: int, iterations: int, lanes: int) -> bytes:
     return Argon2id(
         salt=salt,
@@ -91,6 +110,7 @@ def unlock_vault(connection: Any, password: str) -> bytes:
     row = connection.execute("SELECT * FROM vault_config WHERE id = 1").fetchone()
     if row is None:
         raise VaultNotInitialized("尚未設定密碼保管庫")
+    validate_vault_metadata(row)
     key = _derive_key(
         password,
         bytes(row["salt"]),

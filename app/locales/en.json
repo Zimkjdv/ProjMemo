@@ -367,5 +367,13 @@
   "備份檔不可超過 100 MB。": "Backup files cannot exceed 100 MB.",
   "請先選擇要還原的 SQLite 備份檔。": "Choose a SQLite backup file to restore first.",
   "還原失敗，且自動回復未能完成。請保留並下載還原前備份。": "Restore failed and automatic recovery could not finish. Keep and download the pre-restore backup.",
-  "還原失敗，已使用還原前備份回復原有資料。": "Restore failed. Your original data was recovered from the pre-restore backup."
+  "還原失敗，已使用還原前備份回復原有資料。": "Restore failed. Your original data was recovered from the pre-restore backup.",
+  "保管庫設定格式錯誤或參數不受支援，請使用完整且相容的備份。": "The vault configuration is invalid or unsupported. Use a complete, compatible backup.",
+  "備份檔的資料版本不受支援，請先升級 ProjMemo。": "This backup uses an unsupported schema version. Upgrade ProjMemo first.",
+  "備份檔的保管庫資料表不完整，無法還原。": "The backup has incomplete vault tables and cannot be restored.",
+  "備份檔的資料表結構不相容，無法還原。": "The backup has incompatible table definitions and cannot be restored.",
+  "備份檔含有格式錯誤的資料，無法還原。": "The backup contains invalid data and cannot be restored.",
+  "備份檔的保管庫設定不完整或不相容，無法還原。": "The backup has incomplete or incompatible vault settings and cannot be restored.",
+  "備份檔的匯出設定不相容，無法還原。": "The backup has incompatible export settings and cannot be restored.",
+  "備份檔的加密密碼資料不完整，無法還原。": "The backup has incomplete encrypted password data and cannot be restored."
 }
