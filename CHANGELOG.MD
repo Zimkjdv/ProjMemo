@@ -4,6 +4,10 @@
 
 ## 2026-10-13
 
+- 首頁介紹區字體層次：中文標題 21px、英文全大寫標題 17px、說明 15px、功能標籤 14px；加入 Windows 中文字型 fallback、調整行距與標籤留白，維持精簡區塊高度，不恢復已移除的大標語。
+- 「個人專案知識庫」及英文標題加入淡藍漸層底色、靛藍文字與漸淡底線，以靜態 CSS 強調標題；保留原有語意標題與雙語內容。
+- 首頁／雙語 5 項回歸通過，1280px 桌面繁中／英文視覺確認無溢出；樣式限定首頁介紹區。
+
 - P0 第三項：新增本機 Host 白名單、同來源 Origin／Referer／Fetch Metadata 檢查與簽章 CSRF cookie；所有 POST 路由使用共同驗證，25 個模板表單位置附隱藏 token，密碼 reveal 請求附頁面 token。
 - token cookie 使用 HttpOnly／SameSite=Strict，HTTPS 下 Secure；重新啟動會使舊 token 失效。缺少有效 cookie／header 的請求在解析 body 前拒絕；未知或跨來源（含 `Origin: null`）拒絕。
 - 備份與復原檔禁止快取，HTML 含 token 的頁面也禁止快取；加入 nosniff／no-referrer／禁止 framing 回應標頭，Windows 啟動腳本明確綁定 127.0.0.1。

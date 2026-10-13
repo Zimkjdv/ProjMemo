@@ -79,15 +79,16 @@ label input, label select, label textarea { display: block; margin-top: 6px; }
 .hero-copy { max-width: 630px; margin: 0; color: var(--muted); }
 .hero-action { flex-shrink: 0; }
 /* Homepage introduction: scoped so backup and vault headers retain their layout. */
-.dashboard-hero { position: relative; isolation: isolate; gap: 32px; padding: 24px 32px; border-color: #dfe5f2; background: radial-gradient(ellipse at 100% 35%, #eaf0ff, transparent 58%), linear-gradient(110deg, #fff, #fafbff); }
+.dashboard-hero { position: relative; isolation: isolate; gap: 32px; padding: 24px 32px; border-color: #dfe5f2; background: radial-gradient(ellipse at 100% 35%, #eaf0ff, transparent 58%), linear-gradient(110deg, #fff, #fafbff); font-family: "Segoe UI Variable Text", "Segoe UI", "Microsoft JhengHei", "Noto Sans TC", sans-serif; }
 .dashboard-hero::before { position: absolute; top: 28px; bottom: 28px; left: 0; width: 3px; border-radius: 0 3px 3px 0; background: #7087e8; content: ""; }
 .dashboard-hero .hero-copy-block { flex: 1; min-width: 0; }
-.dashboard-hero .eyebrow { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 11px; padding: 4px 9px; border: 1px solid #e2e8ff; border-radius: 6px; background: rgba(238, 242, 255, .72); font-size: .66rem; line-height: 1.4; letter-spacing: .08em; }
-.dashboard-hero .eyebrow::before { width: 5px; height: 5px; flex-shrink: 0; border-radius: 50%; background: var(--primary); content: ""; }
-.dashboard-hero .hero-copy { max-width: 700px; color: #596579; font-size: .86rem; line-height: 1.65; }
-.hero-features { display: flex; flex-wrap: wrap; gap: 8px; margin: 17px 0 0; padding: 0; list-style: none; }
-.hero-features li { display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border: 1px solid #e5e9f2; border-radius: 7px; color: #475467; background: rgba(255, 255, 255, .8); font-size: .74rem; font-weight: 500; }
-.hero-features svg { width: 15px; height: 15px; flex-shrink: 0; fill: none; stroke: #627bd8; stroke-width: 1.65; stroke-linecap: round; stroke-linejoin: round; }
+.dashboard-hero .eyebrow { position: relative; display: inline-block; margin-bottom: 8px; padding: 4px 10px 5px; border-radius: 7px; color: #3352b9; background: linear-gradient(110deg, #eaf0ff, #f5f7ff); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8); font-size: 1.3125rem; font-weight: 750; line-height: 1.4; letter-spacing: .025em; }
+.dashboard-hero .eyebrow::after { position: absolute; bottom: 3px; left: 10px; right: 10px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, #91a8ec, rgba(145, 168, 236, .3) 65%, transparent); content: ""; }
+.dashboard-hero .hero-copy { max-width: 760px; color: #657189; font-size: .9375rem; line-height: 1.75; letter-spacing: .01em; }
+.dashboard-hero .hero-features { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0 0; padding: 0; list-style: none; }
+.dashboard-hero .hero-features li { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border: 1px solid #e1e7f6; border-radius: 8px; color: #42516b; background: #f4f6fd; font-size: .875rem; font-weight: 600; line-height: 1.5; }
+.dashboard-hero .hero-features svg { width: 17px; height: 17px; flex-shrink: 0; fill: none; stroke: #5b73cf; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+html[lang="en"] .dashboard-hero .eyebrow { font-size: 1.0625rem; letter-spacing: .045em; }
 .hero-workspace { display: flex; width: 180px; flex-shrink: 0; flex-direction: column; align-items: center; gap: 9px; padding-left: 20px; border-left: 1px solid rgba(207, 218, 247, .65); }
 .hero-workspace-art { width: 120px; height: 75px; overflow: visible; }
 .hero-art-sheet { fill: #fff; stroke: #c8d4f7; stroke-width: 1.5; }
@@ -96,7 +97,7 @@ label input, label select, label textarea { display: block; margin-top: 6px; }
 .hero-art-line { fill: none; stroke: #a6b8e9; stroke-width: 2.5; stroke-linecap: round; }
 .hero-art-mark { fill: #5c76d9; }
 .hero-art-check { fill: none; stroke: white; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.dashboard-hero .hero-action { min-height: 43px; gap: 9px; padding: 8px 15px; white-space: nowrap; box-shadow: 0 4px 10px rgba(56, 87, 214, .18); }
+.dashboard-hero .hero-action { min-height: 43px; gap: 9px; padding: 8px 15px; font-size: .9375rem; white-space: nowrap; box-shadow: 0 4px 10px rgba(56, 87, 214, .18); }
 .hero-action-icon { display: inline-grid; width: 21px; height: 21px; place-items: center; border-radius: 6px; background: rgba(255, 255, 255, .15); font-size: 1rem; line-height: 1; }
 .dashboard-hero .hero-action:focus-visible { outline: 3px solid #a8b9f7; outline-offset: 4px; }
 .filter-bar { display: flex; align-items: center; gap: 10px; margin: 0 0 24px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); }
