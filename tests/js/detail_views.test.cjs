@@ -15,9 +15,9 @@ function detailHarness(savedView, blockedStorage = false) {
   const main = makeParent();
   const side = makeParent();
   const sections = ["important-links", "project-notes", "access-accounts", "handover", "environment"]
-    .map((id, i) => ({ id, parentElement: i < 3 ? main : side, draft: "unsaved", open: true }));
-  main.children = sections.slice(0, 3);
-  side.children = sections.slice(3);
+    .map((id, i) => ({ id, parentElement: i < 2 ? main : side, draft: "unsaved", open: true }));
+  main.children = sections.slice(0, 2);
+  side.children = sections.slice(2);
   const content = Object.assign(makeParent(), {
     dataset: { view: "cards" },
     querySelectorAll(selector) { return selector === ".detail-panel" ? sections : sections.slice(1, 3); },
@@ -58,8 +58,8 @@ test("details use shortcut order, retain the same drafts, and return to the orig
   assert.ok(page.sections.every((section) => section.draft === "unsaved"));
   assert.equal(page.sections[1].open, false);
   page.buttons[0].handlers.click();
-  assert.deepEqual(page.main.children.map(({ id }) => id), ["important-links", "project-notes", "access-accounts"]);
-  assert.deepEqual(page.side.children.map(({ id }) => id), ["handover", "environment"]);
+  assert.deepEqual(page.main.children.map(({ id }) => id), ["important-links", "project-notes"]);
+  assert.deepEqual(page.side.children.map(({ id }) => id), ["access-accounts", "handover", "environment"]);
   assert.equal(page.sections[1].open, true);
   assert.equal(page.events.length, 2);
   page.buttons[0].handlers.click();

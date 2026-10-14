@@ -1,4 +1,4 @@
-<section class="panel detail-panel" id="access-accounts">
+<section class="panel detail-panel{% if not access_accounts %} detail-panel-empty{% endif %}" id="access-accounts">
   <div class="panel-heading">
     <div>{% if language == 'en' %}<p class="eyebrow">ACCESS &amp; CREDENTIALS</p>{% endif %}<div class="heading-line"><h2>{{ t("帳號與權限") }}</h2><span class="section-count">{{ access_accounts|length }}</span></div></div>
   </div>

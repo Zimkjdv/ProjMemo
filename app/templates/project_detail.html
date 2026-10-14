@@ -2,9 +2,6 @@
 {% block title %}{{ project.name }}｜ProjMemo{% endblock %}
 {% block content %}
 <section class="project-hero">
-  <nav class="breadcrumb" aria-label="{{ t('頁面路徑') }}">
-    <a href="/">{{ t("專案列表") }}</a><span aria-hidden="true">/</span><span>{{ project.name }}</span>
-  </nav>
   <div class="project-overview-card">
     <div class="project-hero-row">
       <div class="project-identity">
@@ -58,17 +55,20 @@
     <button class="view-switch-button" type="button" data-detail-view="list" aria-pressed="false" aria-controls="project-content"><span aria-hidden="true">☷</span> {{ t("明細清單") }}</button>
   </div>
 </div>
-<nav class="section-jumps" aria-label="{{ t("專案內容捷徑") }}">
+<nav class="content-navigation" aria-label="{{ t("內容導覽") }}">
+  <div class="content-navigation-heading"><strong>{{ t("內容導覽") }}</strong><span>{{ t("點選跳至區段") }}</span></div>
+  <div class="section-jumps">
   <a href="#important-links"><span class="jump-name">{{ t("重要 URL") }}</span><span class="jump-count">{{ urls|length }}</span></a>
   <a href="#project-notes"><span class="jump-name">{{ t("備註與注意事項") }}</span><span class="jump-count">{{ notes|length }}</span></a>
   <a href="#handover"><span class="jump-name">{{ t("交接清單") }}</span><span class="jump-count">{{ checklist|length }}</span></a>
-  <a href="#environment"><span class="jump-name">{{ t("環境設定") }}</span><span class="jump-count">{{ environment_variables|length }}</span></a>
+  <a href="#environment"><span class="jump-name">{{ t("環境變數說明") }}</span><span class="jump-count">{{ environment_variables|length }}</span></a>
   <a href="#access-accounts"><span class="jump-name">{{ t("帳號與權限") }}</span><span class="jump-count">{{ access_accounts|length }}</span></a>
+  </div>
 </nav>
 
 <div class="detail-layout" id="project-content" data-view="cards">
   <div class="detail-main">
-    <section class="panel detail-panel" id="important-links">
+    <section class="panel detail-panel{% if not urls %} detail-panel-empty{% endif %}" id="important-links">
       <div class="panel-heading">
         <div>{% if language == 'en' %}<p class="eyebrow">REFERENCE</p>{% endif %}<div class="heading-line"><h2>{{ t("重要 URL") }}</h2><span class="section-count">{{ urls|length }}</span></div></div>
       </div>
@@ -109,7 +109,7 @@
       <details class="add-form"><summary><span aria-hidden="true">＋</span> {{ t("新增 URL") }}</summary><form method="post" action="/projects/{{ project.id }}/urls">{{ csrf_input() }}<div class="form-grid two-columns"><label>{{ t("類型") }}<select name="type">{% for value, label in url_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label><label>{{ t("標題") }}<input name="title" required placeholder="{{ t("例如：Production") }}"></label></div><label>{{ t("網址") }}<input name="url" type="url" required placeholder="https://..."></label><label>{{ t("備註") }}<input name="note" placeholder="{{ t("選填") }}"></label><button class="button button-primary" type="submit">{{ t("新增 URL") }}</button></form></details>
     </section>
 
-    <section class="panel detail-panel" id="project-notes">
+    <section class="panel detail-panel{% if not notes %} detail-panel-empty{% endif %}" id="project-notes">
       <div class="panel-heading">
         <div>{% if language == 'en' %}<p class="eyebrow">NOTES &amp; CAUTIONS</p>{% endif %}<div class="heading-line"><h2>{{ t("備註與注意事項") }}</h2><span class="section-count">{{ notes|length }}</span></div></div>
       </div>
@@ -132,11 +132,11 @@
       {% endif %}
       <details class="add-form"><summary><span aria-hidden="true">＋</span> {{ t("新增 Markdown 備註") }}</summary><form method="post" action="/projects/{{ project.id }}/notes">{{ csrf_input() }}<div class="form-grid two-columns"><label>{{ t("類型") }}<select name="category">{% for value, label in note_categories %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label><label>{{ t("優先級") }}<select name="priority">{% for value, label in priorities %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label></div><label>{{ t("標題") }}<input name="title" required placeholder="{{ t("例如：第一次部署前注意事項") }}"></label><label>{{ t("Markdown 內容") }}<textarea name="content_markdown" rows="9" required placeholder="{{ t("支援 Markdown、程式碼區塊與表格") }}"></textarea></label><button class="button button-primary" type="submit">{{ t("新增備註") }}</button></form></details>
     </section>
-    {% include "access_accounts.html" %}
   </div>
 
   <aside class="detail-side">
-    <section class="panel detail-panel" id="handover">
+    {% include "access_accounts.html" %}
+    <section class="panel detail-panel{% if not checklist %} detail-panel-empty{% endif %}" id="handover">
       <div class="panel-heading">
         <div>{% if language == 'en' %}<p class="eyebrow">HANDOVER</p>{% endif %}<div class="heading-line"><h2>{{ t("交接清單") }}</h2><span class="section-count">{{ checklist|length }}</span></div></div>
       </div>
@@ -161,7 +161,7 @@
       <details class="add-form"><summary><span aria-hidden="true">＋</span> {{ t("新增交接項目") }}</summary><form method="post" action="/projects/{{ project.id }}/checklist">{{ csrf_input() }}<label>{{ t("項目類型") }}<select name="category">{% for value, label in checklist_categories %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label><label>{{ t("項目名稱") }}<input name="title" required placeholder="{{ t("例如：確認 AWS 權限已移交") }}"></label><label>{{ t("說明") }}<textarea name="description" rows="3"></textarea></label><label>{{ t("負責人") }}<input name="owner"></label><label>{{ t("備註") }}<input name="note"></label><button class="button button-primary" type="submit">{{ t("新增項目") }}</button></form></details>
     </section>
 
-    <section class="panel detail-panel" id="environment">
+    <section class="panel detail-panel{% if not environment_variables %} detail-panel-empty{% endif %}" id="environment">
       <div class="panel-heading">
         <div>{% if language == 'en' %}<p class="eyebrow">CONFIGURATION</p>{% endif %}<div class="heading-line"><h2>{{ t("環境變數說明") }}</h2><span class="section-count">{{ environment_variables|length }}</span></div></div>
       </div>
@@ -186,5 +186,6 @@
     </section>
   </aside>
 </div>
-<script src="/static/project-detail.js?v=20261013-views" defer></script>
+<script src="/static/project-detail.js?v=20261014-layout" defer></script>
+<script src="/static/project-navigation.js?v=20261014" defer></script>
 {% endblock %}

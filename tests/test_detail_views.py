@@ -24,6 +24,15 @@ def test_detail_views_share_forms_and_have_compact_empty_sections(tmp_path: Path
         assert page.status_code == 200
         elements = PageElements(page.text).elements
         assert sum("detail-empty" in attrs.get("class", "") for _, attrs in elements) == 5
+        assert sum("detail-panel-empty" in attrs.get("class", "") for _, attrs in elements) == 5
+        assert not any("breadcrumb" in attrs.get("class", "") for _, attrs in elements)
+        assert any(tag == "nav" and attrs.get("aria-label") == "內容導覽" for tag, attrs in elements)
+        assert 'href="/">我的專案</a>' in page.text
+        ids = [attrs["id"] for _, attrs in elements if "id" in attrs]
+        assert len(ids) == len(set(ids))
+        # Side-column accounts are immediately after the main-column notes.
+        assert ids.index("project-notes") < ids.index("access-accounts") < ids.index("handover") < ids.index("environment")
+        assert "環境設定</span>" not in page.text
         assert "empty-inline" not in page.text
         buttons = [attrs for tag, attrs in elements if tag == "button" and "data-detail-view" in attrs]
         assert [attrs["data-detail-view"] for attrs in buttons] == ["cards", "list"]
@@ -34,6 +43,8 @@ def test_detail_views_share_forms_and_have_compact_empty_sections(tmp_path: Path
         client.post("/settings/language", data={"language": "en", "return_to": project_url})
         english = client.get(project_url)
         assert "Project content view" in english.text
+        assert 'aria-label="Content navigation"' in english.text
+        assert "Select a section to jump to it" in english.text
         assert "More account details" not in english.text  # No records yet.
         assert "Only password fields are encrypted" in english.text
 
@@ -55,6 +66,7 @@ def test_populated_details_have_column_labels_and_expandable_safe_content(tmp_pa
         page = client.get(project_url)
         elements = PageElements(page.text).elements
         assert sum("detail-columns " in attrs.get("class", "") for _, attrs in elements) == 5
+        assert not any("detail-panel-empty" in attrs.get("class", "") for _, attrs in elements)
         expanders = [attrs for tag, attrs in elements if tag == "details" and "data-expand-in-cards" in attrs]
         assert len(expanders) == 2 and all("open" in attrs for attrs in expanders)
         assert "<script>alert(1)</script>" not in page.text
