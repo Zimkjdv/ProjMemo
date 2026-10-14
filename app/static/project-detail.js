@@ -11,6 +11,13 @@
       .map((link) => sections.find(({ element }) => `#${element.id}` === link.getAttribute("href")))
       .filter(Boolean);
     const buttons = [...viewSwitch.querySelectorAll("[data-detail-view]")];
+    const expansionChoices = new WeakMap();
+    const expanders = [...content.querySelectorAll("[data-expand-in-cards]")];
+    expanders.forEach((details) => {
+      details.querySelector?.("summary")?.addEventListener("click", () => {
+        expansionChoices.set(details, !details.open);
+      });
+    });
     const applyView = (view) => {
       const previousView = content.dataset.view;
       if (previousView !== view) {
@@ -20,8 +27,8 @@
         } else {
           sections.forEach(({ element, parent }) => parent.append(element));
         }
-        content.querySelectorAll("[data-expand-in-cards]").forEach((details) => {
-          details.open = view === "cards";
+        expanders.forEach((details) => {
+          details.open = expansionChoices.has(details) ? expansionChoices.get(details) : view === "cards";
         });
         content.dataset.view = view;
       }

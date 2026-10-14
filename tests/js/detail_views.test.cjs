@@ -15,7 +15,10 @@ function detailHarness(savedView, blockedStorage = false) {
   const main = makeParent();
   const side = makeParent();
   const sections = ["important-links", "project-notes", "access-accounts", "handover", "environment"]
-    .map((id, i) => ({ id, parentElement: i < 2 ? main : side, draft: "unsaved", open: true }));
+    .map((id, i) => ({ id, parentElement: i < 2 ? main : side, draft: "unsaved", open: true,
+      summary: { handlers: {}, addEventListener(name, handler) { this.handlers[name] = handler; } },
+      querySelector() { return this.summary; },
+    }));
   main.children = sections.slice(0, 2);
   side.children = sections.slice(2);
   const content = Object.assign(makeParent(), {
@@ -72,6 +75,20 @@ test("saved details are restored; invalid or blocked storage still allows switch
   const page = detailHarness(null, true);
   page.buttons[1].handlers.click();
   assert.equal(page.content.dataset.view, "list");
+});
+
+test("manual expansion choices are preserved across both view switches", () => {
+  const page = detailHarness(null);
+  const expander = page.sections[2];
+  expander.summary.handlers.click();
+  expander.open = false; // Native summary action after the click handler.
+  page.buttons[1].handlers.click();
+  page.buttons[0].handlers.click();
+  assert.equal(expander.open, false);
+  expander.summary.handlers.click();
+  expander.open = true;
+  page.buttons[1].handlers.click();
+  assert.equal(expander.open, true);
 });
 
 function vaultHarness() {

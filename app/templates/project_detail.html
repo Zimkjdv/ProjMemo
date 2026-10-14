@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block title %}{{ project.name }}｜ProjMemo{% endblock %}
+{% from "_settings_icons.html" import settings_icon %}
 {% from "_copy_controls.html" import copy_value with context %}
+{% from "_content_form_actions.html" import content_form_actions with context %}
 {% block content %}
 <section class="project-hero">
   <div class="project-overview-card">
@@ -79,23 +81,23 @@
         {% for item in urls %}
         <article class="url-entry">
           <div class="url-item">
-            <span class="url-type-icon" aria-hidden="true">↗</span>
+            <span class="url-type-icon">{{ settings_icon("link") }}</span>
             <div class="url-copy">
-              <span class="mini-label url-kind">{{ url_type_label(item.type) }}</span>
+              <span class="mini-label url-kind url-kind-{{ item.type }}">{{ url_type_label(item.type) }}</span>
               <div class="url-name"><a href="{{ item.url }}" target="_blank" rel="noreferrer">{{ item.title }} <span aria-hidden="true">↗</span></a></div>
-              <div class="url-address">{{ copy_value('url-value-' ~ item.id, item.url, t('複製 URL')) }}{% if item.note %}<p>{{ item.note }}</p>{% endif %}</div>
+              <div class="url-address">{{ copy_value('url-value-' ~ item.id, item.url, t('複製 URL')) }}<button class="url-expand-button" type="button" data-expand-url aria-controls="url-value-{{ item.id }}" aria-expanded="false" hidden>{{ t('展開網址') }}</button>{% if item.note %}<p>{{ item.note }}</p>{% endif %}</div>
             </div>
             <details class="item-actions">
               <summary aria-label="{{ t("編輯或刪除") }} {{ item.title }}">•••</summary>
               <div class="action-popover">
-                <form method="post" action="/urls/{{ item.id }}/edit">{{ csrf_input() }}
+                <form method="post" action="/urls/{{ item.id }}/edit" data-content-form>{{ csrf_input() }}
                   <div class="form-grid two-columns">
                     <label>{{ t("類型") }}<select name="type">{% for value, label in url_types %}<option value="{{ value }}" {% if item.type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
                     <label>{{ t("標題") }}<input name="title" required value="{{ item.title }}"></label>
                   </div>
                   <label>{{ t("網址") }}<input name="url" type="url" required value="{{ item.url }}"></label>
                   <label>{{ t("備註") }}<input name="note" value="{{ item.note }}"></label>
-                  <button class="button button-primary" type="submit">{{ t("儲存 URL") }}</button>
+                  {{ content_form_actions(t("儲存 URL")) }}
                 </form>
                 <form class="delete-form" method="post" action="/urls/{{ item.id }}/delete" onsubmit="return confirm({{ t("確定刪除此 URL？")|tojson|forceescape }})">{{ csrf_input() }}<button class="button button-danger" type="submit">{{ t("刪除 URL") }}</button></form>
               </div>
@@ -107,7 +109,7 @@
       {% else %}
       <p class="detail-empty">{{ t("還沒有重要連結") }}</p>
       {% endif %}
-      <details class="add-form"><summary><span aria-hidden="true">＋</span> {{ t("新增 URL") }}</summary><form method="post" action="/projects/{{ project.id }}/urls">{{ csrf_input() }}<div class="form-grid two-columns"><label>{{ t("類型") }}<select name="type">{% for value, label in url_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label><label>{{ t("標題") }}<input name="title" required placeholder="{{ t("例如：Production") }}"></label></div><label>{{ t("網址") }}<input name="url" type="url" required placeholder="https://..."></label><label>{{ t("備註") }}<input name="note" placeholder="{{ t("選填") }}"></label><button class="button button-primary" type="submit">{{ t("新增 URL") }}</button></form></details>
+      <details class="add-form"><summary><span aria-hidden="true">＋</span> {{ t("新增 URL") }}</summary><form method="post" action="/projects/{{ project.id }}/urls" data-content-form>{{ csrf_input() }}<div class="form-grid two-columns"><label>{{ t("類型") }}<select name="type">{% for value, label in url_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label><label>{{ t("標題") }}<input name="title" required placeholder="{{ t("例如：Production") }}"></label></div><label>{{ t("網址") }}<input name="url" type="url" required placeholder="https://..."></label><label>{{ t("備註") }}<input name="note" placeholder="{{ t("選填") }}"></label>{{ content_form_actions(t("儲存 URL")) }}</form></details>
     </section>
 
     <section class="panel detail-panel{% if not notes %} detail-panel-empty{% endif %}" id="project-notes">
@@ -120,9 +122,9 @@
         {% for note in notes %}
         {% set rendered_note = note.content_markdown|markdown %}
         <article class="note-card priority-{{ note.priority }}">
-          <div class="note-heading"><div><span class="mini-label">{{ note_category_label(note.category) }}</span><span class="priority-label priority-{{ note.priority }}">{{ priority_label(note.priority) }}</span></div><details class="item-actions"><summary aria-label="{{ t("編輯或刪除") }} {{ note.title }}">•••</summary><div class="action-popover"><form method="post" action="/notes/{{ note.id }}/edit">{{ csrf_input() }}<div class="form-grid two-columns"><label>{{ t("類型") }}<select name="category">{% for value, label in note_categories %}<option value="{{ value }}" {% if note.category == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><label>{{ t("優先級") }}<select name="priority">{% for value, label in priorities %}<option value="{{ value }}" {% if note.priority == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label></div><label>{{ t("標題") }}<input name="title" required value="{{ note.title }}"></label><label>{{ t("Markdown 內容") }}<textarea name="content_markdown" rows="8" required>{{ note.content_markdown }}</textarea></label><button class="button button-primary" type="submit">{{ t("儲存備註") }}</button></form><form class="delete-form" method="post" action="/notes/{{ note.id }}/delete" onsubmit="return confirm({{ t("確定刪除此備註？")|tojson|forceescape }})">{{ csrf_input() }}<button class="button button-danger" type="submit">{{ t("刪除備註") }}</button></form></div></details></div>
-          <details class="note-content" data-expand-in-cards open>
-            <summary><h3>{{ note.title }}</h3><span class="note-preview detail-list-only">{{ rendered_note|striptags|truncate(140, true, '…') }}</span><span class="detail-list-only disclosure-hint">{{ t("展開／收合內容") }} <span aria-hidden="true">⌄</span></span></summary>
+          <div class="note-heading"><div><span class="mini-label note-category">{{ settings_icon("alert" if note.category == "caution" else "bug" if note.category == "known_issue" else "tool" if note.category == "workaround" else "note") }}{{ note_category_label(note.category) }}</span><span class="priority-label priority-{{ note.priority }}">{{ priority_label(note.priority) }}</span></div><details class="item-actions"><summary aria-label="{{ t("編輯或刪除") }} {{ note.title }}">•••</summary><div class="action-popover"><form method="post" action="/notes/{{ note.id }}/edit" data-content-form>{{ csrf_input() }}<div class="form-grid two-columns"><label>{{ t("類型") }}<select name="category">{% for value, label in note_categories %}<option value="{{ value }}" {% if note.category == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><label>{{ t("優先級") }}<select name="priority">{% for value, label in priorities %}<option value="{{ value }}" {% if note.priority == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label></div><label>{{ t("標題") }}<input name="title" required value="{{ note.title }}"></label><label>{{ t("Markdown 內容") }}<textarea name="content_markdown" rows="8" required>{{ note.content_markdown }}</textarea></label>{{ content_form_actions(t("儲存備註")) }}</form><form class="delete-form" method="post" action="/notes/{{ note.id }}/delete" onsubmit="return confirm({{ t("確定刪除此備註？")|tojson|forceescape }})">{{ csrf_input() }}<button class="button button-danger" type="submit">{{ t("刪除備註") }}</button></form></div></details></div>
+          <details class="note-content" data-note-content open>
+            <summary aria-label="{{ note.title }} · {{ t('展開／收合內容') }}"><h3>{{ note.title }}</h3><span class="note-preview" data-note-summary>{{ rendered_note|striptags }}</span><span class="disclosure-hint note-disclosure"><span class="note-expand-label">{{ t("展開全文") }}</span><span class="note-collapse-label">{{ t("收合內容") }}</span> <span aria-hidden="true">⌄</span></span></summary>
             <div class="markdown-body">{{ rendered_note|safe }}</div>
           </details>
         </article>
@@ -131,7 +133,7 @@
       {% else %}
       <p class="detail-empty">{{ t("還沒有專案備註") }}</p>
       {% endif %}
-      <details class="add-form"><summary><span aria-hidden="true">＋</span> {{ t("新增 Markdown 備註") }}</summary><form method="post" action="/projects/{{ project.id }}/notes">{{ csrf_input() }}<div class="form-grid two-columns"><label>{{ t("類型") }}<select name="category">{% for value, label in note_categories %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label><label>{{ t("優先級") }}<select name="priority">{% for value, label in priorities %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label></div><label>{{ t("標題") }}<input name="title" required placeholder="{{ t("例如：第一次部署前注意事項") }}"></label><label>{{ t("Markdown 內容") }}<textarea name="content_markdown" rows="9" required placeholder="{{ t("支援 Markdown、程式碼區塊與表格") }}"></textarea></label><button class="button button-primary" type="submit">{{ t("新增備註") }}</button></form></details>
+      <details class="add-form"><summary><span aria-hidden="true">＋</span> {{ t("新增 Markdown 備註") }}</summary><form method="post" action="/projects/{{ project.id }}/notes" data-content-form>{{ csrf_input() }}<div class="form-grid two-columns"><label>{{ t("類型") }}<select name="category">{% for value, label in note_categories %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label><label>{{ t("優先級") }}<select name="priority">{% for value, label in priorities %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label></div><label>{{ t("標題") }}<input name="title" required placeholder="{{ t("例如：第一次部署前注意事項") }}"></label><label>{{ t("Markdown 內容") }}<textarea name="content_markdown" rows="9" required placeholder="{{ t("支援 Markdown、程式碼區塊與表格") }}"></textarea></label>{{ content_form_actions(t("儲存備註")) }}</form></details>
     </section>
   </div>
 
@@ -148,7 +150,7 @@
         <article class="checklist-item {% if item.completed %}completed{% endif %}">
           <form method="post" action="/checklist/{{ item.id }}/toggle">{{ csrf_input() }}<button class="check-button" aria-label="{{ t("切換") }} {{ item.title }} {{ t("完成狀態") }}" title="{{ t("切換完成狀態") }}" type="submit">{% if item.completed %}✓{% else %}○{% endif %}</button></form>
           <div class="checklist-content">
-            <div class="checklist-title-row"><strong>{{ item.title }}</strong><details class="item-actions"><summary aria-label="{{ t("編輯或刪除") }} {{ item.title }}">•••</summary><div class="action-popover"><form method="post" action="/checklist/{{ item.id }}/edit">{{ csrf_input() }}<label>{{ t("項目類型") }}<select name="category">{% for value, label in checklist_categories %}<option value="{{ value }}" {% if item.category == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><label>{{ t("項目名稱") }}<input name="title" required value="{{ item.title }}"></label><label>{{ t("說明") }}<textarea name="description" rows="3">{{ item.description }}</textarea></label><label>{{ t("負責人") }}<input name="owner" value="{{ item.owner }}"></label><label>{{ t("備註") }}<input name="note" value="{{ item.note }}"></label><button class="button button-primary" type="submit">{{ t("儲存項目") }}</button></form><form class="delete-form" method="post" action="/checklist/{{ item.id }}/delete" onsubmit="return confirm({{ t("確定刪除此交接項目？")|tojson|forceescape }})">{{ csrf_input() }}<button class="button button-danger" type="submit">{{ t("刪除項目") }}</button></form></div></details></div>
+            <div class="checklist-title-row"><strong>{{ item.title }}</strong><details class="item-actions"><summary aria-label="{{ t("編輯或刪除") }} {{ item.title }}">•••</summary><div class="action-popover"><form method="post" action="/checklist/{{ item.id }}/edit" data-content-form>{{ csrf_input() }}<label>{{ t("項目類型") }}<select name="category">{% for value, label in checklist_categories %}<option value="{{ value }}" {% if item.category == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><label>{{ t("項目名稱") }}<input name="title" required value="{{ item.title }}"></label><label>{{ t("說明") }}<textarea name="description" rows="3">{{ item.description }}</textarea></label><label>{{ t("負責人") }}<input name="owner" value="{{ item.owner }}"></label><label>{{ t("備註") }}<input name="note" value="{{ item.note }}"></label>{{ content_form_actions(t("儲存項目")) }}</form><form class="delete-form" method="post" action="/checklist/{{ item.id }}/delete" onsubmit="return confirm({{ t("確定刪除此交接項目？")|tojson|forceescape }})">{{ csrf_input() }}<button class="button button-danger" type="submit">{{ t("刪除項目") }}</button></form></div></details></div>
             <span class="mini-label">{{ checklist_category_label(item.category) }}</span>
             <p class="muted checklist-owner{% if not item.owner %} detail-list-only{% endif %}">{% if item.owner %}<span class="detail-card-only">{{ t("負責人：") }}</span>{{ item.owner }}{% else %}—{% endif %}</p>
             <div class="checklist-description">{% if item.description %}<p>{{ item.description }}</p>{% endif %}{% if item.note %}<p class="muted">{{ t("備註：") }}{{ item.note }}</p>{% endif %}{% if not item.description and not item.note %}<span class="detail-list-only">—</span>{% endif %}</div>
@@ -159,7 +161,7 @@
       {% else %}
       <p class="detail-empty">{{ t("交接清單還是空的") }}</p>
       {% endif %}
-      <details class="add-form"><summary><span aria-hidden="true">＋</span> {{ t("新增交接項目") }}</summary><form method="post" action="/projects/{{ project.id }}/checklist">{{ csrf_input() }}<label>{{ t("項目類型") }}<select name="category">{% for value, label in checklist_categories %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label><label>{{ t("項目名稱") }}<input name="title" required placeholder="{{ t("例如：確認 AWS 權限已移交") }}"></label><label>{{ t("說明") }}<textarea name="description" rows="3"></textarea></label><label>{{ t("負責人") }}<input name="owner"></label><label>{{ t("備註") }}<input name="note"></label><button class="button button-primary" type="submit">{{ t("新增項目") }}</button></form></details>
+      <details class="add-form"><summary><span aria-hidden="true">＋</span> {{ t("新增交接項目") }}</summary><form method="post" action="/projects/{{ project.id }}/checklist" data-content-form>{{ csrf_input() }}<label>{{ t("項目類型") }}<select name="category">{% for value, label in checklist_categories %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label><label>{{ t("項目名稱") }}<input name="title" required placeholder="{{ t("例如：確認 AWS 權限已移交") }}"></label><label>{{ t("說明") }}<textarea name="description" rows="3"></textarea></label><label>{{ t("負責人") }}<input name="owner"></label><label>{{ t("備註") }}<input name="note"></label>{{ content_form_actions(t("儲存項目")) }}</form></details>
     </section>
 
     <section class="panel detail-panel{% if not environment_variables %} detail-panel-empty{% endif %}" id="environment">
@@ -176,20 +178,30 @@
           <p class="variable-protection{% if not variable.is_secret %} detail-list-only{% endif %}">{% if variable.is_secret %}<span class="secret-badge">{{ t("Secret · 不儲存實際值") }}</span>{% else %}{{ t("一般設定") }}{% endif %}</p>
           <p class="variable-description{% if not variable.description %} detail-list-only{% endif %}">{{ variable.description or '—' }}</p>
           <p class="muted variable-source{% if not variable.source_or_owner %} detail-list-only{% endif %}">{% if variable.source_or_owner %}<span class="detail-card-only">{{ t("存放位置／負責人：") }}</span>{{ variable.source_or_owner }}{% else %}—{% endif %}</p>
-          <details class="item-actions"><summary aria-label="{{ t('編輯或刪除') }} {{ variable.key }}">•••</summary><div class="action-popover"><form method="post" action="/environment-variables/{{ variable.id }}/edit">{{ csrf_input() }}<label>{{ t("變數名稱") }}<input name="key" required value="{{ variable.key }}"></label><label>{{ t("環境") }}<select name="environment">{% for value, label in environments %}<option value="{{ value }}" {% if variable.environment == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><label>{{ t("用途說明") }}<input name="description" value="{{ variable.description }}"></label><label>{{ t("Secret 存放位置或負責人") }}<input name="source_or_owner" value="{{ variable.source_or_owner }}"></label><label class="checkbox-label"><input type="checkbox" name="is_secret" value="true" {% if variable.is_secret %}checked{% endif %}>{{ t("此變數包含 Secret") }}</label><button class="button button-primary" type="submit">{{ t("儲存變數") }}</button></form><form class="delete-form" method="post" action="/environment-variables/{{ variable.id }}/delete" onsubmit="return confirm({{ t("確定刪除此環境變數說明？")|tojson|forceescape }})">{{ csrf_input() }}<button class="button button-danger" type="submit">{{ t("刪除變數") }}</button></form></div></details>
+          <details class="item-actions"><summary aria-label="{{ t('編輯或刪除') }} {{ variable.key }}">•••</summary><div class="action-popover"><form method="post" action="/environment-variables/{{ variable.id }}/edit" data-content-form>{{ csrf_input() }}<label>{{ t("變數名稱") }}<input name="key" required value="{{ variable.key }}"></label><label>{{ t("環境") }}<select name="environment">{% for value, label in environments %}<option value="{{ value }}" {% if variable.environment == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><label>{{ t("用途說明") }}<input name="description" value="{{ variable.description }}"></label><label>{{ t("Secret 存放位置或負責人") }}<input name="source_or_owner" value="{{ variable.source_or_owner }}" placeholder="{{ t("例如：GitHub Actions Secrets / 維運負責人") }}"></label><label class="checkbox-label"><input type="checkbox" name="is_secret" value="true" {% if variable.is_secret %}checked{% endif %}>{{ t("此變數包含 Secret") }}</label>{{ content_form_actions(t("儲存變數")) }}</form><form class="delete-form" method="post" action="/environment-variables/{{ variable.id }}/delete" onsubmit="return confirm({{ t("確定刪除此環境變數說明？")|tojson|forceescape }})">{{ csrf_input() }}<button class="button button-danger" type="submit">{{ t("刪除變數") }}</button></form></div></details>
         </article>
         {% endfor %}
       </div>
       {% else %}
       <p class="detail-empty">{{ t("尚未整理環境設定") }}</p>
       {% endif %}
-      <details class="add-form"><summary><span aria-hidden="true">＋</span> {{ t("新增環境變數說明") }}</summary><form method="post" action="/projects/{{ project.id }}/environment-variables">{{ csrf_input() }}<label>{{ t("變數名稱") }}<input name="key" required placeholder="{{ t("例如：DATABASE_URL") }}"></label><label>{{ t("環境") }}<select name="environment">{% for value, label in environments %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label><label>{{ t("用途說明") }}<input name="description" placeholder="{{ t("此設定的用途") }}"></label><label>{{ t("Secret 存放位置或負責人") }}<input name="source_or_owner" placeholder="{{ t("例如：GitHub Actions Secrets / 維運負責人") }}"></label><label class="checkbox-label"><input type="checkbox" name="is_secret" value="true">{{ t("此變數包含 Secret") }}</label><button class="button button-primary" type="submit">{{ t("新增變數") }}</button></form></details>
+      <details class="add-form"><summary><span aria-hidden="true">＋</span> {{ t("新增環境變數說明") }}</summary><form method="post" action="/projects/{{ project.id }}/environment-variables" data-content-form>{{ csrf_input() }}<label>{{ t("變數名稱") }}<input name="key" required placeholder="{{ t("例如：DATABASE_URL") }}"></label><label>{{ t("環境") }}<select name="environment">{% for value, label in environments %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label><label>{{ t("用途說明") }}<input name="description" placeholder="{{ t("此設定的用途") }}"></label><label>{{ t("Secret 存放位置或負責人") }}<input name="source_or_owner" placeholder="{{ t("例如：GitHub Actions Secrets / 維運負責人") }}"></label><label class="checkbox-label"><input type="checkbox" name="is_secret" value="true">{{ t("此變數包含 Secret") }}</label>{{ content_form_actions(t("儲存變數")) }}</form></details>
     </section>
   </aside>
 </div>
-<script src="/static/project-detail.js?v=20261014-layout" defer></script>
+<script src="/static/project-detail.js?v=20261014-notes" defer></script>
+<script src="/static/project-notes.js?v=20261014" defer></script>
+<script type="application/json" id="url-view-messages">{{ {'expand': t('展開網址'), 'collapse': t('收合網址')}|tojson }}</script>
+<script src="/static/project-urls.js?v=20261014" defer></script>
 <script src="/static/project-navigation.js?v=20261014" defer></script>
 <script type="application/json" id="copy-messages">{{ {'copy': t('複製'), 'code': t('複製程式碼'), 'success': t('已複製'), 'pending': t('複製中…'), 'failure': t('複製失敗，請選取文字後手動複製。')}|tojson }}</script>
 <div id="copy-feedback" class="copy-feedback" role="status" aria-live="polite" aria-atomic="true" hidden></div>
 <script src="/static/project-copy.js?v=20261014" defer></script>
+<script type="application/json" id="content-form-messages">{{ {'discard': t('尚有未儲存的修改。確定捨棄並收合表單？')}|tojson }}</script>
+<dialog id="content-discard-dialog" class="content-discard-dialog" aria-labelledby="content-discard-title" aria-describedby="content-discard-description">
+  <h3 id="content-discard-title">{{ t('捨棄未儲存的修改？') }}</h3>
+  <p id="content-discard-description">{{ t('此操作只會清除目前表單的草稿，不會刪除已保存的資料。') }}</p>
+  <div class="content-form-actions"><button class="button button-ghost" type="button" data-keep-content autofocus>{{ t('保留修改') }}</button><button class="button button-danger" type="button" data-discard-content>{{ t('捨棄並收合') }}</button></div>
+</dialog>
+<script src="/static/project-forms.js?v=20261014" defer></script>
 {% endblock %}

@@ -1,5 +1,6 @@
 {% from "_settings_icons.html" import settings_icon as account_icon %}
 {% from "_copy_controls.html" import copy_value with context %}
+{% from "_content_form_actions.html" import content_form_actions with context %}
 <section class="panel detail-panel{% if not access_accounts %} detail-panel-empty{% endif %}" id="access-accounts">
   <div class="panel-heading">
     <div>{% if language == 'en' %}<p class="eyebrow">ACCESS &amp; CREDENTIALS</p>{% endif %}<div class="heading-line"><h2>{{ t("帳號與權限") }}</h2><span class="section-count">{{ access_accounts|length }}</span></div></div>
@@ -23,7 +24,7 @@
         <details class="item-actions">
           <summary aria-label="{{ t("編輯或刪除") }} {{ account.label }}">•••</summary>
           <div class="action-popover">
-            <form method="post" action="/accounts/{{ account.id }}/edit">{{ csrf_input() }}
+            <form method="post" action="/accounts/{{ account.id }}/edit" data-content-form>{{ csrf_input() }}
               <label>{{ t("帳號／服務名稱") }}<input name="label" required value="{{ account.label }}"></label>
               <div class="form-grid two-columns">
                 <label>{{ t("類型") }}<select name="category">{% for value, label in access_account_categories %}<option value="{{ value }}" {% if account.category == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
@@ -38,7 +39,7 @@
               <label>{{ t("密碼保管位置（選填）") }}<input name="secret_reference" value="{{ account.secret_reference }}"></label>
               {% if vault_unlocked %}<label data-vault-unlocked-only>{{ t("更換密碼（留白表示不變）") }}<input type="password" name="secret_value" maxlength="4096" autocomplete="new-password"></label>{% elif account.has_secret %}<p class="muted">{{ t("若要更換密碼，請先解鎖保管庫。") }}</p>{% endif %}
               {% if account.has_secret %}<label class="checkbox-label"><input type="checkbox" name="delete_secret" value="true">{{ t("刪除已保存密碼") }}</label>{% endif %}
-              <button class="button button-primary" type="submit">{{ t("儲存帳號資料") }}</button>
+              {{ content_form_actions(t("儲存帳號資料")) }}
             </form>
             <form class="delete-form" method="post" action="/accounts/{{ account.id }}/delete" onsubmit="return confirm({{ t("確定刪除此帳號資料與已加密密碼？")|tojson|forceescape }})">{{ csrf_input() }}<button class="button button-danger" type="submit">{{ t("刪除帳號資料") }}</button></form>
           </div>
@@ -91,7 +92,7 @@
 
   <details class="add-form">
     <summary><span aria-hidden="true">＋</span> {{ t("新增帳號／存取資料") }}</summary>
-    <form method="post" action="/projects/{{ project.id }}/accounts">{{ csrf_input() }}
+    <form method="post" action="/projects/{{ project.id }}/accounts" data-content-form>{{ csrf_input() }}
       <label>{{ t("帳號／服務名稱") }}<input name="label" required placeholder="{{ t("例如：測試環境 PostgreSQL") }}"></label>
       <div class="form-grid two-columns">
         <label>{{ t("類型") }}<select name="category">{% for value, label in access_account_categories %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label>
@@ -105,7 +106,7 @@
       <label>{{ t("負責人／聯絡人") }}<input name="owner"></label>
       <label>{{ t("密碼保管位置（選填）") }}<input name="secret_reference" placeholder="{{ t("例如：公司密碼庫的項目名稱") }}"></label>
       {% if vault_unlocked %}<label data-vault-unlocked-only>{{ t("實際密碼（選填；加密保存）") }}<input type="password" name="secret_value" maxlength="4096" autocomplete="new-password"></label>{% else %}<p class="muted">{{ t("目前可先保存帳號資料；要保存實際密碼，請先設定並解鎖保管庫。") }}</p>{% endif %}
-      <button class="button button-primary" type="submit">{{ t("新增帳號資料") }}</button>
+      {{ content_form_actions(t("儲存帳號資料")) }}
     </form>
   </details>
 </section>

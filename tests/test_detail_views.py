@@ -68,7 +68,8 @@ def test_populated_details_have_column_labels_and_expandable_safe_content(tmp_pa
         assert sum("detail-columns " in attrs.get("class", "") for _, attrs in elements) == 5
         assert not any("detail-panel-empty" in attrs.get("class", "") for _, attrs in elements)
         expanders = [attrs for tag, attrs in elements if tag == "details" and "data-expand-in-cards" in attrs]
-        assert len(expanders) == 2 and all("open" in attrs for attrs in expanders)
+        assert len(expanders) == 1 and all("open" in attrs for attrs in expanders)
+        assert sum(tag == "details" and "data-note-content" in attrs for tag, attrs in elements) == 1
         assert "<script>alert(1)</script>" not in page.text
         assert "<strong>Ready</strong>" in page.text
         assert sum("data-secret-output" in attrs for _, attrs in elements) == 0
