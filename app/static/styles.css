@@ -227,10 +227,6 @@ html.project-detail-page { scroll-padding-top: 0; }
 .detail-panel-empty > .vault-inline-status { margin-bottom: 10px; }
 .heading-line { display: flex; align-items: center; gap: 9px; }
 .section-count { min-width: 22px; height: 22px; display: inline-grid; place-items: center; padding: 0 6px; border-radius: 7px; color: #475467; background: #f2f4f7; font-size: .72rem; font-weight: 700; }
-/* Keep the fallback counts unless JS has confirmed a visible sticky navigator. */
-html.content-navigation-ready #project-content > .detail-panel > .panel-heading .section-count,
-html.content-navigation-ready #project-content > .detail-main > .detail-panel > .panel-heading .section-count,
-html.content-navigation-ready #project-content > .detail-side > .detail-panel > .panel-heading .section-count { display: none; }
 .url-list, .note-list { display: grid; gap: 9px; }
 .url-entry { padding: 0 0 9px; border-bottom: 1px solid #f0f1f4; }
 .url-entry:last-child { padding-bottom: 0; border-bottom: 0; }

@@ -25,10 +25,6 @@
     frame = null;
     const headerHeight = header ? header.getBoundingClientRect().height : 0;
     const navigationHeight = navigation.getBoundingClientRect().height;
-    if (typeof getComputedStyle === "function") {
-      const sticky = getComputedStyle(navigation).position === "sticky" && navigationHeight > 0;
-      document.documentElement.classList.toggle("content-navigation-ready", sticky);
-    }
     boundary = Math.ceil(headerHeight + navigationHeight + 12);
     document.documentElement.style.setProperty("--project-header-height", `${headerHeight}px`);
     document.documentElement.style.setProperty("--project-anchor-offset", `${boundary}px`);

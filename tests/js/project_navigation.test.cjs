@@ -5,7 +5,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 const source = fs.readFileSync(path.join(__dirname, "../../app/static/project-navigation.js"), "utf8");
 
-function harness(hash = "", position = "sticky") {
+function harness(hash = "") {
   let scroll = 0;
   let headerHeight = 69;
   let navHeight = 80;
@@ -38,7 +38,7 @@ function harness(hash = "", position = "sticky") {
   const window = { location, requestAnimationFrame: (callback) => { frames.push(callback); return frames.length; },
     addEventListener: (name, handler) => { events[name] = handler; },
   };
-  vm.runInNewContext(source, { document, window, Element: class Element {}, getComputedStyle: () => ({ position }) });
+  vm.runInNewContext(source, { document, window, Element: class Element {} });
   const flush = () => { while (frames.length) frames.shift()(); };
   flush();
   return { sections, links, events, properties, location, flush, classes,
@@ -95,12 +95,18 @@ test("resizing and expanding content refresh offsets; switching views re-evaluat
   assert.deepEqual(page.current(), ["#important-links"]);
 });
 
-test("duplicate heading counts are hidden only after a visible sticky navigator is confirmed", () => {
+test("heading counts remain visible alongside navigation counts after resize and view changes", () => {
   const page = harness();
-  assert.equal(page.classes.has("content-navigation-ready"), true);
+  const styles = fs.readFileSync(path.join(__dirname, "../../app/static/styles.css"), "utf8");
+  assert.equal(styles.includes("content-navigation-ready"), false);
+  const countRules = [...styles.matchAll(/[^{}]*\.section-count[^{}]*\{([^}]*)\}/g)];
+  assert.ok(countRules.length > 0);
+  for (const rule of countRules) assert.doesNotMatch(rule[1], /display\s*:\s*none\b/);
+  assert.equal(page.classes.has("content-navigation-ready"), false);
   page.resize(69, 0);
   assert.equal(page.classes.has("content-navigation-ready"), false);
   page.resize(69, 80);
-  assert.equal(page.classes.has("content-navigation-ready"), true);
-  assert.equal(harness("", "static").classes.has("content-navigation-ready"), false);
+  page.events["projmemo:detail-view-change"](); page.flush();
+  assert.equal(page.classes.has("content-navigation-ready"), false);
+  assert.deepEqual(page.current(), ["#important-links"]);
 });

@@ -17,7 +17,7 @@ class Controls(HTMLParser):
 
 
 @pytest.mark.parametrize('language', ['zh-Hant', 'en'])
-def test_detail_polish_retains_fallback_counts_and_named_icon_controls(tmp_path: Path, monkeypatch, language):
+def test_detail_polish_retains_heading_and_navigation_counts_and_named_icon_controls(tmp_path: Path, monkeypatch, language):
     monkeypatch.setenv('PROJMEMO_DB_PATH', str(tmp_path / 'polish.db'))
     from app.main import app
 
@@ -36,13 +36,13 @@ def test_detail_polish_retains_fallback_counts_and_named_icon_controls(tmp_path:
         elements = Controls(page.text).elements
         assert sum(attrs.get('class') == 'section-count' for _, attrs in elements) == 5
         assert sum(attrs.get('class') == 'jump-count' for _, attrs in elements) == 5
-        assert 'content-navigation-ready' not in page.text  # Progressive enhancement, not hidden server-side.
+        assert 'content-navigation-ready' not in page.text  # Both count locations are retained.
         assert '>•••</summary>' not in page.text
         controls = [attrs for tag, attrs in elements if tag == 'summary' and attrs.get('aria-label', '').startswith('Edit or delete' if language == 'en' else '編輯或刪除')]
         assert len(controls) == 5
         assert page.text.count('circle cx="19" cy="12"') == 5
-        assert 'project-navigation.js?v=20261014-counts' in page.text
-        assert 'styles.css?v=20261014-content-polish' in page.text
+        assert 'project-navigation.js?v=20261014-section-counts' in page.text
+        assert 'styles.css?v=20261014-section-counts' in page.text
 
 
 @pytest.mark.parametrize('language', ['zh-Hant', 'en'])
@@ -62,4 +62,4 @@ def test_selected_language_contract_and_shared_styles_cover_all_desktop_pages(tm
             active = [attrs for attrs in language_buttons if attrs.get('aria-pressed') == 'true']
             assert len(active) == 1 and active[0]['value'] == language
             assert active[0]['class'] == 'active'
-            assert 'styles.css?v=20261014-content-polish' in page.text
+            assert 'styles.css?v=20261014-section-counts' in page.text
