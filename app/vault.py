@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from collections.abc import Callable
 import os
 import secrets
 import threading
@@ -160,39 +161,69 @@ def decrypt_secret(
 class _VaultSession:
     key: bytes
     expires_at: float
+    version: int
 
 
 class VaultSessions:
     """Keep derived keys in process memory, addressed by random HttpOnly session tokens."""
 
-    def __init__(self, ttl_seconds: int = VAULT_SESSION_TTL_SECONDS) -> None:
+    def __init__(self, ttl_seconds: int = VAULT_SESSION_TTL_SECONDS, *, max_sessions: int = 32,
+                 clock: Callable[[], float] = time.monotonic, wall_clock: Callable[[], float] = time.time) -> None:
+        if ttl_seconds <= 0 or max_sessions < 1:
+            raise ValueError("Session TTL and capacity must be positive")
         self._ttl_seconds = ttl_seconds
+        self._max_sessions = max_sessions
+        self._clock = clock
+        self._wall_clock = wall_clock
+        self._version = 0
         self._sessions: dict[str, _VaultSession] = {}
         self._lock = threading.Lock()
 
-    def issue(self, key: bytes) -> str:
+    def _purge_locked(self, now: float) -> int:
+        expired = [token for token, session in self._sessions.items() if session.expires_at <= now]
+        for token in expired:
+            del self._sessions[token]
+        return len(expired)
+
+    def purge_expired(self) -> int:
+        with self._lock:
+            return self._purge_locked(self._clock())
+
+    def issue(self, key: bytes, *, replace_token: str | None = None) -> str:
         token = secrets.token_urlsafe(32)
         with self._lock:
-            self._sessions[token] = _VaultSession(key=key, expires_at=time.monotonic() + self._ttl_seconds)
+            now = self._clock()
+            self._purge_locked(now)
+            self._sessions.pop(replace_token, None)
+            if len(self._sessions) >= self._max_sessions:
+                oldest = min(self._sessions, key=lambda value: self._sessions[value].expires_at)
+                del self._sessions[oldest]
+            self._version += 1
+            self._sessions[token] = _VaultSession(key=key, expires_at=now + self._ttl_seconds, version=self._version)
         return token
 
     def get_key(self, token: str | None) -> bytes | None:
-        if not token:
-            return None
-        now = time.monotonic()
         with self._lock:
+            self._purge_locked(self._clock())
             session = self._sessions.get(token)
-            if session is None:
-                return None
-            if session.expires_at <= now:
-                del self._sessions[token]
-                return None
-            return session.key
+            return session.key if session else None
+
+    def status(self, token: str | None) -> dict[str, object]:
+        """Public timing metadata only: never expose a token or derived key."""
+        with self._lock:
+            now = self._clock()
+            self._purge_locked(now)
+            session = self._sessions.get(token)
+            remaining = session.expires_at - now if session else 0
+            return {"unlocked": session is not None, "remaining_seconds": remaining,
+                    "expires_at_ms": int((self._wall_clock() + remaining) * 1000) if session else None,
+                    "session_version": session.version if session else 0}
 
     def revoke(self, token: str | None) -> None:
         if not token:
             return
         with self._lock:
+            self._purge_locked(self._clock())
             self._sessions.pop(token, None)
 
     def clear(self) -> None:

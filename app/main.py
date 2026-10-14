@@ -2,7 +2,8 @@
 
 from pathlib import Path
 import sqlite3
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
+import asyncio
 from datetime import datetime
 from math import ceil
 from urllib.parse import quote, unquote, urlencode, urlsplit
@@ -105,7 +106,17 @@ unlock_attempt_limiter = UnlockAttemptLimiter()
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     init_db()
-    yield
+    async def reap_sessions():
+        while True:
+            await asyncio.sleep(30)
+            vault_sessions.purge_expired()
+    reaper = asyncio.create_task(reap_sessions())
+    try:
+        yield
+    finally:
+        reaper.cancel()
+        with suppress(asyncio.CancelledError):
+            await reaper
 
 
 app = FastAPI(title="ProjMemo", version="0.1.0", lifespan=lifespan, dependencies=[Depends(require_csrf)])
@@ -256,6 +267,20 @@ def current_vault_key(request: Request) -> bytes | None:
     return vault_sessions.get_key(request.cookies.get(VAULT_COOKIE_NAME))
 
 
+def vault_status_context(request: Request, configured: bool, allow_export: bool) -> dict[str, object]:
+    status = vault_sessions.status(request.cookies.get(VAULT_COOKIE_NAME))
+    return {"configured": configured, "allow_secret_export": allow_export, **status}
+
+
+@app.get("/settings/vault/status")
+def credential_vault_status(request: Request) -> JSONResponse:
+    with db_session() as connection:
+        configured = connection.execute("SELECT 1 FROM vault_config WHERE id = 1").fetchone() is not None
+        settings = connection.execute("SELECT allow_secret_export FROM app_settings WHERE id = 1").fetchone()
+    return JSONResponse(vault_status_context(request, configured, bool(settings["allow_secret_export"]) if settings else False),
+                        headers=NO_STORE_HEADERS)
+
+
 def require_vault_key(request: Request) -> bytes:
     key = current_vault_key(request)
     if key is None:
@@ -276,13 +301,15 @@ def vault_page(
         settings = connection.execute(
             "SELECT allow_secret_export FROM app_settings WHERE id = 1"
         ).fetchone()
+    session_status = vault_status_context(request, configured, bool(settings["allow_secret_export"]) if settings else False)
     response = templates.TemplateResponse(
         request,
         "vault.html",
         page_context(
             request,
             vault_configured=configured,
-            vault_unlocked=current_vault_key(request) is not None,
+            vault_unlocked=session_status["unlocked"],
+            vault_session_status=session_status,
             allow_secret_export=bool(settings["allow_secret_export"]) if settings else False,
             error=error,
         ),
@@ -295,7 +322,7 @@ def vault_page(
 
 
 def vault_session_response(request: Request, key: bytes) -> RedirectResponse:
-    token = vault_sessions.issue(key)
+    token = vault_sessions.issue(key, replace_token=request.cookies.get(VAULT_COOKIE_NAME))
     response = RedirectResponse(url="/settings/vault", status_code=303)
     response.set_cookie(
         VAULT_COOKIE_NAME,
@@ -686,9 +713,11 @@ def show_project(request: Request, project_id: int) -> HTMLResponse:
         settings = connection.execute(
             "SELECT allow_secret_export FROM app_settings WHERE id = 1"
         ).fetchone()
+    session_status = vault_status_context(request, vault_configured, bool(settings["allow_secret_export"]) if settings else False)
     values.update(
         vault_configured=vault_configured,
-        vault_unlocked=current_vault_key(request) is not None,
+        vault_unlocked=session_status["unlocked"],
+        vault_session_status=session_status,
         allow_secret_export=bool(settings["allow_secret_export"]) if settings else False,
     )
     return templates.TemplateResponse(request, "project_detail.html", page_context(request, **values))
@@ -1249,6 +1278,8 @@ def reveal_access_account_secret(request: Request, account_id: int) -> JSONRespo
         )
     except VaultError as error:
         raise HTTPException(status_code=500, detail=str(error)) from error
+    if current_vault_key(request) is None:
+        raise HTTPException(status_code=423, detail="保管庫已鎖定，請先解鎖")
     response = JSONResponse({"secret": secret_value})
     response.headers.update(
         {

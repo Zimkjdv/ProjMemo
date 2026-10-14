@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{{ project.name }}｜ProjMemo{% endblock %}
+{% from "_copy_controls.html" import copy_value with context %}
 {% block content %}
 <section class="project-hero">
   <div class="project-overview-card">
@@ -82,7 +83,7 @@
             <div class="url-copy">
               <span class="mini-label url-kind">{{ url_type_label(item.type) }}</span>
               <div class="url-name"><a href="{{ item.url }}" target="_blank" rel="noreferrer">{{ item.title }} <span aria-hidden="true">↗</span></a></div>
-              <div class="url-address"><code>{{ item.url }}</code>{% if item.note %}<p>{{ item.note }}</p>{% endif %}</div>
+              <div class="url-address">{{ copy_value('url-value-' ~ item.id, item.url, t('複製 URL')) }}{% if item.note %}<p>{{ item.note }}</p>{% endif %}</div>
             </div>
             <details class="item-actions">
               <summary aria-label="{{ t("編輯或刪除") }} {{ item.title }}">•••</summary>
@@ -188,4 +189,7 @@
 </div>
 <script src="/static/project-detail.js?v=20261014-layout" defer></script>
 <script src="/static/project-navigation.js?v=20261014" defer></script>
+<script type="application/json" id="copy-messages">{{ {'copy': t('複製'), 'code': t('複製程式碼'), 'success': t('已複製'), 'pending': t('複製中…'), 'failure': t('複製失敗，請選取文字後手動複製。')}|tojson }}</script>
+<div id="copy-feedback" class="copy-feedback" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+<script src="/static/project-copy.js?v=20261014" defer></script>
 {% endblock %}

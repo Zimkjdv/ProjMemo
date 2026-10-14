@@ -127,6 +127,17 @@ test("view changes immediately mask revealed passwords and cancel their timers",
   assert.equal(page.timers.size, 0);
 });
 
+test("vault invalidation masks an existing reveal and prevents a delayed response from displaying", async () => {
+  const page = vaultHarness();
+  const first = page.handlers.reveal(); page.resolve(0); await first;
+  page.handlers["projmemo:vault-invalidated"]();
+  assert.equal(page.output.textContent, "••••••••••");
+  const delayed = page.handlers.reveal();
+  page.handlers["projmemo:vault-invalidated"]();
+  page.resolve(1, "stale-secret"); await delayed;
+  assert.equal(page.output.textContent, "••••••••••");
+});
+
 test("a pending response cannot reveal again after switching, even during a newer request", async () => {
   const page = vaultHarness();
   const stale = page.handlers.reveal();

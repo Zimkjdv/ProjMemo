@@ -14,17 +14,18 @@
   </div>
   <div class="vault-hero-status">
     <span class="vault-status-label">{{ t("保管庫狀態") }}</span>
-    {% if vault_configured and vault_unlocked %}<span class="vault-state vault-state-open">{{ t("已解鎖") }}</span>{% elif vault_configured %}<span class="vault-state">{{ t("已鎖定") }}</span>{% else %}<span class="vault-state">{{ t("未設定") }}</span>{% endif %}
+    {% if vault_configured and vault_unlocked %}<span class="vault-state vault-state-open" data-vault-state-label data-vault-state-short>{{ t("已解鎖") }}</span>{% elif vault_configured %}<span class="vault-state" data-vault-state-label data-vault-state-short>{{ t("已鎖定") }}</span>{% else %}<span class="vault-state" data-vault-state-label data-vault-state-short>{{ t("未設定") }}</span>{% endif %}
   </div>
 </section>
 
 {% if error %}<div class="alert alert-error" role="alert">{{ error }}</div>{% endif %}
+{% include "_vault_session.html" %}
 
 <div class="vault-workspace">
 <section class="panel vault-panel vault-access-panel" aria-labelledby="vault-access-title">
   <div class="vault-panel-heading">
     <span class="vault-section-icon {% if vault_unlocked %}vault-icon-open{% endif %}">{{ vault_icon('unlock' if vault_unlocked else 'lock') }}</span>
-    <div><h2 id="vault-access-title">{% if not vault_configured %}{{ t("開始設定") }}{% elif vault_unlocked %}{{ t("保管庫已解鎖") }}{% else %}{{ t("解鎖保管庫") }}{% endif %}</h2><p>{{ t("主密碼不會保存") }}</p></div>
+    <div><h2 id="vault-access-title"{% if vault_unlocked %} data-vault-state-label{% endif %}>{% if not vault_configured %}{{ t("開始設定") }}{% elif vault_unlocked %}{{ t("保管庫已解鎖") }}{% else %}{{ t("解鎖保管庫") }}{% endif %}</h2><p>{{ t("主密碼不會保存") }}</p></div>
   </div>
 
   {% if not vault_configured %}
@@ -35,8 +36,8 @@
     <button class="button button-primary" type="submit">{{ vault_icon('shield') }}{{ t("建立加密保管庫") }}</button>
   </form>
   {% elif vault_unlocked %}
-  <div class="vault-unlocked-note">{{ vault_icon('clock') }}<p>{{ t("保管庫已在此瀏覽器解鎖，解鎖滿 15 分鐘或重新啟動 ProjMemo 後會自動鎖定。") }}</p></div>
-  <form method="post" action="/settings/vault/lock" class="vault-lock-form">{{ csrf_input() }}<button class="button button-ghost" type="submit">{{ vault_icon('lock') }}{{ t("立即鎖定") }}</button></form>
+  <div class="vault-unlocked-note" data-vault-unlocked-only>{{ vault_icon('clock') }}<p>{{ t("保管庫已在此瀏覽器解鎖，解鎖滿 15 分鐘或重新啟動 ProjMemo 後會自動鎖定。") }}<br><span data-vault-remaining aria-live="off"></span></p></div>
+  <form method="post" action="/settings/vault/lock" class="vault-lock-form" data-vault-unlocked-only>{{ csrf_input() }}<button class="button button-ghost" type="submit">{{ vault_icon('lock') }}{{ t("立即鎖定") }}</button></form>
   {% else %}
   <p class="vault-panel-copy">{{ t("輸入主密碼以查看或保存實際密碼。連續輸入錯誤過多次時，解鎖會暫停一段時間。") }}</p>
   <form method="post" action="/settings/vault/unlock" class="vault-form">{{ csrf_input() }}

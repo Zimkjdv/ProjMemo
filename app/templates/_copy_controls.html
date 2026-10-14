@@ -1,0 +1,4 @@
+{% from "_settings_icons.html" import settings_icon %}
+{% macro copy_value(id, value, label) -%}
+<span class="copy-value"><code id="{{ id }}" data-copy-value>{{ value }}</code><button type="button" class="copy-button" data-copy-target="{{ id }}" aria-label="{{ label }}" title="{{ label }}" hidden>{{ settings_icon('copy') }}<span>{{ t('複製') }}</span></button></span>
+{%- endmacro %}

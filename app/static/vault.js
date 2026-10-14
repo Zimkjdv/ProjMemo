@@ -48,7 +48,7 @@
           payload.secret = "";
           return;
         }
-        if (document.visibilityState !== "visible") {
+        if (document.visibilityState !== "visible" || document.documentElement?.dataset.vaultSessionActive === "false") {
           payload.secret = "";
           mask(output, button);
           return;
@@ -77,6 +77,7 @@
     });
   };
   document.addEventListener("projmemo:detail-view-change", maskAll);
+  document.addEventListener("projmemo:vault-invalidated", maskAll);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible") maskAll();
   });
