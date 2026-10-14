@@ -5,13 +5,14 @@ const path = require("node:path");
 const vm = require("node:vm");
 const source = fs.readFileSync(path.join(__dirname, "../../app/static/project-navigation.js"), "utf8");
 
-function harness(hash = "") {
+function harness(hash = "", position = "sticky") {
   let scroll = 0;
   let headerHeight = 69;
   let navHeight = 80;
   const events = {};
   const frames = [];
   const properties = {};
+  const classes = new Set();
   const sections = [
     ["important-links", 300, 550], ["project-notes", 600, 1600],
     ["handover", 700, 790], ["environment", 820, 1020], ["access-accounts", 300, 680],
@@ -28,7 +29,7 @@ function harness(hash = "") {
     getBoundingClientRect: () => ({ height: navHeight }), contains: (target) => links.includes(target),
   };
   const document = {
-    documentElement: { classList: { add() {} }, style: { setProperty: (name, value) => { properties[name] = value; } } },
+    documentElement: { classList: { add(name) { classes.add(name); }, toggle(name, enabled) { if (enabled) classes.add(name); else classes.delete(name); } }, style: { setProperty: (name, value) => { properties[name] = value; } } },
     querySelector: (selector) => selector === ".content-navigation" ? navigation : header,
     getElementById: (id) => id === "project-content" ? {} : sections.find((section) => section.id === id),
     addEventListener: (name, handler) => { events[name] = handler; },
@@ -37,10 +38,10 @@ function harness(hash = "") {
   const window = { location, requestAnimationFrame: (callback) => { frames.push(callback); return frames.length; },
     addEventListener: (name, handler) => { events[name] = handler; },
   };
-  vm.runInNewContext(source, { document, window, Element: class Element {} });
+  vm.runInNewContext(source, { document, window, Element: class Element {}, getComputedStyle: () => ({ position }) });
   const flush = () => { while (frames.length) frames.shift()(); };
   flush();
-  return { sections, links, events, properties, location, flush,
+  return { sections, links, events, properties, location, flush, classes,
     current: () => links.filter((link) => link.attrs["aria-current"] === "location").map((link) => link.hash),
     scrollTo(value, manual = true) { scroll = value; if (manual) events.wheel(); events.scroll(); flush(); },
     resize(headerValue, navValue) { headerHeight = headerValue; navHeight = navValue; events.resize(); flush(); },
@@ -92,4 +93,14 @@ test("resizing and expanding content refresh offsets; switching views re-evaluat
   page.sections[4].bottom = 2600;
   page.flush();
   assert.deepEqual(page.current(), ["#important-links"]);
+});
+
+test("duplicate heading counts are hidden only after a visible sticky navigator is confirmed", () => {
+  const page = harness();
+  assert.equal(page.classes.has("content-navigation-ready"), true);
+  page.resize(69, 0);
+  assert.equal(page.classes.has("content-navigation-ready"), false);
+  page.resize(69, 80);
+  assert.equal(page.classes.has("content-navigation-ready"), true);
+  assert.equal(harness("", "static").classes.has("content-navigation-ready"), false);
 });

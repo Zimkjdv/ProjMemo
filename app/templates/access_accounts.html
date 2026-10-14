@@ -22,7 +22,7 @@
       <div class="access-account-heading">
         <div class="access-account-identity"><span class="mini-label account-kind detail-card-only">{{ account_icon('desktop' if account.category == 'server' else 'database' if account.category == 'database' else 'key') }}{{ access_account_category_label(account.category) }} · {{ access_environment_label(account.environment) }}</span><h3>{{ account.label }}</h3></div>
         <details class="item-actions">
-          <summary aria-label="{{ t("編輯或刪除") }} {{ account.label }}">•••</summary>
+          <summary aria-label="{{ t("編輯或刪除") }} {{ account.label }}">{{ account_icon('more') }}</summary>
           <div class="action-popover">
             <form method="post" action="/accounts/{{ account.id }}/edit" data-content-form>{{ csrf_input() }}
               <label>{{ t("帳號／服務名稱") }}<input name="label" required value="{{ account.label }}"></label>

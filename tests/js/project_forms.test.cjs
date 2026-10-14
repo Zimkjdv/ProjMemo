@@ -179,3 +179,13 @@ test("modal Escape and clicks do not retrigger underlying edit-menu closing", ()
   page.button.click(); page.modalButtons.discard.click();
   assert.equal(page.container.open, false);
 });
+
+test("Escape closes a clean edit menu and returns focus without opening a dialog", () => {
+  const page = harness("edit", true, true);
+  const event = page.event(); page.handlers.keydown(event);
+  assert.equal(page.container.open, false);
+  assert.equal(page.summary.focused, 1);
+  assert.equal(page.dialog.open, false);
+  assert.equal(page.prompts.length, 0);
+  assert.equal(event.prevented, true);
+});
