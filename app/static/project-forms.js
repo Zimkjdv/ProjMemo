@@ -60,6 +60,8 @@
   // Closing an edit menu follows the same discard policy as its Cancel button.
   document.addEventListener("click", (event) => {
     if (dialog?.open) return;
+    // Changing the view moves the same DOM; it is not a request to cancel drafts.
+    if (event.target.closest?.("[data-detail-view]")) return;
     for (const container of containers) {
       if (!container.matches(".item-actions") || !container.open || container.contains(event.target)) continue;
       if (!close(container, false)) {

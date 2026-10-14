@@ -2,3 +2,6 @@
 {% macro copy_value(id, value, label) -%}
 <span class="copy-value"><code id="{{ id }}" data-copy-value>{{ value }}</code><button type="button" class="copy-button" data-copy-target="{{ id }}" aria-label="{{ label }}" title="{{ label }}" hidden>{{ settings_icon('copy') }}<span>{{ t('複製') }}</span></button></span>
 {%- endmacro %}
+{% macro expandable_value(id, value, label) -%}
+<div class="readable-value" data-readable-value>{{ copy_value(id, value, label) }}<button type="button" class="readable-expand-button" data-expand-value aria-controls="{{ id }}" aria-expanded="false" hidden>{{ t('展開完整內容') }}</button></div>
+{%- endmacro %}

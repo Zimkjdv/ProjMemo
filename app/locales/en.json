@@ -443,6 +443,15 @@
   "尚有未儲存的修改。確定捨棄並收合表單？": "There are unsaved changes. Discard them and close the form?",
   "內容導覽": "Content navigation",
   "點選跳至區段": "Select a section to jump to it",
+  "展開完整內容": "Show full value",
+  "備註分頁": "Note pagination",
+  "編輯中，請先儲存或收合再換頁。": "Save or close the editor before changing note pages.",
+  "每頁備註數量": "Notes per page",
+  "顯示全部": "Show all",
+  "顯示第 {first}–{last} 筆備註，共 {count} 筆": "Notes {first}–{last} of {count}",
+  "收合完整內容": "Collapse value",
+  "重設列表": "Reset list",
+  "重設檢視、每頁筆數與篩選": "Reset view, page size and filters",
   "妥善保管備份檔": "Keep backup files secure",
   "只有實際密碼是密文，其餘專案與帳號資料仍可讀取。請把備份放在安全位置，不要公開或隨意轉寄。": "Only passwords are encrypted; other project and account data remain readable. Store backups securely and do not publish or casually forward them."
 }

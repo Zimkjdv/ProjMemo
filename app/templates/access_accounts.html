@@ -1,5 +1,5 @@
 {% from "_settings_icons.html" import settings_icon as account_icon %}
-{% from "_copy_controls.html" import copy_value with context %}
+{% from "_copy_controls.html" import expandable_value with context %}
 {% from "_content_form_actions.html" import content_form_actions with context %}
 <section class="panel detail-panel{% if not access_accounts %} detail-panel-empty{% endif %}" id="access-accounts">
   <div class="panel-heading">
@@ -47,8 +47,8 @@
       </div>
       <div class="account-primary-fields account-list-fields">
         <span class="account-list-category detail-list-only"><span class="mini-label">{{ access_account_category_label(account.category) }}</span><span class="muted">{{ access_environment_label(account.environment) }}</span></span>
-        {% if account.endpoint %}<div class="account-endpoint-field"><span class="account-field-label">{{ t('主機／登入網址') }}</span>{{ copy_value('account-endpoint-' ~ account.id, account.endpoint, t('複製主機／登入網址')) }}</div>{% endif %}
-        <div class="account-list-username{% if not account.username %} detail-list-only{% endif %}"><span class="account-field-label detail-card-only">{{ t('登入帳號') }}</span>{% if account.username %}{{ copy_value('account-username-' ~ account.id, account.username, t('複製登入帳號')) }}{% else %}—{% endif %}</div>
+        {% if account.endpoint %}<div class="account-endpoint-field"><span class="account-field-label">{{ t('主機／登入網址') }}</span>{{ expandable_value('account-endpoint-' ~ account.id, account.endpoint, t('複製主機／登入網址')) }}</div>{% endif %}
+        <div class="account-list-username{% if not account.username %} detail-list-only{% endif %}"><span class="account-field-label detail-card-only">{{ t('登入帳號') }}</span>{% if account.username %}{{ expandable_value('account-username-' ~ account.id, account.username, t('複製登入帳號')) }}{% else %}—{% endif %}</div>
         <span class="account-list-scope detail-list-only">{{ account.role_scope or '—' }}</span>
       </div>
       <details class="account-more" data-expand-in-cards open>

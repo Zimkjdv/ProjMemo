@@ -666,6 +666,7 @@ def index(
             ),
             card_view_url=project_list_url(q, selected_status, "cards", page_size, page),
             list_view_url=project_list_url(q, selected_status, "list", page_size, page),
+            clear_filter_url=project_list_url("", "", view_mode, page_size, 1),
         ),
     )
 

@@ -118,6 +118,14 @@
       </div>
       {% if notes %}
       <div class="detail-columns detail-columns-notes" aria-hidden="true"><span>{{ t("標題／摘要") }}</span><span>{{ t("類型／優先級") }}</span></div>
+      {% if notes|length > 50 %}
+      <nav class="note-pagination" data-note-pagination aria-label="{{ t('備註分頁') }}" hidden>
+        <label>{{ t('每頁') }} <select data-note-page-size aria-label="{{ t('每頁備註數量') }}"><option value="10">10</option><option value="20" selected>20</option><option value="50">50</option><option value="0">{{ t('顯示全部') }}</option></select></label>
+        <span data-note-page-summary role="status" aria-live="polite"></span>
+        <span class="note-page-paused" data-note-page-paused hidden>{{ t('編輯中，請先儲存或收合再換頁。') }}</span>
+        <span class="note-page-buttons"><button class="button button-ghost" type="button" data-note-page-previous>{{ t('上一頁') }}</button><button class="button button-ghost" type="button" data-note-page-next>{{ t('下一頁') }}</button></span>
+      </nav>
+      {% endif %}
       <div class="note-list">
         {% for note in notes %}
         {% set rendered_note = note.content_markdown|markdown %}
@@ -190,9 +198,13 @@
   </aside>
 </div>
 <script src="/static/project-detail.js?v=20261014-notes" defer></script>
-<script src="/static/project-notes.js?v=20261014" defer></script>
+<script type="application/json" id="note-page-messages">{{ {'range': t('顯示第 {first}–{last} 筆備註，共 {count} 筆')}|tojson }}</script>
+<script src="/static/note-pagination.js?v=20261014-r06" defer></script>
+<script src="/static/project-notes.js?v=20261014-r06" defer></script>
 <script type="application/json" id="url-view-messages">{{ {'expand': t('展開網址'), 'collapse': t('收合網址')}|tojson }}</script>
 <script src="/static/project-urls.js?v=20261014" defer></script>
+<script type="application/json" id="value-view-messages">{{ {'expand': t('展開完整內容'), 'collapse': t('收合完整內容')}|tojson }}</script>
+<script src="/static/project-values.js?v=20261014-r06" defer></script>
 <script src="/static/project-navigation.js?v=20261014-section-counts" defer></script>
 <script type="application/json" id="copy-messages">{{ {'copy': t('複製'), 'code': t('複製程式碼'), 'success': t('已複製'), 'pending': t('複製中…'), 'failure': t('複製失敗，請選取文字後手動複製。')}|tojson }}</script>
 <div id="copy-feedback" class="copy-feedback" role="status" aria-live="polite" aria-atomic="true" hidden></div>
@@ -203,5 +215,5 @@
   <p id="content-discard-description">{{ t('此操作只會清除目前表單的草稿，不會刪除已保存的資料。') }}</p>
   <div class="content-form-actions"><button class="button button-ghost" type="button" data-keep-content autofocus>{{ t('保留修改') }}</button><button class="button button-danger" type="button" data-discard-content>{{ t('捨棄並收合') }}</button></div>
 </dialog>
-<script src="/static/project-forms.js?v=20261014" defer></script>
+<script src="/static/project-forms.js?v=20261014-r06" defer></script>
 {% endblock %}

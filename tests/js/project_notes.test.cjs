@@ -58,3 +58,17 @@ test("width-dependent measurement updates untouched notes without overriding man
   assert.equal(page.notes[0].open, true);
   assert.equal(page.notes[0].dataset.noteLong, "false");
 });
+
+test("paged-out notes are not measured and page changes retain manual expansion", () => {
+  const page = harness();
+  page.click(1);
+  const row = { hidden: true }, note = page.notes[1];
+  note.closest = () => row;
+  Object.defineProperty(note.body, "scrollHeight", { configurable: true, get() { throw Error("Hidden note measured"); } });
+  page.events["projmemo:note-page-change"]();
+  assert.doesNotThrow(() => page.flush());
+  Object.defineProperty(note.body, "scrollHeight", { configurable: true, value: 240 });
+  row.hidden = false;
+  page.events["projmemo:note-page-change"](); page.flush();
+  assert.equal(note.open, true);
+});

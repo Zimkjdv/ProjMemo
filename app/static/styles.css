@@ -300,6 +300,14 @@ html.project-detail-page { scroll-padding-top: 0; }
 .detail-view-switch button.active { border-color: #bdcbed; background: #e2e9ff; }
 .detail-view-switch button:focus-visible { outline: 3px solid #263f9b; outline-offset: 3px; }
 .detail-empty { margin: 0; padding: 3px 0; color: var(--muted); font-size: .82rem; }
+.note-pagination { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 0 0 12px; color: var(--muted); font-size: .78rem; }
+.note-pagination[hidden], .detail-layout[data-view] .note-list > .note-card[hidden] { display: none; }
+.note-page-paused { color: #9a3412; }
+.note-pagination label { display: inline-flex; align-items: center; gap: 7px; margin: 0; }
+.note-pagination select { width: auto; min-height: 32px; padding: 4px 8px; font-size: .78rem; }
+.note-page-buttons { display: inline-flex; gap: 4px; margin-left: auto; }
+.note-page-buttons .button { min-height: 32px; padding: 4px 8px; font-size: .78rem; }
+.note-pagination button:disabled, .note-pagination select:disabled { opacity: .5; cursor: not-allowed; }
 .note-content > summary { list-style: none; cursor: pointer; }
 .note-content > summary::-webkit-details-marker { display: none; }
 .note-content > summary:focus-visible, .account-more > summary:focus-visible, .security-details > summary:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; border-radius: 4px; }
@@ -416,6 +424,13 @@ html.project-detail-page { scroll-padding-top: 0; }
 .action-popover { position: absolute; z-index: 15; top: calc(100% + 4px); right: 0; width: min(420px, calc(100vw - 56px)); max-height: min(72vh, 680px); margin-top: 0; padding: 13px; overflow-y: auto; border: 1px solid var(--line); border-radius: 10px; background: #fff; box-shadow: 0 16px 40px rgba(16, 24, 40, .16); }
 .action-popover label { font-size: .8rem; }
 .action-popover input, .action-popover select, .action-popover textarea { font-size: .84rem; }
+/* In details view, editors consume their own grid row instead of covering neighbours. */
+.detail-layout[data-view="list"] .item-actions[open] { grid-column: 1 / -1; grid-row: auto; display: flex; flex-direction: column; align-items: flex-end; min-width: 0; width: 100%; }
+.detail-layout[data-view="list"] .item-actions[open] > .action-popover { position: static; width: 100%; max-height: none; overflow: visible; margin-top: 6px; border-color: #bdcbed; box-shadow: none; }
+.detail-layout[data-view="list"] .access-account-heading > .item-actions[open] { grid-row: 4; }
+.detail-layout[data-view="list"] .note-card:has(.item-actions[open]) { grid-template-columns: minmax(0, 1fr); }
+.detail-layout[data-view="list"] .note-card:has(.item-actions[open]) .note-heading { grid-column: 1; grid-row: 2; flex-wrap: wrap; }
+.detail-layout[data-view="list"] .note-heading > .item-actions[open] { flex-basis: 100%; }
 .delete-form { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
 
 /* Content typography only: the dashboard Black title and settings remain unchanged. */
@@ -675,6 +690,11 @@ html.project-detail-page { scroll-padding-top: 0; }
 .account-field-label { display: block; margin-bottom: 3px; color: #667085; font-size: .75rem; }
 .copy-value { display: flex; align-items: start; gap: 7px; min-width: 0; }
 .copy-value > code { flex: 1; min-width: 0; color: #344054; font-family: ui-monospace, Consolas, monospace; font-size: .84rem; overflow-wrap: anywhere; }
+.readable-value { min-width: 0; }
+.readable-value[data-readable-enhanced]:not(.readable-value-expanded) .copy-value > code { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.readable-expand-button { display: inline-block; margin: 4px 0 0; padding: 0; border: 0; background: transparent; color: var(--primary-dark); font: inherit; font-size: .75rem; font-weight: 650; cursor: pointer; }
+.readable-expand-button[hidden] { display: none; }
+.readable-expand-button:focus-visible { outline: 2px solid var(--primary); outline-offset: 3px; border-radius: 3px; }
 .account-primary-fields .copy-value > code { font-weight: 600; }
 .url-copy .copy-value > code { color: #596579; margin-top: 4px; }
 .copy-button { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 28px; padding: 3px 6px; flex-shrink: 0; border: 1px solid #dae1ee; border-radius: 6px; background: #fff; color: #475467; font: inherit; font-size: .71rem; cursor: pointer; }

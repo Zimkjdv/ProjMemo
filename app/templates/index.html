@@ -52,6 +52,7 @@
   <input type="hidden" name="view" value="{{ view_mode }}">
   <input type="hidden" name="page" value="1">
   <button class="button button-secondary" type="submit">{{ t("套用篩選") }}</button>
+  <a class="button button-ghost" href="/?view=cards&amp;page_size=10&amp;page=1&amp;q=&amp;status=" data-reset-list-preferences title="{{ t('重設檢視、每頁筆數與篩選') }}">{{ t('重設列表') }}</a>
 </form>
 
 <div class="results-toolbar">
@@ -95,7 +96,7 @@
 {% else %}
 <section class="empty-state">
   <span class="empty-icon" aria-hidden="true">▤</span>
-  {% if q or selected_status %}<h2>{{ t("沒有符合條件的專案") }}</h2><p>{{ t("試試其他關鍵字或狀態篩選。") }}</p><a class="button button-ghost" href="/">{{ t("清除篩選") }}</a>
+  {% if q or selected_status %}<h2>{{ t("沒有符合條件的專案") }}</h2><p>{{ t("試試其他關鍵字或狀態篩選。") }}</p><a class="button button-ghost" href="{{ clear_filter_url }}">{{ t("清除篩選") }}</a>
   {% else %}<h2>{{ t("開始整理第一個專案") }}</h2><p>{{ t("把常用連結、注意事項與交接資訊集中在一起。") }}</p><a class="button button-primary" href="/projects/new">{{ t("建立第一個專案") }}</a>{% endif %}
 </section>
 {% endif %}
@@ -114,4 +115,6 @@
   {% endif %}
 </nav>
 {% endif %}
+<script type="application/json" id="list-preferences">{{ {'view': view_mode, 'page_size': page_size, 'q': q, 'status': selected_status}|tojson }}</script>
+<script src="/static/list-preferences.js?v=20261014-r06" defer></script>
 {% endblock %}

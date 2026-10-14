@@ -189,3 +189,16 @@ test("Escape closes a clean edit menu and returns focus without opening a dialog
   assert.equal(page.prompts.length, 0);
   assert.equal(event.prevented, true);
 });
+
+test("view buttons are not outside cancellation and retain dirty edit drafts", () => {
+  const page = harness("edit", true, true);
+  page.controls[0].value = "Retained draft";
+  const event = page.event(false);
+  event.target.closest = selector => selector === "[data-detail-view]" ? {} : null;
+  page.handlers.click(event);
+  assert.equal(page.dialog.open, false);
+  assert.equal(page.container.open, true);
+  assert.equal(page.controls[0].value, "Retained draft");
+  assert.equal(event.prevented, false);
+  assert.equal(page.form.resets, 0);
+});

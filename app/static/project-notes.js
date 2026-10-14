@@ -7,6 +7,7 @@
   const update = () => {
     frame = null;
     notes.forEach((note) => {
+      if (note.closest?.(".note-card")?.hidden) return;
       const body = note.querySelector(".markdown-body");
       const preview = note.querySelector("[data-note-summary]");
       if (!body || !preview) return;
@@ -29,6 +30,7 @@
     });
   });
   document.addEventListener("projmemo:detail-view-change", schedule);
+  document.addEventListener("projmemo:note-page-change", schedule);
   window.addEventListener("resize", schedule);
   if (document.fonts?.ready) document.fonts.ready.then(schedule);
   update();
