@@ -6,6 +6,15 @@
 
 ## 2026-10-15
 
+### R07-B — 一般／開發模式與持有式 port 綁定
+
+原條目完整移入，保留當時競爭問題的描述；目前以真正 bind 並持有 socket 解決。
+
+- [x] 分開開發 reload 與一般使用模式；明確 loopback、單 worker、port 範圍及衝突處理。現有 TCP 探測與實際綁定之間仍可能競爭。
+- [x] 日常不 reload，新增 `run-dev.bat`；Python launcher 固定 loopback／單 worker，有界最多 100 次，CLI／環境 port 驗證，Windows exclusive socket 直接交給 Uvicorn，避免探測與綁定之間的競爭。不停止其他程式、不開 LAN。
+- [x] 真實 Windows 一般／reload 子程序在第一個 port 被占用時仍可 HTTP 存取；隔離 DB、無安裝網路。另驗證 socket 持有排他、範圍耗盡、無效參數、單 worker、匯入失敗及既有 batch 安裝失敗回歸。維運文件說明開發 supervisor 存活不等於應用就緒。
+- [x] 完整 Python 386 項、Node 66 項通過（Node 使用 `tests/js/*.test.cjs`，不將錯誤副檔名的零項執行當成驗證），清除本項隔離 pytest 暫存；正式 DB 不變。
+
 ### R07-A — 安裝與日常啟動分離
 
 原條目從 `cc94ca9:ROADMAP.MD` 完整移入；一般／開發模式、port、依賴及維運仍待 R07 後續項目，不提前勾選整批。

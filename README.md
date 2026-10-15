@@ -215,12 +215,12 @@ run-local.bat
 py -3 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
-python -m uvicorn app.main:app --reload
+python -m app.launcher --dev
 ```
 
-`run-local.bat` 會從 `8000` 開始探測可用 port；若被占用則依序嘗試 `8001`、`8002` 等，終端機會顯示實際網址。手動執行 Uvicorn 不會自動換 port，需自行指定 `--port`。本機 SQLite 預設建立在 `data/projmemo.db`，此資料目錄已加入 `.gitignore`。
+`run-local.bat` 是一般模式、不自動重載；開發時使用 `run-dev.bat`（或 `run-local.bat --dev`）。兩者固定 `127.0.0.1`、單 worker，從 `8000` 起實際綁定可用 port 並持有 socket 交給服務，不再使用先探測後釋放的方式。衝突時最多嘗試 100 個 port，終端機顯示實際網址；全部不可用時非零結束。可用 `--port 8123 --port-end 8130` 限定範圍，不開放 LAN host／多 worker 選項。本機 SQLite 預設在 `data/projmemo.db`，已加入 `.gitignore`。
 
-兩個 batch 腳本會固定切換至自己的目錄；手動 Python／Uvicorn 指令仍請從專案根目錄執行。目前保管庫 session 存於單一程序記憶體，請使用單 worker 並保持本機存取；`--reload` 是開發模式，重載會使解鎖失效。一般／開發模式與競爭安全 port 綁定另由 R07 下一項交付，目前啟動模式尚未改變。
+啟動及安裝 batch 會固定切換至自己的目錄；手動 Python 指令仍請從專案根目錄執行。開發重載會使保管庫解鎖與舊表單 token 失效，請重新整理頁面；日常使用一般模式。開發模式有監督程序與一個應用 worker，不是多 worker 部署。不要用手動 Uvicorn 指令繞過本機／單 worker 限制，詳見 [本機維運](docs/local-operations.md)。
 
 可用 `PROJMEMO_DB_PATH` 指定另一個 SQLite 路徑；PDF 字型可由 `PROJMEMO_PDF_FONT`、`PROJMEMO_PDF_BOLD_FONT` 指定。更換資料庫前請先停止程式並備份。
 
@@ -228,7 +228,7 @@ python -m uvicorn app.main:app --reload
 
 ```powershell
 $env:PROJMEMO_PORT = "8123"
-python -m uvicorn app.main:app --reload --port $env:PROJMEMO_PORT
+python -m app.launcher
 ```
 
 ## 測試
