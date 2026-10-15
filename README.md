@@ -258,4 +258,4 @@ python -m app.launcher
 
 已完成的階段紀錄移至 [CHANGELOG.MD](CHANGELOG.MD)，未完成項目統一維護於 [ROADMAP.MD](ROADMAP.MD)。目前專案本身支援新增、檢視與編輯，尚未提供整個專案刪除；標籤可透過搜尋文字比對，尚無獨立標籤篩選器。
 
-P0 的備份／還原／本機請求保護，以及 R03 架構與遷移、R04 保管庫 session、R05 表單回饋／草稿保護／備註伺服器端分頁、R07 啟動／依賴與維運已完成。R08 已交付 Markdown 特殊字元／完整投影回歸、catalog 維護與 Windows → Linux／CJK CI，雲端兩邊皆通過。套用新依賴前先停止舊服務，再執行一次 `setup-local.bat`，日常用 `run-local.bat`。後續以 R06 實機縮放、R08 完整瀏覽器／系統剪貼簿與 PDF 生成／視覺驗收為主。Docker 待本機功能穩定後再進行；多人協作與手機排版不屬於目前個人版範圍。
+P0、R03／R04／R05／R07 已完成。R08 已交付 Markdown 特殊字元／完整投影、catalog、Windows → Linux／CJK CI 及真實瀏覽器互動回歸，雲端兩邊皆通過。套用新依賴前先停止舊服務，再執行一次 `setup-local.bat`，日常用 `run-local.bat`。後續為 R06 實機縮放／系統剪貼簿，以及 R08 PDF 生成／視覺驗收。Docker 待本機功能穩定後再進行；多人協作與手機排版不屬於目前個人版範圍。

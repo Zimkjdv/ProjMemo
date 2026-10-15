@@ -6,6 +6,16 @@
 
 ## 2026-10-15
 
+### R08-D — 真實桌面瀏覽器完整互動回歸
+
+原條目來源 `3e482af:ROADMAP.MD`；以下保留前兩句原文，最後一句 Windows 系統剪貼簿貼回依使用者要求，合併留在 Roadmap 的 R06-B 剩餘驗收，不勾選為完成。完整原文保存在 [瀏覽器回歸指南](docs/browser-regression.md)。本項驗證、提交並推送後才開始 PDF 項目。
+
+- [x] 補表單錯誤等回歸及更多標準桌面瀏覽器的完整互動驗收；過期 session、重複解鎖、延遲 reveal、CSRF、完整備份驗證及還原異常流程已有隔離測試。來源政策與原生表單的衝突已修正，並完成實際瀏覽器中英文切換驗證；Header／token 測試不能取代瀏覽器驗收。
+- [x] `8b979b8` 加入獨立 npm 雜湊鎖、Playwright Chromium／Firefox 與可選已安裝 Edge；每語言六項涵蓋真實原生／JS 表單錯誤與重試、錯誤焦點／aria-invalid、雙語切換、URL 編輯／Escape、卡片／明細、10／20／50 分頁、草稿與網路錯誤回退、SQLite 下載／無效上傳／確認還原，以及假帳號保管庫設定／顯示／鎖定／錯誤解鎖不回填。
+- [x] 每例新建隔離 DB、假資料及持有的空閒 loopback socket，不重用正式服務；測試網路限制同源、無 trace／錄影／截圖 artifact，上下文僅含假資料並留在忽略的 data。stdin EOF 正常關閉及清除私有資料；中斷遺留與本輪 pytest 暫存經精確路徑驗證後清除，正式資料／備份／原 `.venv` 保留。來源檢查排除 node_modules 但仍檢查自有測試，新增反向回歸。
+- [x] 本機 Chromium／Edge 各 12 項通過、Python 462 項與 Node 66 項通過；Firefox 本機兩次 `spawn UNKNOWN` 不算通過，也未繞過 OS 安全政策。[Windows 雲端驗收](https://github.com/Zimkjdv/ProjMemo/actions/runs/38709940208) 真正完成三瀏覽器 36 項、Python 462 項及 Node 66 項。保留原 2 項第三方棄用警告與 Linux 專用字型檢查 skip；不把 headless viewport 當 Windows 縮放／OS 剪貼簿驗收。
+- [x] 同一 run 最終 success：Linux 亦真正完成兩引擎 24 項、Python 452 項／11 個 Windows 專用 skip、Node 66 項及必需 CJK glyph；不是只看 workflow 啟動或挪用本機結果。npm 安裝審計當次無已知漏洞，不宣稱永久安全。
+
 ### R08-C — Windows 基線、Linux／字型與來源檢查 CI
 
 原條目從 `7c1431f:ROADMAP.MD` 完整移入；先完成並推送 R08-A `1a5559f`，再完成／推送 R08-B `9b64711`，之後才開始 CI。其他 R08 真實桌面／完整 PDF 工作仍保留待辦。

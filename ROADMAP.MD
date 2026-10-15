@@ -19,7 +19,7 @@
 | 保管庫 | `app/vault.py` 處理 Argon2id、AES-GCM 與程序內 session | 強化輸入邊界、過期清理及單程序限制 |
 | 匯出／備份 | Markdown／PDF／備份獨立模組，由服務協調；共用 `ProjectData` 與列舉 | 補跨平台字型／長文件等完整匯出驗收 |
 | UI | Jinja2 模板、集中 CSS、功能別 JS | 統一表單回饋、選單操作、長內容及桌面密度 |
-| 文件／品質 | README、安全說明、Python／Node、catalog／格式檢查及 Windows → Linux／CJK CI | 補真實完整 PDF 匯出與實機瀏覽器／剪貼簿驗收 |
+| 文件／品質 | README、安全說明、Python／Node、catalog／格式檢查及含真實瀏覽器的 Windows → Linux／CJK CI | 補真實完整 PDF 匯出與 R06 實機縮放／剪貼簿驗收 |
 
 ## 優先級與執行順序
 
@@ -53,10 +53,13 @@ R07 四項實作與整體驗收已逐項交付，原始五條 checkbox 完整移
 ### R08 — 測試與文件維護
 
 - [ ] **R06-B 剩餘驗收**：在實際 Windows 桌面瀏覽器將 URL、主機／登入網址、登入帳號及多行程式碼貼回比對完整原文；確認剪貼簿拒絕／不可用時的雙語手動複製提示。自動化精確文字與失敗回饋、頁面 Clipboard API 寫入已驗證，但不取代系統剪貼簿貼回驗收；完成前 Changelog 的 R06-B 原驗收不勾選。
-- [ ] 補表單錯誤等回歸及更多標準桌面瀏覽器的完整互動驗收；過期 session、重複解鎖、延遲 reveal、CSRF、完整備份驗證及還原異常流程已有隔離測試。來源政策與原生表單的衝突已修正，並完成實際瀏覽器中英文切換驗證；Header／token 測試不能取代瀏覽器驗收。補實際 Windows 瀏覽器剪貼簿貼回驗收，內嵌瀏覽器的虛擬剪貼簿與頁面 Clipboard API 無法互通。
+  - [ ] 補實際 Windows 瀏覽器剪貼簿貼回驗收，內嵌瀏覽器的虛擬剪貼簿與頁面 Clipboard API 無法互通。
+
+以上兩條為同一待驗收範圍（第二條保留原瀏覽器條目的剩餘原文），依使用者要求留待與 R06 其他實機驗收一起處理。一般瀏覽器互動回歸已移至 Changelog R08-D，現行規範見 [瀏覽器回歸](docs/browser-regression.md)；不因本輪測試而勾選 R06-B。
+
 - [ ] PDF 專用測試目前只檢查置中常數，生命週期等測試使用替身；補真實 PDF 生成、文字抽取與頁面視覺檢查。涵蓋長表格、跨頁、CJK、程式碼、缺字型及敏感／一般匯出。
 
-R08 文件子項已隨 R03 交付 `docs/architecture.md`、`docs/database-migrations.md` 與 `docs/backup-recovery.md`。R08-A Markdown 特殊字元／投影、R08-B catalog 維護及 R08-C Windows → Linux／CJK CI 已完成，三條原始 checkbox 完整移至 Changelog；CI 真實雲端驗收見 [CI 規範與結果](docs/ci.md)。CI 的字型載入／缺字型回歸不代替上方原 PDF 條目的完整生成／抽字／視覺驗收；實機剪貼簿與完整瀏覽器流程亦仍待完成，不將 R08 整批標記完成。
+R08 文件子項已隨 R03 交付架構／復原指南；R08-A／B／C 及 R08-D 一般瀏覽器流程已移至 Changelog，原條目與拆分界線保留。含真實瀏覽器的 CI 已在 Windows／Linux 通過，見 [瀏覽器回歸](docs/browser-regression.md)。CI 字型檢查不代替完整 PDF 生成／抽字／視覺驗收；系統剪貼簿仍排除於本輪，不將 R08 整批標記完成。
 
 ## P2：依需求擴充
 

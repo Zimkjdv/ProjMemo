@@ -36,6 +36,8 @@ Linux 改用 `.venv/bin/python`，安裝引擎時使用 `playwright install --wi
 
 另支援已安裝 Edge：設定 `PROJMEMO_TEST_EDGE=1` 後可用 `-- --project=edge` 執行 12 項；沒有 Edge 不自動下載或略過。Windows CI 啟用 Edge（共 36 項），Linux 跑兩引擎（24 項）。實際平台結果須以該提交 run 為準；這不等同已驗證所有已安裝瀏覽器版本、真實 Windows 125%／150% 縮放、OS 剪貼簿或完整視覺可讀性。
 
+`8b979b8` 的 [run 38709940208](https://github.com/Zimkjdv/ProjMemo/actions/runs/38709940208) 最終成功：Windows 三瀏覽器 36 項、Python 462 項（1 個 Linux 專用 skip）、Node 66 項；Linux 兩引擎 24 項、Python 452 項（11 個 Windows 專用 skip）、Node 66 項及 CJK glyph。保留既有兩個第三方棄用警告。本機 Edge 另有 12 項通過；Firefox 的本機啟動限制仍如實保留，由真正 Windows runner 的 Firefox 結果補驗，不把本機未執行算成功。
+
 來源 `3e482af:ROADMAP.MD` 的原條目保留如下，避免拆分時遺失範圍；最後一句依使用者要求與 R06-B 一起保留待驗收，不因本輪瀏覽器測試勾選完成：
 
 > 補表單錯誤等回歸及更多標準桌面瀏覽器的完整互動驗收；過期 session、重複解鎖、延遲 reveal、CSRF、完整備份驗證及還原異常流程已有隔離測試。來源政策與原生表單的衝突已修正，並完成實際瀏覽器中英文切換驗證；Header／token 測試不能取代瀏覽器驗收。補實際 Windows 瀏覽器剪貼簿貼回驗收，內嵌瀏覽器的虛擬剪貼簿與頁面 Clipboard API 無法互通。
