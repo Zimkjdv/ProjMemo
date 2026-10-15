@@ -1,0 +1,96 @@
+name: ProjMemo checks
+
+"on":
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUTF8: "1"
+  PYTHONHASHSEED: "0"
+  PIP_DISABLE_PIP_VERSION_CHECK: "1"
+
+jobs:
+  windows:
+    name: Windows baseline
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12.10"
+          architecture: x64
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24.19.0"
+          package-manager-cache: false
+      - name: Install locked test environment
+        shell: pwsh
+        run: |
+          python -m venv .venv
+          .\.venv\Scripts\python.exe -m pip install --require-hashes -r .github/requirements-bootstrap.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          .\.venv\Scripts\python.exe -m pip install --require-hashes -r requirements-test.txt
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          .\.venv\Scripts\python.exe -m pip check
+      - name: Source and catalog checks
+        shell: pwsh
+        run: |
+          .\.venv\Scripts\python.exe scripts/check_sources.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          .\.venv\Scripts\python.exe scripts/check_catalogs.py
+      - name: Python regression including real Windows launchers
+        shell: pwsh
+        run: .\.venv\Scripts\python.exe -m pytest -q --basetemp=data/pytest-ci -p no:cacheprovider
+      - name: Node regression
+        run: node --test tests/js/*.test.cjs
+
+  linux:
+    name: Linux compatibility and CJK font
+    needs: windows
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PROJMEMO_CI_CJK_REQUIRED: "1"
+      PROJMEMO_PDF_FONT: /usr/share/fonts/truetype/wqy/wqy-zenhei.ttc
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12.10"
+          architecture: x64
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: "24.19.0"
+          package-manager-cache: false
+      - name: Install CJK TrueType font
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install --no-install-recommends -y fonts-wqy-zenhei
+      - name: Install locked test environment
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install --require-hashes -r .github/requirements-bootstrap.txt
+          .venv/bin/python -m pip install --require-hashes -r requirements-test.txt
+          .venv/bin/python -m pip check
+      - name: Source and catalog checks
+        run: |
+          .venv/bin/python scripts/check_sources.py
+          .venv/bin/python scripts/check_catalogs.py
+      - name: Python compatibility and required CJK font
+        run: .venv/bin/python -m pytest -q --basetemp=data/pytest-ci -p no:cacheprovider
+      - name: Node regression
+        run: node --test tests/js/*.test.cjs

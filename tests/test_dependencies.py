@@ -2,6 +2,7 @@
 
 from pathlib import Path
 import re
+import sys
 
 import pytest
 
@@ -72,6 +73,7 @@ def test_hash_generation_fetches_only_exact_metadata(monkeypatch):
     assert "example==1.0" in text and "--hash=sha256:" + "a" * 64 in text
 
 
+@pytest.mark.skipif(sys.platform != "win32", reason="The lock-writing CLI intentionally requires Windows")
 def test_failed_metadata_does_not_replace_existing_lock(tmp_path, monkeypatch):
     pins = tmp_path / "pins.txt"
     output = tmp_path / "existing.txt"

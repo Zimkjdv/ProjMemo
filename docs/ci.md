@@ -1,0 +1,34 @@
+# CI 與可重現驗證
+
+`.github/workflows/ci.yml` 在 main push、pull request 或手動執行時檢查程式，不部署服務。先跑 Windows baseline，成功後才跑 Linux compatibility and CJK font；不因新增 Linux job 而跳過真正 Windows batch／reload 回歸。
+
+目前固定 CPython 3.12.10 x64、Node 24.19.0，runner 為 windows-2025／ubuntu-24.04；應用／測試閉包使用含雜湊的 `requirements-test.txt`，pip bootstrap 另由 `.github/requirements-bootstrap.txt` 釘選並驗證雜湊。升級版本須同時審查鎖與 CI 基線，不能只改版本號後略過回歸。OS runner image 本身會更新，並非整個 OS 的 bit-for-bit 快照。
+
+兩個 job 都執行 pip check、來源檢查、catalog 檢查、完整 Python 及 Node 測試。Python 使用明確隔離 `--basetemp=data/pytest-ci`，所有 app 測試使用 fixture DB；不連真實服務、不讀本機正式資料。Windows 跑真實 batch／normal／reload／port 衝突，Linux 明確略過 Windows 專用案例；Windows-only 的鎖寫入 CLI 不在 Linux 假裝可用。
+
+## 格式與靜態檢查
+
+```powershell
+python scripts/check_sources.py
+python scripts/check_catalogs.py
+python -m pytest -q --basetemp=data/pytest-local -p no:cacheprovider
+node --test tests/js/*.test.cjs
+```
+
+請在已明確安裝測試鎖的開發 venv 執行。來源檢查限定 app／scripts／tests／.github 的程式／模板／樣式／JSON／YAML，不掃 data、venv 或備份；要求 UTF-8、檔尾換行、無行尾空白（接受 CRLF 或 LF），檢查 Python AST、JSON（含重複 key）、YAML 語法及 `node --check`。不執行受檢腳本；空來源目錄與缺少 Node 會失敗，避免零檔案假成功。
+
+這是可立即執行的基本格式／語法政策，不冒充全專案 Black／Ruff／mypy 或 ESLint 深度規則；不重排既有長行與 frozen HTTP 契約。Markdown 刻意的行尾空白不受這個格式規則影響。Node 仍只是開發／CI 需求，不是應用 runtime 依賴。
+
+## Linux／字型範圍
+
+Ubuntu 安裝 `fonts-wqy-zenhei`，明確指定 `/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc`。CI 必須成功由 ReportLab 載入實際 regular／bold fallback 字型，確認「專案備註交接清單環境設定」字形存在，不能跳過。另有缺字型明確失敗的隔離回歸。這只驗證解析／glyph 與 Python 相容性，不產生／抽取／視覺驗收完整 PDF；R08 的 PDF 長表格、跨頁、敏感匯出與實機字型品質仍待完成。
+
+此相容性 job 使用相同已鎖閉包測試，未宣稱 Windows 解析的鎖會包含所有 Linux optional extras，亦未宣稱 Linux／Docker 正式部署完成。
+
+## 權限與失敗處理
+
+官方 actions 以完整 SHA 固定，checkout 不保留 credential，token 僅 `contents: read`；不用 `pull_request_target`、不部署、不上傳 data／日誌／DB artifacts。每個 job 20 分鐘上限，同一 ref 的新 run 會取消舊 run。workflow 不更改 branch protection；若要把它設為合併必要檢查，需由擁有者另外設定。
+
+首次推送 workflow 才能有真實 GitHub run；本機測試成功不算雲端 CI 成功。若失敗，依 run／job 的失敗步驟修正，再對新的 commit 核對，不能把 skipped／queued 當成通過。每次驗收紀錄寫入 CHANGELOG 並提供 run URL。
+
+官方依據：[GitHub Python CI](https://docs.github.com/en/actions/tutorials/build-and-test-code/python)、[checkout 權限](https://github.com/actions/checkout/tree/v6)、[Node syntax check](https://nodejs.org/api/cli.html)、[Ubuntu 字型套件](https://packages.ubuntu.com/noble/fonts-wqy-zenhei)。
