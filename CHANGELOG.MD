@@ -6,6 +6,17 @@
 
 ## 2026-10-15
 
+### R08-C — Windows 基線、Linux／字型與來源檢查 CI
+
+原條目從 `7c1431f:ROADMAP.MD` 完整移入；先完成並推送 R08-A `1a5559f`，再完成／推送 R08-B `9b64711`，之後才開始 CI。其他 R08 真實桌面／完整 PDF 工作仍保留待辦。
+
+- [x] 加入 CI：Python 回歸、Node 檢視測試、格式／靜態檢查；先建立可重現 Windows 基線，再加入 Linux／字型環境驗證。
+- [x] `98ad64e` 建立 GitHub Actions，固定官方 action SHA、Python 3.12.10／Node 24.19.0，pip bootstrap 與應用／test 鎖皆驗證雜湊。Windows 成功才執行 Ubuntu 24.04／實際 CJK glyph；只給 contents read、無部署／資料 artifact，上限與同 ref 取消避免重複消耗。
+- [x] 唯讀來源 gate 檢查 UTF-8／檔尾換行／行尾空白、Python／JSON（含重複 key）／YAML／Node 語法；限定來源範圍，不執行被檢查腳本，不掃 DB／venv。基本格式政策不冒充全專案 Black／mypy／ESLint，未重排舊檔或改寫 frozen 契約。新增 13 項 CI／格式／字型回歸（Windows 有一項明確 skip）。
+- [x] 本機完整 Python 461 passed／1 skipped、Node 66 passed。首次雲端發現被 Git 忽略的 data 父目錄未建立，`24d61fc` 補建立與回歸斷言後重新推送；不是降低測試要求或隱藏失敗。
+- [x] [真實成功 run 38706234351](https://github.com/Zimkjdv/ProjMemo/actions/runs/38706234351) 對應 `24d61fc41dd8045c292378a753091f3f34d80c74`：Windows Python 461 passed／1 skipped，Linux 451 passed／11 Windows-only skipped，兩邊 Node 66 passed，來源／catalog 皆成功；Linux 字型載入與繁中文字形真的驗證，缺字型失敗亦有隔離回歸。兩項第三方棄用警告保留，不宣稱完整 PDF 視覺或正式 Linux／Docker 部署已完成。
+- [x] R08 三條完成原文完整移錄，剩餘實機瀏覽器／系統剪貼簿與完整 PDF 驗收未勾選；新增 CI 規範與 run 證據。清除此輪自建 pytest／驗證 venv，正式 DB、原 `.venv`、備份與既有範例保留；未熱更新正在使用的環境。
+
 ### R08-B — 雙語 catalog 檢查與維護流程
 
 原條目從 `7c1431f:ROADMAP.MD` 完整移入；第一項 `1a5559f` 確認推送後才開始這一項。

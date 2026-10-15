@@ -34,3 +34,14 @@ Ubuntu 安裝 `fonts-wqy-zenhei`，明確指定 `/usr/share/fonts/truetype/wqy/w
 首次推送 workflow 才能有真實 GitHub run；本機測試成功不算雲端 CI 成功。若失敗，依 run／job 的失敗步驟修正，再對新的 commit 核對，不能把 skipped／queued 當成通過。每次驗收紀錄寫入 CHANGELOG 並提供 run URL。
 
 官方依據：[GitHub Python CI](https://docs.github.com/en/actions/tutorials/build-and-test-code/python)、[checkout 權限](https://github.com/actions/checkout/tree/v6)、[Node syntax check](https://nodejs.org/api/cli.html)、[Ubuntu 字型套件](https://packages.ubuntu.com/noble/fonts-wqy-zenhei)。
+
+## 2026-10-15 真實驗收
+
+驗收 commit `24d61fc41dd8045c292378a753091f3f34d80c74`，[run 38706234351](https://github.com/Zimkjdv/ProjMemo/actions/runs/38706234351) 最終 conclusion 為 success，兩個 job 皆成功：
+
+| 環境 | Python | Node | 其他 |
+| --- | --- | --- | --- |
+| Windows baseline | 461 passed、1 skipped | 66 passed | 來源／catalog、真正 batch／reload 通過；唯一 skip 為指定給 Linux 的 CJK 環境檢查。 |
+| Linux compatibility and CJK font | 451 passed、11 skipped | 66 passed | CJK 實際載入及 glyph 通過；11 項 skip 明確為 Windows 專用案例。 |
+
+兩邊保留 2 項第三方 httpx／AnyIO 棄用警告。首次 run 38705872022 發現乾淨 checkout 缺少 data 父目錄，並非藉由略過測試修正；已加入目錄建立與回歸斷言後重新推送，以上成功 run 對應的是修正後 commit，不挪用前一個失敗 run 的結果。完整 PDF 視覺／實機剪貼簿不在此驗收內。
