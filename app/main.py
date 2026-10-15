@@ -5,12 +5,14 @@ from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from .database_access import DatabaseAccessMiddleware, DatabaseBusyError
 from .db import init_db
 from .errors import ApplicationError
+from .form_errors import recover_form_error
 from .i18n import get_language, translate_error
 from .routers import accounts, backups, content, exports, language, projects, vault
 from .runtime import AppRuntime
@@ -40,7 +42,20 @@ async def localized_http_error(request: Request, error: HTTPException) -> JSONRe
 
 
 async def application_error(request: Request, error: ApplicationError) -> JSONResponse:
+    recovered = await recover_form_error(request, error)
+    if recovered is not None:
+        return recovered
     return await localized_http_error(request, HTTPException(error.status_code, error.detail))
+
+
+async def validation_error(request: Request, error: RequestValidationError):
+    # Do not serialize Pydantic input/ctx: they can contain submitted passwords.
+    fields = {str(item["loc"][-1]): "此欄位為必填或格式不正確。" for item in error.errors()}
+    problem = ApplicationError(422, "請檢查必填欄位與輸入格式。")
+    recovered = await recover_form_error(request, problem, fields=fields)
+    if recovered is not None:
+        return recovered
+    return await localized_http_error(request, HTTPException(422, problem.detail))
 
 
 async def database_busy_error(request: Request, error: DatabaseBusyError) -> JSONResponse:
@@ -61,6 +76,7 @@ def create_app(runtime: AppRuntime | None = None) -> FastAPI:
     )
     application.add_exception_handler(HTTPException, localized_http_error)
     application.add_exception_handler(ApplicationError, application_error)
+    application.add_exception_handler(RequestValidationError, validation_error)
     application.add_exception_handler(DatabaseBusyError, database_busy_error)
     for module in (language, projects, content, accounts, vault, backups, exports):
         application.include_router(module.router)

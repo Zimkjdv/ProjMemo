@@ -210,6 +210,16 @@ def load_project(project_id: int) -> sqlite3.Row:
         return get_project(connection, project_id)
 
 
+def project_for_item(kind: str, item_id: int) -> int:
+    table = {"urls": "project_urls", "notes": "notes", "checklist": "checklist_items",
+             "environment-variables": "environment_variables", "accounts": "access_accounts"}[kind]
+    with db_session() as connection:
+        row = connection.execute(f"SELECT project_id FROM {table} WHERE id = ?", (item_id,)).fetchone()
+        if row is None:
+            raise ApplicationError(404, "找不到此專案")
+        return int(row["project_id"])
+
+
 def load_project_data(project_id: int) -> ProjectData:
     with db_session() as connection:
         return project_detail(connection, project_id)

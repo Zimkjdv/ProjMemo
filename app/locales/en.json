@@ -1,4 +1,8 @@
 {
+  "請檢查輸入資料": "Check your input",
+  "非敏感輸入已保留；密碼請重新輸入。": "Non-sensitive input is preserved. Please enter passwords again.",
+  "此欄位為必填或格式不正確。": "This field is required or has an invalid format.",
+  "請檢查必填欄位與輸入格式。": "Check required fields and input formats.",
   "集中整理連結、備註與交接事項，讓專案資訊隨手可查。": "Keep links, notes, and handover tasks together. Find project details at a glance.",
   "專案整理功能": "Project organization features",
   "Markdown 備註": "Markdown notes",

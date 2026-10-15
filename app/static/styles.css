@@ -725,6 +725,10 @@ html.project-detail-page { scroll-padding-top: 0; }
 .sensitive-export > p { margin: 12px 0; }
 .sensitive-export form { display: flex; gap: 9px; flex-wrap: wrap; }
 .sensitive-confirm { margin-bottom: 12px; font-size: .8rem; }
+.form-feedback { margin: 0 0 18px; padding: 14px 16px; border: 1px solid #f1b5b5; border-radius: 10px; background: #fff5f5; color: #9c2525; }
+.form-feedback p { margin: 6px 0; }
+.field-error { display: block; color: #b42318; margin-top: 5px; font-weight: 500; }
+[aria-invalid="true"] { border-color: #d92d20; }
 
 @media (max-width: 650px) {
   .vault-form { grid-template-columns: minmax(0, 1fr); }
