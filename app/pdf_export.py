@@ -227,6 +227,12 @@ def _is_table_separator(line: str) -> bool:
     return bool(cells) and all(re.fullmatch(r":?-{3,}:?", cell.replace(" ", "")) for cell in cells)
 
 
+def _list_bullet(font_name: str) -> str:
+    """Some CJK fonts (including WQY) lack U+2022: never emit a .notdef bullet."""
+    glyphs = getattr(pdfmetrics.getFont(font_name).face, "charToGlyph", {})
+    return next((char for char in ("•", "●", "-") if glyphs.get(ord(char), 0)), "-")
+
+
 def _markdown_flowables(content: str, styles: dict[str, ParagraphStyle]) -> list[Any]:
     lines = (content or "").splitlines()
     flowables: list[Any] = []
@@ -303,7 +309,8 @@ def _markdown_flowables(content: str, styles: dict[str, ParagraphStyle]) -> list
                 if not list_match:
                     break
                 indent = min(len(list_match.group(1)) // 2, 4)
-                bullet = "•" if list_match.group(2).strip() in {"-", "*", "+"} else list_match.group(2).strip()
+                bullet = (_list_bullet(styles["list"].fontName) if list_match.group(2).strip() in {"-", "*", "+"}
+                          else list_match.group(2).strip())
                 style = ParagraphStyle(
                     f"ProjMemoList{index}", parent=styles["list"],
                     leftIndent=13 + indent * 10, firstLineIndent=-10,

@@ -6,6 +6,19 @@
 
 ## 2026-10-15
 
+### R08-E — 真實 PDF 生成、抽字、跨頁與 Windows 視覺驗收
+
+原條目來源 `cdd7063:ROADMAP.MD`，完整搬移如下；首句保留當時只測置中常數的歷史基線，不表示現在仍只有該測試。R08-D 已在 Windows／Linux 通過並以 `cdd7063` 提交／推送完成紀錄後，才開始本項；R06-B 系統剪貼簿與 R06 縮放不在本輪。
+
+- [x] PDF 專用測試目前只檢查置中常數，生命週期等測試使用替身；補真實 PDF 生成、文字抽取與頁面視覺檢查。涵蓋長表格、跨頁、CJK、程式碼、缺字型及敏感／一般匯出。
+- [x] `254057c` 加入 PDF 專項 12 項，後續另補三個非零 glyph 選擇案例，共 15 項（原 1 項＋新增 14 項）：strict parsing、pypdf 完整抽字、PDFium 每頁渲染／可見字元邊界／非空白、內嵌字型與實際 glyph、重複表頭、長 URL／單列／標題、90 行程式碼及 80 列 Markdown 表格。真實 HTTP 雙語案例驗證完整 55 筆備註、一般不解密／不含明文、敏感政策／確認／鎖定、no-store 與缺字型 503，不以 renderer mock 代替。
+- [x] 依真實失敗與頁面檢查修正：單列超過一頁的 LayoutError、內容欄寬、長標題頁首溢出、敏感 PDF 連續／前後空白壓縮、清單圓點抽字成 DEL，以及備註標題與正文連結失效造成的孤立頁尾。完整標題／內容／原加密值不裁切，不放寬密碼匯出保護。
+- [x] 純假資料工具 `python -m scripts.verify_pdf` 使用不存在的新輸出目錄，不碰 DB；PDFium 與獨立 Poppler 全頁渲染及逐張 contact sheet 核對。最終 Windows／Microsoft JhengHei 五份共 26 頁：空 1、混合 7、長單列 9、長標題 8、敏感 1；中文字形、邊界、程式碼、跨頁表頭／接續及警告通過。人工視覺檢查與自動幾何不混稱，其他字型／平台換版需重看，不宣稱任意 Unicode 或像素金樣。
+- [x] 本機完整 Python 473 passed／1 Linux 專用 skip、Node 66 passed，來源／catalog、pip check 通過，保留原兩項第三方棄用警告。只新增 pypdf／pypdfium2 測試鎖，runtime 不變；新鎖經解析、雜湊安裝及審計，報告涵蓋與未列項界線見 [PDF 驗收](docs/pdf-verification.md)。清除本輪 pytest 與所有假 PDF／PNG／抽字暫存，不提交或上傳敏感檔；正式資料、備份與原 `.venv` 保留。
+- [x] `254057c` 的 [run 38713819658](https://github.com/Zimkjdv/ProjMemo/actions/runs/38713819658) Windows 473 Python／36 browser／66 Node 通過，Linux 三項新 PDF 測試失敗（文泉驛缺少 U+2022）。已修正為依可用 glyph 選圓點／減號，不放寬缺字／控制字元檢查；本機 Windows 載入同版 Ubuntu 字型的 15 項 PDF 及 25 頁自動渲染／抽字通過，但不能代替 Linux OS 驗收。
+- [x] 依使用者最新要求，保留 Linux compatibility and CJK font job，但只在 Run workflow 明確勾選 `run_linux` 後執行；push／PR 預設只跑 Windows，並有 workflow gate 回歸。**Linux 雲端修正後補驗未完成**，另以未勾選項保留 Roadmap，不因本輪 Windows 交付而勾選 Linux。
+- [x] glyph 修正及手動 CI 門檻後，本機最終完整 Python 476 passed／1 Linux 專用 skip、Node 66 passed；未降低或刪除原失敗斷言。完成部分移入本紀錄，延後的 R06-B／Linux 補驗仍為 `[ ]`；README、CI、PDF 與瀏覽器指南同步。
+
 ### R08-D — 真實桌面瀏覽器完整互動回歸
 
 原條目來源 `3e482af:ROADMAP.MD`；以下保留前兩句原文，最後一句 Windows 系統剪貼簿貼回依使用者要求，合併留在 Roadmap 的 R06-B 剩餘驗收，不勾選為完成。完整原文保存在 [瀏覽器回歸指南](docs/browser-regression.md)。本項驗證、提交並推送後才開始 PDF 項目。

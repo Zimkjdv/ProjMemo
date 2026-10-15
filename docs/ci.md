@@ -1,6 +1,6 @@
 # CI 與可重現驗證
 
-`.github/workflows/ci.yml` 在 main push、pull request 或手動執行時檢查程式，不部署服務。先跑 Windows baseline，成功後才跑 Linux compatibility and CJK font；不因新增 Linux job 而跳過真正 Windows batch／reload 回歸。
+`.github/workflows/ci.yml` 在 main push、pull request 或手動執行時檢查程式，不部署服務。依 2026-10-15 使用者要求，push／PR 與預設手動執行只跑 Windows baseline；Linux compatibility and CJK font 保留但延後，須在 Actions → Run workflow 明確勾選 `run_linux`，且 Windows 成功後才執行。Linux skipped 表示本次未驗證，不是成功；不跳過真正 Windows batch／reload 回歸。
 
 目前固定 CPython 3.12.10 x64、Node 24.19.0，runner 為 windows-2025／ubuntu-24.04；應用／測試閉包使用含雜湊的 `requirements-test.txt`，pip bootstrap 另由 `.github/requirements-bootstrap.txt` 釘選並驗證雜湊。升級版本須同時審查鎖與 CI 基線，不能只改版本號後略過回歸。OS runner image 本身會更新，並非整個 OS 的 bit-for-bit 快照。
 
@@ -23,7 +23,7 @@ node --test tests/js/*.test.cjs
 
 ## 真實瀏覽器回歸
 
-兩個 job 在 Python／Node 後，以獨立 `tests/browser/package-lock.json` 執行 `npm ci --ignore-scripts`、安裝對應 Playwright 引擎，最後執行互動測試。Windows 另啟用 runner 已安裝的 Edge（36 項），Linux 安裝瀏覽器系統依賴後執行 Chromium／Firefox（24 項）。不自動略過缺少引擎、不 retry 掩蓋不穩定、不指向外部／正式服務；詳細案例及隔離／清理規範見 [瀏覽器回歸](browser-regression.md)。系統剪貼簿與真實 Windows 縮放不包含在本項內。
+執行中的 job 在 Python／Node 後，以獨立 `tests/browser/package-lock.json` 執行 `npm ci --ignore-scripts`、安裝對應 Playwright 引擎，最後執行互動測試。Windows 另啟用 runner 已安裝的 Edge（36 項），手動啟用 Linux 時安裝瀏覽器系統依賴後執行 Chromium／Firefox（24 項）。不自動略過缺少引擎、不 retry 掩蓋不穩定、不指向外部／正式服務；詳細案例及隔離／清理規範見 [瀏覽器回歸](browser-regression.md)。系統剪貼簿與真實 Windows 縮放不包含在本項內。
 
 ## Linux／字型範圍
 
@@ -40,6 +40,8 @@ Ubuntu 安裝 `fonts-wqy-zenhei`，明確指定 `/usr/share/fonts/truetype/wqy/w
 官方依據：[GitHub Python CI](https://docs.github.com/en/actions/tutorials/build-and-test-code/python)、[checkout 權限](https://github.com/actions/checkout/tree/v6)、[Node syntax check](https://nodejs.org/api/cli.html)、[Ubuntu 字型套件](https://packages.ubuntu.com/noble/fonts-wqy-zenhei)。
 
 ## 2026-10-15 真實驗收
+
+以下 R08-C 為當時已通過的歷史結果。後續 R08-E `254057c` 的 [run 38713819658](https://github.com/Zimkjdv/ProjMemo/actions/runs/38713819658) Windows 473 Python／36 browser／66 Node 成功，但 Linux 新 PDF 測試三項失敗，原因為文泉驛缺少 U+2022。已補實際 glyph 選擇與三個單元案例；依使用者要求，修正後 Linux 雲端驗收延至下次，不重跑或冒稱已通過。下次須明確啟用 `run_linux`，確認完整 run 後才搬移 Roadmap 待辦。本機載入同版字型的成功不能取代 Linux OS／GitHub Actions 驗收。
 
 驗收 commit `24d61fc41dd8045c292378a753091f3f34d80c74`，[run 38706234351](https://github.com/Zimkjdv/ProjMemo/actions/runs/38706234351) 最終 conclusion 為 success，兩個 job 皆成功：
 

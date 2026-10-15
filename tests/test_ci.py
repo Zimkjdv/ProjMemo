@@ -19,6 +19,8 @@ def test_workflow_is_read_only_pinned_and_windows_gates_linux():
     jobs = workflow["jobs"]
     assert jobs["windows"]["runs-on"] == "windows-2025"
     assert jobs["linux"]["needs"] == "windows"
+    assert workflow["on"]["workflow_dispatch"]["inputs"]["run_linux"]["default"] is False
+    assert "github.event_name == 'workflow_dispatch' && inputs.run_linux" in jobs["linux"]["if"]
     assert jobs["linux"]["env"]["PROJMEMO_CI_CJK_REQUIRED"] == "1"
     for job in jobs.values():
         assert job["timeout-minutes"] <= 20

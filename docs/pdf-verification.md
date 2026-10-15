@@ -1,6 +1,6 @@
 # 真實 PDF 回歸與視覺驗收
 
-R08-E 不再只驗證 `%PDF-` 或 renderer 替身。`tests/test_pdf_export.py` 共 12 項（包含原置中常數案例），實際呼叫 ReportLab、pypdf 抽字與 PDFium 每頁渲染；兩個 HTTP 案例另走真實資料載入／AES-GCM 解密與匯出政策，全部使用隔離假資料。
+R08-E 不再只驗證 `%PDF-` 或 renderer 替身。`tests/test_pdf_export.py` 共 15 項（包含原置中常數與三個 glyph 選擇案例）；其餘涵蓋真正 ReportLab 生成／缺字型失敗、pypdf 抽字與 PDFium 每頁渲染。兩個 HTTP 案例另走真實資料載入／AES-GCM 解密與匯出政策，全部使用隔離假資料。
 
 ## 覆蓋與邊界
 
@@ -21,7 +21,7 @@ PDF 是閱讀格式，不保證複製後保留每種 tab／CRLF／自動折行�
 - Markdown／業務 LongTable 允許單列內跨頁，保留重複表頭，不再因一列高於一頁發生 LayoutError；欄寬依實際 frame 內容寬度縮放，避免欄位超出邊界。
 - 長專案名稱的重複頁首按量測寬度縮略；正文與 PDF metadata 保留完整標題。備註標題直接使用 keepWithNext，避免只包一個標題的 KeepTogether 阻斷與正文的連結。
 - 敏感 PDF 用不可折疊空白保留可見密碼空格，不改 DB／加密值，也不放寬匯出政策。
-- 清單符號使用內嵌 CJK 字型；原本 Helvetica 圓點抽字成 DEL 控制字元的問題已有真實抽字與 glyph 回歸。
+- 清單符號使用內嵌 CJK 字型，依非零 glyph 順序選擇 `•`、`●` 或 `-`；原本 Helvetica 圓點抽字成 DEL，以及文泉驛缺少 U+2022 而輸出空字元的問題都有回歸。未移除缺字／控制字元檢查，也不將 glyph 0 視為可用字形。
 
 ## 重跑及人工檢查
 
@@ -38,7 +38,9 @@ python -m scripts.verify_pdf --output data/pdf-review-NEW --poppler
 
 檢查每一張 contact sheet，再以原頁 PNG 放大有疑慮的位置：六章順序、中文字形／粗體、長 URL／程式碼未裁切、表頭跨頁、長單列接續、頁首與頁尾未重疊、一般無密碼、敏感有警告。換字型／平台不固定二進位 PDF 或像素金樣；必須重新看頁面，不能只比 bytes／頁數。
 
-2026-10-15 本機 Windows／Microsoft JhengHei 最終樣本：空專案 1 頁、混合 7 頁、超長單列 9 頁、長標題 8 頁、敏感 1 頁，共 26 頁。PDFium 及 Poppler 全部渲染、抽字與幾何通過，逐張 contact sheet 核對全部頁面；沒有裁切／缺字／重疊，重複表頭與長列結尾完整。長標題本身會占多行，續頁與較多留白是分頁的正常結果，不為減頁刪內容。完整 Python 473 passed／1 Linux 專用 skip、Node 66 passed，保留原兩項第三方棄用警告。雲端結果另以該提交 run 為準。
+2026-10-15 本機 Windows／Microsoft JhengHei 樣本：空專案 1 頁、混合 7 頁、超長單列 9 頁、長標題 8 頁、敏感 1 頁，共 26 頁。PDFium 及 Poppler 全部渲染、抽字與幾何通過，逐張 contact sheet 核對全部頁面；沒有裁切／缺字／重疊，重複表頭與長列結尾完整。長標題本身會占多行，續頁與較多留白是分頁的正常結果，不為減頁刪內容。原 12 項 PDF 版本的完整 Python 473 passed／1 Linux 專用 skip、Node 66 passed；後續另加三個 glyph 選擇案例，最終數量以 Changelog 為準，保留原兩項第三方棄用警告。
+
+`254057c` 的 [run 38713819658](https://github.com/Zimkjdv/ProjMemo/actions/runs/38713819658) Windows 全數通過，但 Linux 三項 PDF 字型抽字失敗，不冒稱整個 run 成功。修正後在 Windows 額外載入 Ubuntu 24.04 同版 `fonts-wqy-zenhei 0.9.45-8`（regular／bold 均指定該檔），15 項 PDF 回歸通過，五份 25 頁亦完成自動抽字／幾何／雙引擎渲染。這只是 Windows 上的字型重現，不是 Linux OS 或 Linux 視覺認證。依使用者要求，Linux／CJK GitHub Actions 留待下次手動勾選 `run_linux` 後補驗，Roadmap 保留待辦。
 
 review 目錄含假敏感資料，與 pytest 暫存一樣只供本機驗證；不提交 PDF／PNG／抽字／DB 或上傳 CI artifact。驗收後先確認程序結束，再精確清除本輪目錄，保留正式資料與備份。
 

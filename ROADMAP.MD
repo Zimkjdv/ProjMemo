@@ -17,9 +17,9 @@
 | 路由與流程 | `app/main.py` 僅組裝應用；八個 router（含健康探針）與七個 service 分開，列舉／匯出資料共用 | 新功能維持邊界及 HTTP／交易回歸，不重回單一大型入口 |
 | 資料 | SQLite 八張業務表與遷移紀錄表，schema v3；已量測並加入七個索引與有界鎖等待 | 保留升級回歸與個人版限制，不把索引等同整頁效能問題已解決 |
 | 保管庫 | `app/vault.py` 處理 Argon2id、AES-GCM 與程序內 session | 強化輸入邊界、過期清理及單程序限制 |
-| 匯出／備份 | Markdown／PDF／備份獨立模組，由服務協調；共用 `ProjectData` 與列舉 | 補跨平台字型／長文件等完整匯出驗收 |
+| 匯出／備份 | Markdown／PDF／備份獨立模組，共用 `ProjectData` 與列舉；真實 PDF／抽字／跨頁回歸及本輪視覺驗收完成 | 維護字型／長文件回歸，換平台或字型時重新看頁面 |
 | UI | Jinja2 模板、集中 CSS、功能別 JS | 統一表單回饋、選單操作、長內容及桌面密度 |
-| 文件／品質 | README、安全說明、Python／Node、catalog／格式檢查及含真實瀏覽器的 Windows → Linux／CJK CI | 補真實完整 PDF 匯出與 R06 實機縮放／剪貼簿驗收 |
+| 文件／品質 | README、安全說明、Python／Node、catalog／格式檢查及含真實瀏覽器／PDF 的 Windows → Linux／CJK CI | R06 實機縮放／剪貼簿驗收；維護既有回歸 |
 
 ## 優先級與執行順序
 
@@ -57,9 +57,9 @@ R07 四項實作與整體驗收已逐項交付，原始五條 checkbox 完整移
 
 以上兩條為同一待驗收範圍（第二條保留原瀏覽器條目的剩餘原文），依使用者要求留待與 R06 其他實機驗收一起處理。一般瀏覽器互動回歸已移至 Changelog R08-D，現行規範見 [瀏覽器回歸](docs/browser-regression.md)；不因本輪測試而勾選 R06-B。
 
-- [ ] PDF 專用測試目前只檢查置中常數，生命週期等測試使用替身；補真實 PDF 生成、文字抽取與頁面視覺檢查。涵蓋長表格、跨頁、CJK、程式碼、缺字型及敏感／一般匯出。
+- [ ] **R08-E Linux／CJK GitHub Actions 補驗（依使用者要求延後）**：`254057c` 的 run 38713819658 Windows 全數通過，但 Linux 真實 PDF 抽字／清單 glyph 有三項失敗；已加入依實際 glyph 選擇圓點／減號的修正及回歸。Linux OS／字型的雲端驗收本輪不再執行，不能標記已通過；下次 Actions → Run workflow 明確勾選 `run_linux`，Windows 成功後再驗證 Linux 完整 Python／Node／兩瀏覽器與 PDF。push／PR 只跑 Windows，保留 Linux job 與原本檢查，不用 skip 測試隱藏缺陷。
 
-R08 文件子項已隨 R03 交付架構／復原指南；R08-A／B／C 及 R08-D 一般瀏覽器流程已移至 Changelog，原條目與拆分界線保留。含真實瀏覽器的 CI 已在 Windows／Linux 通過，見 [瀏覽器回歸](docs/browser-regression.md)。CI 字型檢查不代替完整 PDF 生成／抽字／視覺驗收；系統剪貼簿仍排除於本輪，不將 R08 整批標記完成。
+R08 文件子項已隨 R03 交付架構／復原指南；R08-A／B／C／D 及 R08-E Windows 交付已移至 Changelog，原條目與拆分界線保留。真實瀏覽器規範見 [瀏覽器回歸](docs/browser-regression.md)，真實生成／抽字／渲染與本輪 Windows 逐頁視覺結果見 [PDF 驗收](docs/pdf-verification.md)。只保留使用者指定延後的系統剪貼簿與 Linux／CJK 雲端補驗；不將 R06-B 原驗收、整批 R06 或 Linux 補驗勾選。
 
 ## P2：依需求擴充
 
@@ -80,7 +80,7 @@ R08 文件子項已隨 R03 交付架構／復原指南；R08-A／B／C 及 R08-D
 
 ## 本次分析的界線
 
-本文件保留尚未完成的工作；已交付細節見 Changelog。未執行惡意備份資源壓力測試或完整 PDF 視覺驗收，未開啟或修改使用者的實際 SQLite 資料。
+本文件保留尚未完成的工作；已交付細節見 Changelog。未執行惡意備份資源壓力測試；R08-E 已以純假資料完成完整 PDF 生成／抽字／渲染及本輪 Windows 逐頁視覺驗收，範圍與重跑規範見 docs/pdf-verification.md。未開啟或修改使用者的實際 SQLite 資料。
 
 2026-10-14 UI 補充分析核對附件、原始碼、現有測試與 Changelog；後續 R06-A／R06-B／R06-C 及 R04 已實作並以隔離假資料驗證，R06-D 視覺實作亦已驗證但真正 Windows 縮放未完成，詳見 Changelog，未操作真實帳號。附件截圖不能用來精確量測實際瀏覽器字級與對比。既有測試紀錄以 Changelog 為準，下列數量是早期分析當時的基線，不是目前測試總數。
 

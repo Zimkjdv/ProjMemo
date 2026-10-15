@@ -5,6 +5,12 @@ name: ProjMemo checks
     branches: [main]
   pull_request:
   workflow_dispatch:
+    inputs:
+      run_linux:
+        description: Run deferred Linux compatibility and CJK font verification
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -70,6 +76,7 @@ jobs:
 
   linux:
     name: Linux compatibility and CJK font
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_linux }}
     needs: windows
     runs-on: ubuntu-24.04
     timeout-minutes: 20

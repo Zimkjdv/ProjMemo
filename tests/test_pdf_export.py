@@ -49,8 +49,8 @@ def test_pdf_embeds_usable_cjk_fonts_and_glyphs():
     content = pdf_export.generate_project_pdf(*pdf_fixture("mixed").renderer_args())
     reader = PdfReader(BytesIO(content))
     text = "".join(page.extract_text() for page in reader.pages)
-    assert "•" in text  # Bullet text must use embedded Unicode, not Helvetica's DEL alias.
     regular, bold = pdf_export._register_cjk_fonts()
+    assert pdf_export._list_bullet(regular) in text  # Embedded Unicode, not Helvetica's DEL alias.
     for font_name in (regular, bold):
         glyphs = pdfmetrics.getFont(font_name).face.charToGlyph
         assert all(ord(char) in glyphs for char in text if not char.isspace())
@@ -58,6 +58,17 @@ def test_pdf_embeds_usable_cjk_fonts_and_glyphs():
     embedded = [font for font in fonts if "/ToUnicode" in font and "/FontDescriptor" in font]
     assert embedded
     assert all("/FontFile2" in font["/FontDescriptor"] for font in embedded)
+
+
+@pytest.mark.parametrize("glyphs,expected", [
+    ({0x2022: 1, 0x25cf: 2, 45: 3}, "•"),
+    ({0x2022: 0, 0x25cf: 2, 45: 3}, "●"),
+    ({45: 3}, "-"),
+])
+def test_list_bullet_requires_an_actual_nonzero_font_glyph(monkeypatch, glyphs, expected):
+    from types import SimpleNamespace
+    monkeypatch.setattr(pdf_export.pdfmetrics, "getFont", lambda _: SimpleNamespace(face=SimpleNamespace(charToGlyph=glyphs)))
+    assert pdf_export._list_bullet("fixture") == expected
 
 
 @pytest.mark.parametrize("secret", [SECRET, "first\nsecond<&>", "  leading  internal   trailing  "])
