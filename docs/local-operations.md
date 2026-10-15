@@ -23,3 +23,15 @@ Windows 使用 `setup-local.bat` 建立／檢查 `.venv` 並安裝專案依賴�
 ## 健康與故障處理
 
 `/health/live` 是程序存活，`/health/ready` 才確認啟動／DB 可讀及操作准入；不回傳敏感資料或自動重建 DB。啟動前檢查父目錄可寫與 64 MiB 基本剩餘空間，失敗以固定分類停止。安全日誌在 DB 同目錄 `logs/`，約 1 MiB × 4 輪替，不包含請求欄位與例外內容；完整分類、故障處理與檢查限制見 [健康與日誌](operations-health.md)。
+
+## R07 驗收基線（2026-10-15）
+
+| 情境 | 明確結果與證據 |
+| --- | --- |
+| 其他工作目錄 | 從含空白的另一個 cwd 呼叫完整路徑 `run-local.bat`／`run-dev.bat`，真實 HTTP 與 ready 成功；setup／check 也有 batch 回歸。 |
+| 已安裝、離線使用 | `PIP_NO_INDEX=1` 下啟動／check 不安裝、不升級、不呼叫 pip；純 runtime 新 venv 無 pytest／httpx 仍通過 check。首次安裝／更新另需網路或預備 wheelhouse。 |
+| 第一個 port 占用 | 持有占用 socket，module 與 batch 的 normal／reload 四種組合均換 port 並完成 HTTP／ready；嘗試有界，單一占用範圍拒絕，未終止既有服務。 |
+| 安裝失敗 | 真正隔離 venv 測試 pip 缺失、禁止網路時無法取得套件；venv 建立失敗也有 batch 路徑回歸。非零結束、無成功訊息、不啟動、不開正式 DB。 |
+| 啟動／儲存失敗 | 真實子程序在壞 DB 退出 3 且保留原檔；低空間、錯路徑、不可寫與 log 故障固定分類。日誌／HTTP 不含敏感 sentinel。 |
+
+測試檔為 `tests/test_local_setup.py`、`tests/test_launcher.py`、`tests/test_dependencies.py`、`tests/test_operations.py`。只在隔離 DB／venv 驗證，維護工具、生成中間檔與 pytest 暫存不隨 Git 發布。既有正式 venv 未熱更新，因此測試不冒充目前舊服務已載入新依賴；請依上述 stop → setup → run 流程套用。

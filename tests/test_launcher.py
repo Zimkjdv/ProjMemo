@@ -84,15 +84,22 @@ def test_dependency_failure_is_clear_without_exception_content(monkeypatch, caps
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows socket spawn and batch baseline")
 @pytest.mark.parametrize("development", [False, True])
-def test_real_server_reuses_bound_socket_when_first_port_busy(tmp_path, development):
+@pytest.mark.parametrize("entry", ["module", "batch"])
+def test_real_server_reuses_bound_socket_when_first_port_busy(tmp_path, development, entry):
     with closing(launcher.bind_local_socket(0, 0)) as occupied:
         first = occupied.getsockname()[1]
         if first > 65435:
             pytest.skip("Ephemeral port too close to range boundary")
         env = os.environ | {"PROJMEMO_DB_PATH": str(tmp_path / "fixture.db"), "PROJMEMO_PORT": str(first), "PIP_NO_INDEX": "1"}
+        command = [sys.executable, "-m", "app.launcher"] + (["--dev"] if development else [])
+        directory = ROOT
+        if entry == "batch":
+            directory = tmp_path / "other working directory with spaces"
+            directory.mkdir()
+            script = ROOT / ("run-dev.bat" if development else "run-local.bat")
+            command = f'cmd.exe /d /s /c ""{script}" --port {first}"'
         process = subprocess.Popen(
-            [sys.executable, "-m", "app.launcher"] + (["--dev"] if development else []),
-            cwd=ROOT, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            command, cwd=directory, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             text=True, errors="replace", creationflags=subprocess.CREATE_NEW_PROCESS_GROUP,
         )
         lines = queue.Queue()
@@ -140,6 +147,8 @@ def test_real_server_reuses_bound_socket_when_first_port_busy(tmp_path, developm
             reader.join(timeout=2)
             process.stdout.close()
         assert "r07-secret-query-fixture" not in "".join(output)
+        assert "Installing collected packages" not in "".join(output)
+        assert "Collecting " not in "".join(output)
 
 
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows launcher subprocess baseline")
