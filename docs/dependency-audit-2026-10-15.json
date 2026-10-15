@@ -1,0 +1,450 @@
+{
+  "date": "2026-10-15",
+  "platform": "Windows x64 / CPython 3.12.10",
+  "tool": "pip-audit 2.10.1",
+  "service": "PyPI",
+  "scope": "Application runtime and test requirement closures; excludes packaging bootstrap and maintenance-tool dependencies",
+  "before": [
+    {
+      "name": "pytest",
+      "version": "8.3.5",
+      "advisories": [
+        {
+          "id": "PYSEC-2026-1845",
+          "fix_versions": [
+            "9.0.3"
+          ],
+          "aliases": [
+            "GHSA-6w46-j5rx-g56g",
+            "CVE-2025-71176"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "python-multipart",
+      "version": "0.0.20",
+      "advisories": [
+        {
+          "id": "PYSEC-2026-1852",
+          "fix_versions": [
+            "0.0.22"
+          ],
+          "aliases": [
+            "CVE-2026-24486",
+            "GHSA-wp53-j4wj-2cfg"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-3038",
+          "fix_versions": [
+            "0.0.26"
+          ],
+          "aliases": [
+            "GHSA-mj87-hwqh-73pj",
+            "CVE-2026-40347"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-3039",
+          "fix_versions": [
+            "0.0.27"
+          ],
+          "aliases": [
+            "GHSA-pp6c-gr5w-3c5g",
+            "CVE-2026-42561"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-3040",
+          "fix_versions": [
+            "0.0.31"
+          ],
+          "aliases": [
+            "GHSA-v9pg-7xvm-68hf",
+            "CVE-2026-53540"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-3036",
+          "fix_versions": [
+            "0.0.30"
+          ],
+          "aliases": [
+            "GHSA-5rvq-cxj2-64vf",
+            "CVE-2026-53539"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-3037",
+          "fix_versions": [
+            "0.0.30"
+          ],
+          "aliases": [
+            "CVE-2026-53538",
+            "GHSA-6jv3-5f52-599m"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "starlette",
+      "version": "0.46.2",
+      "advisories": [
+        {
+          "id": "PYSEC-2026-1941",
+          "fix_versions": [
+            "0.47.2"
+          ],
+          "aliases": [
+            "CVE-2025-54121",
+            "GHSA-2c2j-9gv5-cj73"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-1942",
+          "fix_versions": [
+            "0.49.1"
+          ],
+          "aliases": [
+            "CVE-2025-62727",
+            "GHSA-7f5h-v6xp-fcq8"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-161",
+          "fix_versions": [
+            "1.0.1"
+          ],
+          "aliases": [
+            "CVE-2026-48710",
+            "GHSA-86qp-5c8j-p5mr",
+            "X41-2026-002"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-2281",
+          "fix_versions": [
+            "1.1.0"
+          ],
+          "aliases": [
+            "CVE-2026-48818",
+            "GHSA-wqp7-x3pw-xc5r"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-2280",
+          "fix_versions": [
+            "1.1.0"
+          ],
+          "aliases": [
+            "GHSA-x746-7m8f-x49c",
+            "CVE-2026-48817"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-249",
+          "fix_versions": [
+            "1.3.1"
+          ],
+          "aliases": [
+            "GHSA-82w8-qh3p-5jfq",
+            "CVE-2026-54283"
+          ]
+        },
+        {
+          "id": "PYSEC-2026-248",
+          "fix_versions": [
+            "1.3.0"
+          ],
+          "aliases": [
+            "GHSA-jp82-jpqv-5vv3",
+            "CVE-2026-54282"
+          ]
+        }
+      ]
+    }
+  ],
+  "after": {
+    "runtime": {
+      "exit_code": 0,
+      "dependencies": [
+        {
+          "name": "annotated-doc",
+          "version": "0.0.5"
+        },
+        {
+          "name": "annotated-types",
+          "version": "0.8.0"
+        },
+        {
+          "name": "anyio",
+          "version": "4.15.1"
+        },
+        {
+          "name": "cffi",
+          "version": "2.1.1"
+        },
+        {
+          "name": "charset-normalizer",
+          "version": "3.5.2"
+        },
+        {
+          "name": "click",
+          "version": "8.5.0"
+        },
+        {
+          "name": "colorama",
+          "version": "0.4.6"
+        },
+        {
+          "name": "cryptography",
+          "version": "50.0.2"
+        },
+        {
+          "name": "fastapi",
+          "version": "0.135.4"
+        },
+        {
+          "name": "h11",
+          "version": "0.16.0"
+        },
+        {
+          "name": "httptools",
+          "version": "0.9.0"
+        },
+        {
+          "name": "idna",
+          "version": "3.20"
+        },
+        {
+          "name": "jinja2",
+          "version": "3.1.6"
+        },
+        {
+          "name": "markdown",
+          "version": "3.8.2"
+        },
+        {
+          "name": "markupsafe",
+          "version": "3.0.4"
+        },
+        {
+          "name": "nh3",
+          "version": "0.3.7"
+        },
+        {
+          "name": "pillow",
+          "version": "12.3.0"
+        },
+        {
+          "name": "pycparser",
+          "version": "3.11"
+        },
+        {
+          "name": "pydantic",
+          "version": "2.14.1"
+        },
+        {
+          "name": "pydantic-core",
+          "version": "2.50.1"
+        },
+        {
+          "name": "python-dotenv",
+          "version": "1.2.4"
+        },
+        {
+          "name": "python-multipart",
+          "version": "0.0.32"
+        },
+        {
+          "name": "pyyaml",
+          "version": "6.0.3"
+        },
+        {
+          "name": "reportlab",
+          "version": "5.0.1"
+        },
+        {
+          "name": "starlette",
+          "version": "1.3.1"
+        },
+        {
+          "name": "typing-extensions",
+          "version": "4.16.0"
+        },
+        {
+          "name": "typing-inspection",
+          "version": "0.4.4"
+        },
+        {
+          "name": "uvicorn",
+          "version": "0.34.2"
+        },
+        {
+          "name": "watchfiles",
+          "version": "1.3.0"
+        },
+        {
+          "name": "websockets",
+          "version": "17.2"
+        }
+      ],
+      "known_vulnerabilities": 0
+    },
+    "test": {
+      "exit_code": 0,
+      "dependencies": [
+        {
+          "name": "annotated-doc",
+          "version": "0.0.5"
+        },
+        {
+          "name": "annotated-types",
+          "version": "0.8.0"
+        },
+        {
+          "name": "anyio",
+          "version": "4.15.1"
+        },
+        {
+          "name": "certifi",
+          "version": "2026.7.22"
+        },
+        {
+          "name": "cffi",
+          "version": "2.1.1"
+        },
+        {
+          "name": "charset-normalizer",
+          "version": "3.5.2"
+        },
+        {
+          "name": "click",
+          "version": "8.5.0"
+        },
+        {
+          "name": "colorama",
+          "version": "0.4.6"
+        },
+        {
+          "name": "cryptography",
+          "version": "50.0.2"
+        },
+        {
+          "name": "fastapi",
+          "version": "0.135.4"
+        },
+        {
+          "name": "h11",
+          "version": "0.16.0"
+        },
+        {
+          "name": "httpcore",
+          "version": "1.0.9"
+        },
+        {
+          "name": "httptools",
+          "version": "0.9.0"
+        },
+        {
+          "name": "httpx",
+          "version": "0.28.1"
+        },
+        {
+          "name": "idna",
+          "version": "3.20"
+        },
+        {
+          "name": "iniconfig",
+          "version": "2.3.1"
+        },
+        {
+          "name": "jinja2",
+          "version": "3.1.6"
+        },
+        {
+          "name": "markdown",
+          "version": "3.8.2"
+        },
+        {
+          "name": "markupsafe",
+          "version": "3.0.4"
+        },
+        {
+          "name": "nh3",
+          "version": "0.3.7"
+        },
+        {
+          "name": "pillow",
+          "version": "12.3.0"
+        },
+        {
+          "name": "pluggy",
+          "version": "1.6.0"
+        },
+        {
+          "name": "pycparser",
+          "version": "3.11"
+        },
+        {
+          "name": "pydantic",
+          "version": "2.14.1"
+        },
+        {
+          "name": "pydantic-core",
+          "version": "2.50.1"
+        },
+        {
+          "name": "pygments",
+          "version": "2.21.0"
+        },
+        {
+          "name": "pytest",
+          "version": "9.0.3"
+        },
+        {
+          "name": "python-dotenv",
+          "version": "1.2.4"
+        },
+        {
+          "name": "python-multipart",
+          "version": "0.0.32"
+        },
+        {
+          "name": "pyyaml",
+          "version": "6.0.3"
+        },
+        {
+          "name": "reportlab",
+          "version": "5.0.1"
+        },
+        {
+          "name": "starlette",
+          "version": "1.3.1"
+        },
+        {
+          "name": "typing-extensions",
+          "version": "4.16.0"
+        },
+        {
+          "name": "typing-inspection",
+          "version": "0.4.4"
+        },
+        {
+          "name": "uvicorn",
+          "version": "0.34.2"
+        },
+        {
+          "name": "watchfiles",
+          "version": "1.3.0"
+        },
+        {
+          "name": "websockets",
+          "version": "17.2"
+        }
+      ],
+      "known_vulnerabilities": 0
+    }
+  }
+}

@@ -6,6 +6,16 @@
 
 ## 2026-10-15
 
+### R07-C — 依賴分離、雜湊鎖與實際漏洞查核
+
+原條目完整移入；「本次未查核」是原規劃背景，這輪已實際查核並修補，不沿用舊結論。
+
+- [x] 分離 runtime／test 依賴，記錄支援的 Python 版本、套件鎖定與更新流程。另做依賴安全檢查，本次未查核最新版本或漏洞公告。
+- [x] 明確 Windows x64／CPython 3.12，setup 使用 3.12／`--require-hashes`；日常不連網。runtime 與 test 各有完整間接依賴鎖，維護工具獨立。新增 PyPI 官方雜湊產生工具、更新／離線 wheelhouse／復原規範。
+- [x] pip-audit 2.10.1 原環境找到 3 個套件、14 個不同公告 ID（服務重複回傳 28 筆）；更新 FastAPI 0.135.4／Starlette 1.3.1、multipart 0.0.32、pytest 9.0.3。含雜湊掃描 runtime 30／test 38 個套件均 exit 0、無已知公告，摘要見 `docs/dependency-audit-2026-10-15.json`，不宣稱沒有未知漏洞或涵蓋 OS／bootstrap 工具。
+- [x] 保留原上傳 OpenAPI binary schema 與空白 400／缺欄 422 契約，不重寫歷史快照。全新 runtime 以雜湊鎖安裝、pip check 通過，未安裝 pytest／httpx 仍可離線 check，不開 DB。正式 venv 未熱更新，需停止舊服務後執行 setup。
+- [x] 新依賴環境完整 Python 397 項、Node 66 項通過；另驗證新鎖真實安裝、官方 metadata 解析／失敗不覆寫、純 runtime 無測試套件。兩項第三方測試介面棄用警告保留；清除本項 pytest 暫存。
+
 ### R07-B — 一般／開發模式與持有式 port 綁定
 
 原條目完整移入，保留當時競爭問題的描述；目前以真正 bind 並持有 socket 解決。

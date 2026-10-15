@@ -18,6 +18,12 @@ from ..web_security import NO_STORE_HEADERS
 router = APIRouter()
 
 
+def _binary_upload_schema(schema):
+    # Preserve the existing multipart OpenAPI contract across Pydantic updates.
+    schema.pop("contentMediaType", None)
+    schema["format"] = "binary"
+
+
 def _backup_page(request: Request, *, restored: bool = False, error: str = "",
                  recovery_filename: str = "", status_code: int = 200) -> HTMLResponse:
     values = backups.backup_page_data(recovery_filename)
@@ -40,7 +46,7 @@ def download_database_backup() -> FileResponse:
 
 
 @router.post("/settings/backup/restore")
-def restore_database_backup(request: Request, backup_file: UploadFile = File(...)) -> Response:
+def restore_database_backup(request: Request, backup_file: UploadFile = File(..., json_schema_extra=_binary_upload_schema)) -> Response:
     try:
         recovery_path = backups.restore_upload(backup_file.file, get_runtime(request))
     except BackupValidationError as error:

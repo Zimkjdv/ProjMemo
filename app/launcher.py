@@ -53,6 +53,9 @@ def bind_local_socket(first, last):
 
 
 def check_dependencies():
+    if sys.version_info[:2] != (3, 12):
+        print("ERROR: Python 3.12 is required. Preserve data and repair .venv with setup-local.bat.", file=sys.stderr)
+        return False
     try:
         importlib.import_module("uvicorn")
         importlib.import_module("app.main")

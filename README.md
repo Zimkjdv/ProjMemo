@@ -195,7 +195,7 @@ PDF 匯出會包含專案資料、重要 URL、備註中的 Markdown 內容、�
 
 ## 本機開發
 
-Windows 首次安裝或明確更新依賴時執行（需要 Python 與 Windows `py` launcher）：
+Windows x64 首次安裝或明確更新依賴時執行（目前支援 CPython 3.12 與 Windows `py` launcher）：
 
 ```bat
 setup-local.bat
@@ -212,9 +212,9 @@ run-local.bat
 或手動執行：
 
 ```powershell
-py -3 -m venv .venv
+py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
+python -m pip install --require-hashes -r requirements.txt
 python -m app.launcher --dev
 ```
 
@@ -233,7 +233,7 @@ python -m app.launcher
 
 ## 測試
 
-Python 回歸測試可執行 `.\.venv\Scripts\python.exe -m pytest tests -q`。若有安裝 Node.js，完整前端檢視、分頁、表單與密碼遮蔽測試可執行 `node --test tests/js/*.test.cjs`；Node.js 只用於開發測試，並非應用程式執行需求。架構邊界、HTTP 契約及交易回滾另有 `tests/test_architecture.py`；使用隔離 DB，初始化不得指向正式資料。
+日常 setup 只裝 runtime。開發測試先執行 `.\.venv\Scripts\python.exe -m pip install --require-hashes -r requirements-test.txt`，再執行 `.\.venv\Scripts\python.exe -m pytest tests -q`。若有安裝 Node.js，完整前端檢視、分頁、表單與密碼遮蔽測試可執行 `node --test tests/js/*.test.cjs`；Node.js 只用於開發測試，並非應用程式執行需求。架構邊界、HTTP 契約及交易回滾另有 `tests/test_architecture.py`；使用隔離 DB，初始化不得指向正式資料。套件鎖定、更新／離線重建與漏洞掃描見 [依賴維護](docs/dependencies.md)。
 
 ## 安全原則
 

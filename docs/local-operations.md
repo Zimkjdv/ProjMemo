@@ -16,4 +16,6 @@ Windows 使用 `setup-local.bat` 建立／檢查 `.venv` 並安裝專案依賴�
 
 環境或參數錯誤／無可用 port 回傳非零（通常 2，缺 venv 為 1），一般模式啟動失敗回傳 3。終端機網址表示 socket 已保留，需等待 application startup complete 才代表已就緒。開發監督程序在子程序啟動錯誤後可能仍存活、等待修正，不能只憑監督程序存活判斷成功。Ctrl+C 停止服務。`--check` 不 bind、不開 DB、不安裝套件。
 
-依賴鎖定／安全檢查及維運日誌／健康檢查仍依 R07 後續條目逐項交付。
+## 依賴維護
+
+目前支援 Windows x64／CPython 3.12。setup 只安裝含雜湊的 runtime 鎖，測試需另外明確安裝 `requirements-test.txt`。版本閉包、更新／離線安裝與 2026-10-15 實際安全掃描見 [依賴維護](dependencies.md)。勿對正在執行的服務熱更新 venv；先停止、備份，再 setup。維運日誌／健康檢查仍由 R07 後續條目交付。

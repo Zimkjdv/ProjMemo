@@ -4,14 +4,16 @@ cd /d "%~dp0" || exit /b 1
 
 if not exist ".venv\Scripts\python.exe" (
     echo Creating the local virtual environment...
-    call py -3 -m venv .venv
+    call py -3.12 -m venv .venv
     if errorlevel 1 goto venv_failed
 )
 if not exist ".venv\Scripts\python.exe" goto venv_failed
+".venv\Scripts\python.exe" -c "import sys; sys.exit(0 if sys.version_info[:2] == (3, 12) else 1)"
+if errorlevel 1 goto version_failed
 
 ".venv\Scripts\python.exe" -m pip --version
 if errorlevel 1 goto pip_failed
-".venv\Scripts\python.exe" -m pip install -r "%~dp0requirements.txt"
+".venv\Scripts\python.exe" -m pip install --require-hashes -r "%~dp0requirements.txt"
 if errorlevel 1 goto install_failed
 ".venv\Scripts\python.exe" -c "import uvicorn; from app.main import app"
 if errorlevel 1 goto install_failed
@@ -19,7 +21,10 @@ echo Setup complete. Use run-local.bat for daily startup.
 exit /b 0
 
 :venv_failed
-echo ERROR: Could not create .venv. Install Python and its Windows py launcher, then retry.
+echo ERROR: Could not create .venv. Install Python 3.12 and its Windows py launcher, then retry.
+exit /b 1
+:version_failed
+echo ERROR: Python 3.12 is required. Preserve data and recreate only .venv using Python 3.12.
 exit /b 1
 :pip_failed
 echo ERROR: pip is unavailable in .venv. Repair the virtual environment before retrying setup.

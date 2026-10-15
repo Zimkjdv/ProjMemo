@@ -52,10 +52,20 @@ async def validation_error(request: Request, error: RequestValidationError):
     # Do not serialize Pydantic input/ctx: they can contain submitted passwords.
     fields = {str(item["loc"][-1]): "此欄位為必填或格式不正確。" for item in error.errors()}
     problem = ApplicationError(422, "請檢查必填欄位與輸入格式。")
+    # Newer FastAPI treats an explicitly submitted empty Form value as missing.
+    # Preserve our 400 blank-value / 422 absent-field distinction without echoing input.
+    if request.headers.get("content-type", "").split(";", 1)[0] in {"application/x-www-form-urlencoded", "multipart/form-data"}:
+        submitted = await request.form()
+        if error.errors() and all(item["type"] == "missing" and len(item["loc"]) == 2
+                and item["loc"][0] == "body" and submitted.get(item["loc"][1]) == ""
+                for item in error.errors()):
+            problem = ApplicationError(400, problem.detail)
     recovered = await recover_form_error(request, problem, fields=fields)
     if recovered is not None:
         return recovered
     # Keep FastAPI's documented detail-array shape, but omit input and ctx.
+    if problem.status_code == 400:
+        return await localized_http_error(request, HTTPException(400, problem.detail))
     return JSONResponse({"detail": [{"loc": list(item["loc"]), "type": item["type"],
         "msg": translate_error("此欄位為必填或格式不正確。", get_language(request))}
         for item in error.errors()]}, status_code=422, headers=NO_STORE_HEADERS)
