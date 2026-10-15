@@ -20,14 +20,16 @@ function harness(writer, codeText = null) {
   const code = codeText === null ? null : { textContent: codeText, matches: () => true, parentElement: { before() {} } };
   if (code) Object.defineProperty(code, "id", { set(value) { ids[value] = code; } });
   const feedback = {};
+  const events = {};
   const messages = { copy: "Copy", code: "Copy code", pending: "Copying", success: "Copied", failure: "Failed: manually copy" };
   const content = { contains: target => Object.values(ids).includes(target), querySelectorAll: selector => selector === "[data-copy-target]" ? [button] : code ? [code] : [] };
   feedback.dataset = {};
   vm.runInNewContext(source, { document: {
     getElementById: id => id === "project-content" ? content : id === "copy-messages" ? { textContent: JSON.stringify(messages) } : id === "copy-feedback" ? feedback : ids[id],
     createElement(tag) { const node = makeNode(tag); created.push(node); return node; },
+    addEventListener(name, callback) { events[name] = callback; },
   }, navigator: { clipboard: writer ? { writeText: writer } : undefined }, window: { clearTimeout() {}, setTimeout() {} } });
-  return { field, button, feedback, ids, created, code };
+  return { field, button, feedback, ids, created, code, events };
 }
 
 test("copy preserves full original characters and reports success only after the write completes", async () => {
@@ -41,6 +43,14 @@ test("copy preserves full original characters and reports success only after the
   resolve(); await pending;
   assert.equal(page.feedback.textContent, "Copied");
   assert.equal(page.button.disabled, false);
+});
+
+test("fragment initialization never duplicates existing code toolbars", () => {
+  const page = harness(async () => {}, "code");
+  const before = page.created.length;
+  page.events["projmemo:notes-loaded"]();
+  page.events["projmemo:notes-loaded"]();
+  assert.equal(page.created.length, before);
 });
 
 test("denied or missing clipboard produces a manual-copy fallback without changing the source", async () => {

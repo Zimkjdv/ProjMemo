@@ -95,6 +95,12 @@ class MutationRoute(APIRoute):
                 view = form.get("_detail_view")
                 if view in {"cards", "list"}:
                     params["detail_view"] = view
+                for name in ("notes_page", "notes_size"):
+                    value = form.get("_" + name, "")
+                    if isinstance(value, str) and value.isascii() and value.isdigit() and 0 < len(value) <= 8:
+                        params[name] = value
+                if request.url.path.endswith("/notes"):
+                    params["notes_page"] = "1"
                 location = response.headers["location"] + "?" + urlencode(params) + ("#" + section if section else "")
                 response.headers["location"] = location
                 response.headers["Cache-Control"] = "no-store"

@@ -50,7 +50,14 @@ def csrf_input(context) -> Markup:
         escape(context["csrf_token"]),
     )
     token = context["request"].app.state.runtime.submissions.issue(context["csrf_token"])
-    return csrf + Markup('<input type="hidden" name="_submission_token" value="{}">').format(escape(token))
+    result = csrf + Markup('<input type="hidden" name="_submission_token" value="{}">').format(escape(token))
+    pager = context.get("note_page")
+    if pager:
+        view = context["request"].query_params.get("detail_view", "cards")
+        for name, value in (("_notes_page", pager["number"]), ("_notes_size", pager["size"]),
+                            ("_detail_view", view if view in {"cards", "list"} else "cards")):
+            result += Markup('<input type="hidden" name="{}" value="{}">').format(name, escape(str(value)))
+    return result
 
 
 async def require_csrf(request: Request) -> None:

@@ -8,6 +8,7 @@ JSON consumers keep the normal error contract.
 from html import escape
 from html.parser import HTMLParser
 import re
+from urllib.parse import urlencode
 
 from fastapi import Request
 from fastapi.responses import HTMLResponse
@@ -99,6 +100,9 @@ def restore_form(markup, action, values, message, fields, t, recovery_url=None):
             if node.tag == "input" and node.attrs.get("name") == "return_to":
                 node.attrs["value"] = recovery_url
                 node.raw = None
+            if node.attrs.get("id") == "project-content" and values.get("_detail_view") in {"cards", "list"}:
+                node.attrs["data-return-view"] = values["_detail_view"]
+                node.raw = None
     form = next((node for node in document.root.walk()
                  if node.tag == "form" and node.attrs.get("action") == action), None)
     if form is None:
@@ -163,6 +167,9 @@ async def recover_form_error(request: Request, error, *, fields=None):
     from .services.projects import project_for_item
     path = request.url.path
     try:
+        values = await request.form()
+        request.state.notes_page = values.get("_notes_page", "1")
+        request.state.notes_size = values.get("_notes_size", "20")
         if path == "/projects/new":
             response = projects.new_project(request)
         elif match := re.fullmatch(r"/projects/(\d+)/edit", path):
@@ -170,6 +177,8 @@ async def recover_form_error(request: Request, error, *, fields=None):
         elif match := re.fullmatch(r"/projects/(\d+)/(urls|notes|checklist|environment-variables|accounts|export)", path):
             response = projects.show_project(request, int(match[1]))
         elif match := re.fullmatch(r"/(urls|notes|checklist|environment-variables|accounts)/(\d+)/(edit|delete|toggle)", path):
+            if match[1] == "notes":
+                request.state.editing_note_id = int(match[2])
             response = projects.show_project(request, project_for_item(match[1], int(match[2])))
         elif path.startswith("/settings/vault/"):
             response = vault.vault_page(request)
@@ -177,7 +186,6 @@ async def recover_form_error(request: Request, error, *, fields=None):
             response = backups._backup_page(request)
         else:
             return None
-        values = await request.form()
         t = translator(request)
         errors = fields or getattr(error, "fields", {}) or {
             name: error.detail for name in LEGACY_FIELDS.get(error.detail, ())}
@@ -187,6 +195,9 @@ async def recover_form_error(request: Request, error, *, fields=None):
                         "/settings/backup" if path.startswith("/settings/backup/") else
                         f'/projects/{project["id"]}' + ("/edit" if path.endswith("/edit") and path.startswith("/projects/") else "")
                         if project else "/projects/new")
+        if pager := response.context.get("note_page"):
+            recovery_url += "?" + urlencode({"notes_page": pager["number"], "notes_size": pager["size"],
+                "detail_view": values.get("_detail_view") if values.get("_detail_view") in {"cards", "list"} else "cards"})
         markup = restore_form(response.body.decode("utf-8"), path, values, localize(error.detail), errors, localize, recovery_url)
         if markup is None:
             return None

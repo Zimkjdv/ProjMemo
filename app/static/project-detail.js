@@ -42,7 +42,7 @@
     try {
       if (localStorage.getItem(storageKey) === "list") savedView = "list";
     } catch (_) { /* View switching still works when browser storage is blocked. */ }
-    const returnedView = new URLSearchParams(window.location.search).get("detail_view");
+    const returnedView = content.dataset.returnView || new URLSearchParams(window.location.search).get("detail_view");
     if (["cards", "list"].includes(returnedView)) savedView = returnedView;
     applyView(savedView);
     viewSwitch.hidden = false;

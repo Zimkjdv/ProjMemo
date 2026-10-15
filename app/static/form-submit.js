@@ -6,10 +6,10 @@
     form.dataset.submitting = "true";
     form.setAttribute("aria-busy", "true");
     const content = document.getElementById("project-content");
-    if (content && !form.querySelector('[name="_detail_view"]')) {
-      const input = document.createElement("input");
+    if (content) {
+      let input = form.querySelector('[name="_detail_view"]');
+      if (!input) { input = document.createElement("input"); form.append(input); }
       input.type = "hidden"; input.name = "_detail_view"; input.value = content.dataset.view;
-      form.append(input);
     }
     // Defer disabling so the browser includes the submitter (e.g. language).
     setTimeout(() => {

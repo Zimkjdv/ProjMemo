@@ -46,7 +46,7 @@
   document.addEventListener("click", (event) => {
     if (event.defaultPrevented || event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     const link = event.target.closest?.("a[href]");
-    if (!link || link.target === "_blank" || link.hasAttribute("download") || link.matches("[data-note-page]")) return;
+    if (!link || link.target === "_blank" || link.hasAttribute("download") || link.matches("[data-note-page][data-paging-enhanced]")) return;
     const destination = new URL(link.href, window.location.href);
     if (destination.pathname === window.location.pathname && destination.search === window.location.search) return;
     if (/\/export\.(md|pdf)$/.test(destination.pathname)) return; // Attachment download keeps the page.
@@ -64,6 +64,7 @@
   }, true);
   document.addEventListener("submit", (event) => {
     if (event.defaultPrevented) return;
+    if (event.target.matches?.("[data-note-page-size][data-paging-enhanced]")) return;
     if (replaySubmit) { replaySubmit = false; allowUnload = true; return; }
     const except = event.target.classList.contains("language-switch") ? null : event.target;
     if (changed(document, except) && typeof dialog?.showModal === "function") {

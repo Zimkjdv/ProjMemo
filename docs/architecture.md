@@ -8,7 +8,7 @@
 app/main.py：create_app()、lifespan、middleware 與錯誤處理
   └─ routers/：projects、content、accounts、vault、backups、exports、language
        ├─ presentation.py：模板、繁中／英文 context、安全 Markdown、轉址
-       └─ services/：projects、content、accounts、vault、backups、exports
+       └─ services/：projects、workspace、content、accounts、vault、backups、exports
             ├─ db.py／database_access.py：交易與程序內排他作業
             ├─ vault.py：密碼學、session 與限流原件
             ├─ backup.py：SQLite 備份／還原與失敗回復
@@ -22,15 +22,15 @@ app/main.py：create_app()、lifespan、middleware 與錯誤處理
 | `main.py` | 組裝 app、掛載 static／七個 router、全域 CSRF 依賴及錯誤處理；啟動先遷移，再每 30 秒清理 session，停止時取消清理工作。不放 SQL／表單業務邏輯。 |
 | `sqlite_policy.py` | 明確的一秒 SQL lock wait、BUSY／LOCKED 判斷及有連續鎖等待上限的 SQLite backup API；不自動重播交易，不限制健康大檔案複製總時間。 |
 | `routers/` | 保留既有 URL、參數、表單預設值及回應格式。讀取 Request／cookie，呼叫服務，處理 HTML／JSON、下載、303 及安全 cookie／header；不執行 SQL 或自行提交交易。 |
-| `services/projects.py` | 專案搜尋、列表／分頁資料、基本資料修改、完整專案查詢及共用 `touch_project()`。目前仍載入完整內容，不是內容的伺服器端分頁。 |
+| `services/projects.py`／`workspace.py` | 共用專案與非備註投影、列表／搜尋、修改與 `touch_project()`；`ProjectData` 保持完整，workspace 另採 COUNT／LIMIT／OFFSET 提供 UI 專用 10／20／50 分頁與深頁錯誤回復。 |
 | `services/content.py`／`accounts.py` | 內容驗證、資料修改與專案更新時間在同一交易內；帳號 ID 先建立再加密，失敗整筆回滾。reveal 在解密前及回傳前檢查解鎖，避免到期後回傳明文。 |
 | `services/vault.py` | 設定／解鎖、限流、session 操作與敏感匯出政策；保留既有錯誤碼。底層 Argon2id／AES-GCM 與 AAD 仍在 `app/vault.py`，本次不改。 |
 | `services/backups.py` | 頁面資料、暫存上傳、還原流程與 session 撤銷、恢復檔案路徑檢查。`backup.py` 保有 SQLite 級驗證、快照、排他與回復。上傳 HTTP 檔案由 router 關閉，暫存 DB 由服務清理。 |
 | `services/exports.py` | 普通／敏感匯出的資料載入、政策及文件產生，回傳 `ExportArtifact`；路由才加下載 header。兩種格式共用完整 `ProjectData`，不受畫面分頁限制。 |
 | `options.py` | 單一份狀態、類別、優先級與環境列舉，以及既有匯出用標籤。頁面透過 `presentation.py` 翻譯；使用者內容和既有匯出文字不自動翻譯。 |
 | `project_data.py` | `ProjectData` 定義專案與五類內容，提供模板 context 與 Markdown／PDF 相同的參數順序。普通查詢只回傳帳號 metadata／`has_secret`，不含密文、nonce 或明文。敏感匯出另外授權／查詢，以新的 projection 取代帳號清單，不污染普通資料。 |
-| `errors.py` | `ApplicationError` 僅保存既有狀態碼與訊息；服務不依賴 FastAPI／Request／Response。入口將它轉成原本雙語、禁止快取的 HTTP 錯誤；保管庫表單在 router 顯示原有 HTML 錯誤。其他表單的頁內回饋仍屬 R05 待辦。 |
-| `runtime.py` | 每個 app 的 `AppRuntime` 保存自己的 `VaultSessions`／`UnlockAttemptLimiter`，不再借用 `main.py` 的全域變數；不是使用者登入，也不是多人權限系統。 |
+| `errors.py`／`validation.py`／`form_errors.py` | 服務獨立的業務／欄位錯誤與六類統一輸入規則；HTTP 邊界依原生 HTML／JSON 回覆，展開原表單、跳脫一般值，永不回填或持久化密碼。 |
+| `runtime.py`／`submissions.py` | 每個 app 的 session／限流／單次送出 registry；token 綁定 CSRF，並發單次執行、成功重播 303，不保存表單。單程序、24 小時、最多 10,000 筆，重啟／過期拒絕，不是多人權限或跨重啟 exactly-once。 |
 
 正式入口仍是 `app.main:app`，啟動方式不變。`create_app(runtime=None)` 方便隔離測試及依賴替換；建立 app 不會連線或建立 DB，真正初始化在 lifespan。
 
@@ -82,4 +82,4 @@ app/main.py：create_app()、lifespan、middleware 與錯誤處理
 - 測試先以 `PROJMEMO_DB_PATH` 指向隔離資料庫，再進入 app lifespan；不得用正式 DB 驗證。完整執行 Python 與 Node 測試，舊版 migration、備份回復與加密 AAD 仍要一起回歸。
 - 本輪已用相同測試資料、固定 ReportLab 非內容時間資訊，確認重構前後普通／敏感 Markdown 與實際 PDF 輸出一致。這不是跨平台字型或全部長表格／視覺排版的驗收，R08 PDF 完整驗收仍保留。
 
-查詢／索引量測、內容伺服器端分頁、R05 表單回饋、CI 與啟動維運仍見 [ROADMAP.MD](../ROADMAP.MD)。未因這次模組拆分而改成 Docker、多人或手機版。
+查詢／索引量測、UI 備註伺服器端分頁及 R05 表單回饋已交付；CI、啟動維運與其他待辦見 [ROADMAP.MD](../ROADMAP.MD)。本機單程序定位不變，未改成 Docker、多人或手機版。

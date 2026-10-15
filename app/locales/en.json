@@ -1,4 +1,10 @@
 {
+  "套用": "Apply",
+  "第一頁": "First page",
+  "最後一頁": "Last page",
+  "載入失敗，草稿與目前內容已保留。": "Loading failed. Your drafts and current content are preserved.",
+  "直接開啟此頁（會離開目前頁面）": "Open this page directly (leaves the current page)",
+  "內容增刪可能改變頁次，請以目前總數為準。": "Adding or deleting content can shift pages. Use the current total as reference.",
   "捨棄並離開": "Discard and leave",
   "尚有未儲存的修改。確定捨棄並離開？": "You have unsaved changes. Discard them and leave?",
   "已儲存變更。": "Changes saved.",

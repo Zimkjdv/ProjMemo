@@ -21,16 +21,13 @@ def get_project(connection: sqlite3.Connection, project_id: int) -> sqlite3.Row:
     return project
 
 
-def project_detail(connection: sqlite3.Connection, project_id: int) -> ProjectData:
+def project_related(connection: sqlite3.Connection, project_id: int) -> dict:
     project = get_project(connection, project_id)
-    return ProjectData(
+    return dict(
         project=project,
         urls=connection.execute(
             "SELECT * FROM project_urls WHERE project_id = ? ORDER BY id DESC",
             (project_id,),
-        ).fetchall(),
-        notes=connection.execute(
-            "SELECT * FROM notes WHERE project_id = ? ORDER BY id DESC", (project_id,)
         ).fetchall(),
         checklist=connection.execute(
             "SELECT * FROM checklist_items WHERE project_id = ? ORDER BY completed, id DESC",
@@ -61,6 +58,12 @@ def project_detail(connection: sqlite3.Connection, project_id: int) -> ProjectDa
             (project_id,),
         ).fetchall()],
     )
+
+
+def project_detail(connection: sqlite3.Connection, project_id: int) -> ProjectData:
+    related = project_related(connection, project_id)
+    notes = connection.execute("SELECT * FROM notes WHERE project_id = ? ORDER BY id DESC", (project_id,)).fetchall()
+    return ProjectData(**related, notes=notes)
 
 
 def touch_project(connection: sqlite3.Connection, project_id: int) -> None:

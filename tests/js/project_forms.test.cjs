@@ -31,8 +31,8 @@ function harness(kind = "add", confirmed = true, withDialog = false) {
     },
     querySelectorAll: () => controls.filter(control => control.type === "password"),
   };
-  const summary = { focused: 0, focus() { this.focused++; }, addEventListener(_, handler) { this.click = handler; } };
-  const button = { hidden: true, addEventListener(_, handler) { this.click = handler; } };
+  const summary = { focused: 0, focus() { this.focused++; }, addEventListener(_, handler) { this.bindings = (this.bindings || 0) + 1; this.click = handler; } };
+  const button = { hidden: true, addEventListener(_, handler) { this.bindings = (this.bindings || 0) + 1; this.click = handler; } };
   const container = { open: true, matches: () => kind === "edit", contains: target => target.inside === container,
     querySelector: selector => selector === "summary" ? summary : form,
     querySelectorAll: () => [button],
@@ -44,15 +44,16 @@ function harness(kind = "add", confirmed = true, withDialog = false) {
     querySelector: selector => selector === "[data-keep-content]" ? modalButtons.keep : modalButtons.discard,
     addEventListener(_, handler) { this.cancel = handler; },
   } : null;
+  const leaveDialog = { open: false };
   vm.runInNewContext(source, { document: {
-    getElementById: id => id === "project-content" ? content : id === "content-discard-dialog" ? dialog : { textContent: JSON.stringify({ discard: "Discard?" }) },
+    getElementById: id => id === "project-content" ? content : id === "content-discard-dialog" ? dialog : id === "draft-leave-dialog" ? leaveDialog : { textContent: JSON.stringify({ discard: "Discard?" }) },
     addEventListener(name, handler) { handlers[name] = handler; },
   }, window: { confirm(message) { prompts.push(message); return confirmed; } } });
   const event = (inside = true) => ({ key: "Escape", prevented: false, stopped: false,
     target: { inside: inside ? container : null, closest: () => inside ? container : null },
     preventDefault() { this.prevented = true; }, stopPropagation() { this.stopped = true; },
   });
-  return { controls, container, form, summary, button, prompts, handlers, event, dialog, modalButtons };
+  return { controls, container, form, summary, button, prompts, handlers, event, dialog, modalButtons, leaveDialog };
 }
 
 test("unchanged forms close without prompts or submit, returning focus to their entry", () => {
@@ -63,6 +64,14 @@ test("unchanged forms close without prompts or submit, returning focus to their 
   assert.equal(page.form.resets, 1);
   assert.equal(page.prompts.length, 0);
   assert.equal(page.summary.focused, 1);
+});
+
+test("page discard modal owns both clicks and Escape; fragment rebind is idempotent", () => {
+  const page = harness("edit"); page.controls[0].value = "Draft"; page.leaveDialog.open = true;
+  page.handlers.click(page.event(false)); page.handlers.keydown(page.event(false));
+  assert.equal(page.prompts.length, 0); assert.equal(page.form.resets, 0);
+  page.handlers["projmemo:notes-loaded"](); page.handlers["projmemo:notes-loaded"]();
+  assert.equal(page.summary.bindings, 1); assert.equal(page.button.bindings, 1);
 });
 
 test("declining a discard keeps exact drafts and the form open", () => {

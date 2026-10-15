@@ -1,0 +1,16 @@
+{% if note_page is defined and note_total %}
+<nav class="note-pagination" data-note-pagination aria-label="{{ t('備註分頁') }}">
+  <form method="get" action="/projects/{{ project.id }}#project-notes" data-note-page-size>
+    <input type="hidden" name="notes_page" value="1">
+    <label>{{ t('每頁') }} <select name="notes_size" aria-label="{{ t('每頁備註數量') }}">{% for count in [10,20,50] %}<option value="{{ count }}" {% if note_page.size == count %}selected{% endif %}>{{ count }}</option>{% endfor %}</select></label>
+    <button class="button button-ghost" type="submit">{{ t('套用') }}</button>
+  </form>
+  <span data-note-page-summary role="status" aria-live="polite">{{ t('顯示第 {first}–{last} 筆備註，共 {count} 筆', first=note_page.first, last=note_page.last, count=note_total) }}</span>
+  <span class="note-page-buttons">
+    {% if note_page.number > 1 %}<a class="button button-ghost" data-note-page href="{{ note_page.start }}">{{ t('第一頁') }}</a><a class="button button-ghost" data-note-page href="{{ note_page.previous }}">{{ t('上一頁') }}</a>{% endif %}
+    <span>{{ note_page.number }} / {{ note_page.pages }}</span>
+    {% if note_page.number < note_page.pages %}<a class="button button-ghost" data-note-page href="{{ note_page.next }}">{{ t('下一頁') }}</a><a class="button button-ghost" data-note-page href="{{ note_page.end }}">{{ t('最後一頁') }}</a>{% endif %}
+  </span>
+  <small class="muted">{{ t('內容增刪可能改變頁次，請以目前總數為準。') }}</small>
+</nav>
+{% endif %}

@@ -1,7 +1,8 @@
 (() => {
   const content = document.getElementById("project-content");
   if (!content) return;
-  const notes = [...content.querySelectorAll("[data-note-content]")];
+  let notes = [];
+  const initialized = new WeakSet();
   const choices = new WeakMap();
   let frame;
   const update = () => {
@@ -22,16 +23,23 @@
   const schedule = () => {
     if (frame == null) frame = window.requestAnimationFrame(update);
   };
-  notes.forEach((note) => {
-    note.querySelector("summary").addEventListener("click", (event) => {
-      event.preventDefault();
-      choices.set(note, !note.open);
-      note.open = !note.open;
+  const initialize = () => {
+    notes = [...content.querySelectorAll("[data-note-content]")];
+    notes.forEach((note) => {
+      if (initialized.has(note)) return;
+      initialized.add(note);
+      note.querySelector("summary").addEventListener("click", (event) => {
+        event.preventDefault();
+        choices.set(note, !note.open);
+        note.open = !note.open;
+      });
     });
-  });
+    update();
+  };
+  initialize();
+  document.addEventListener("projmemo:notes-loaded", initialize);
   document.addEventListener("projmemo:detail-view-change", schedule);
   document.addEventListener("projmemo:note-page-change", schedule);
   window.addEventListener("resize", schedule);
   if (document.fonts?.ready) document.fonts.ready.then(schedule);
-  update();
 })();

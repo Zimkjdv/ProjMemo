@@ -729,6 +729,11 @@ html.project-detail-page { scroll-padding-top: 0; }
 .form-feedback p { margin: 6px 0; }
 .field-error { display: block; color: #b42318; margin-top: 5px; font-weight: 500; }
 .operation-success { margin-bottom: 18px; padding: 12px 18px; border: 1px solid #b6dec8; border-radius: 10px; background: #effaf4; color: #166534; }
+.note-pagination { flex-wrap: wrap; }
+.note-pagination form { display: flex; align-items: center; gap: 8px; margin: 0; }
+.note-pagination small { flex-basis: 100%; }
+#project-notes[aria-busy="true"] .note-pagination { opacity: .6; pointer-events: none; }
+.note-load-feedback { margin: 12px 0; padding: 12px; border: 1px solid #f4ce8e; border-radius: 8px; background: #fffbeb; }
 [aria-invalid="true"] { border-color: #d92d20; }
 
 @media (max-width: 650px) {

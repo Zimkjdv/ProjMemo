@@ -1,0 +1,27 @@
+{% from "_settings_icons.html" import settings_icon %}
+{% from "_content_form_actions.html" import content_form_actions with context %}
+<section class="panel detail-panel{% if not notes %} detail-panel-empty{% endif %}" id="project-notes" data-project-id="{{ project.id }}" data-note-total="{{ note_total|default(notes|length) }}" data-notes-page="{{ note_page.number if note_page is defined else 1 }}" data-notes-size="{{ note_page.size if note_page is defined else 20 }}">
+      <div class="panel-heading">
+        <div>{% if language == 'en' %}<p class="eyebrow">NOTES &amp; CAUTIONS</p>{% endif %}<div class="heading-line"><h2>{{ t("備註與注意事項") }}</h2><span class="section-count">{{ note_total|default(notes|length) }}</span></div></div>
+      </div>
+      <div class="note-load-feedback" role="status" hidden></div>
+      {% if notes %}
+      <div class="detail-columns detail-columns-notes" aria-hidden="true"><span>{{ t("標題／摘要") }}</span><span>{{ t("類型／優先級") }}</span></div>
+      {% include "_note_pager.html" %}
+      <div class="note-list">
+        {% for note in notes %}
+        {% set rendered_note = note.content_markdown|markdown %}
+        <article class="note-card priority-{{ note.priority }}">
+          <div class="note-heading"><div><span class="mini-label note-category">{{ settings_icon("alert" if note.category == "caution" else "bug" if note.category == "known_issue" else "tool" if note.category == "workaround" else "note") }}{{ note_category_label(note.category) }}</span><span class="priority-label priority-{{ note.priority }}">{{ priority_label(note.priority) }}</span></div><details class="item-actions"><summary aria-label="{{ t("編輯或刪除") }} {{ note.title }}">{{ settings_icon('more') }}</summary><div class="action-popover"><form method="post" action="/notes/{{ note.id }}/edit" data-content-form>{{ csrf_input() }}<div class="form-grid two-columns"><label>{{ t("類型") }}<select name="category">{% for value, label in note_categories %}<option value="{{ value }}" {% if note.category == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label><label>{{ t("優先級") }}<select name="priority">{% for value, label in priorities %}<option value="{{ value }}" {% if note.priority == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label></div><label>{{ t("標題") }}<input name="title" required value="{{ note.title }}"></label><label>{{ t("Markdown 內容") }}<textarea name="content_markdown" rows="8" required>{{ note.content_markdown }}</textarea></label>{{ content_form_actions(t("儲存備註")) }}</form><form class="delete-form" method="post" action="/notes/{{ note.id }}/delete" onsubmit="return confirm({{ t("確定刪除此備註？")|tojson|forceescape }})">{{ csrf_input() }}<button class="button button-danger" type="submit">{{ t("刪除備註") }}</button></form></div></details></div>
+          <details class="note-content" data-note-content open>
+            <summary aria-label="{{ note.title }} · {{ t('展開／收合內容') }}"><h3>{{ note.title }}</h3><span class="note-preview" data-note-summary>{{ rendered_note|striptags }}</span><span class="disclosure-hint note-disclosure"><span class="note-expand-label">{{ t("展開全文") }}</span><span class="note-collapse-label">{{ t("收合內容") }}</span> <span aria-hidden="true">⌄</span></span></summary>
+            <div class="markdown-body">{{ rendered_note|safe }}</div>
+          </details>
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="detail-empty">{{ t("還沒有專案備註") }}</p>
+      {% endif %}
+      <details class="add-form"><summary><span aria-hidden="true">＋</span> {{ t("新增 Markdown 備註") }}</summary><form method="post" action="/projects/{{ project.id }}/notes" data-content-form>{{ csrf_input() }}<div class="form-grid two-columns"><label>{{ t("類型") }}<select name="category">{% for value, label in note_categories %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label><label>{{ t("優先級") }}<select name="priority">{% for value, label in priorities %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></label></div><label>{{ t("標題") }}<input name="title" required placeholder="{{ t("例如：第一次部署前注意事項") }}"></label><label>{{ t("Markdown 內容") }}<textarea name="content_markdown" rows="9" required placeholder="{{ t("支援 Markdown、程式碼區塊與表格") }}"></textarea></label>{{ content_form_actions(t("儲存備註")) }}</form></details>
+    </section>

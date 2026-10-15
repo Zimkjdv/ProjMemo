@@ -6,6 +6,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from ..presentation import page_context, redirect_to_project, templates
 from ..runtime import VAULT_COOKIE_NAME, get_runtime
 from ..services import projects, vault
+from ..services.workspace import load_workspace
 
 from ..submissions import MutationRoute
 
@@ -54,7 +55,14 @@ def create_project(
 
 @router.get("/projects/{project_id}", response_class=HTMLResponse)
 def show_project(request: Request, project_id: int) -> HTMLResponse:
-    values = projects.load_project_page(project_id)
+    fragment = request.headers.get("X-ProjMemo-Fragment") == "notes" and request.method == "GET"
+    values = load_workspace(project_id,
+        page=getattr(request.state, "notes_page", request.query_params.get("notes_page", "1")),
+        size=getattr(request.state, "notes_size", request.query_params.get("notes_size", "20")),
+        edit_note_id=getattr(request.state, "editing_note_id", None), notes_only=fragment)
+    if fragment:
+        return templates.TemplateResponse(request, "_project_notes.html", page_context(request, **values),
+            headers={"X-ProjMemo-Fragment": "notes", "Cache-Control": "no-store", "Vary": "X-ProjMemo-Fragment, Cookie"})
     session_status = vault.vault_status_context(
         get_runtime(request), request.cookies.get(VAULT_COOKIE_NAME),
         values["vault_configured"], values["allow_secret_export"],
@@ -64,6 +72,7 @@ def show_project(request: Request, project_id: int) -> HTMLResponse:
         request,
         "project_detail.html",
         page_context(request, **values),
+        headers={"Cache-Control": "no-store", "Vary": "X-ProjMemo-Fragment, Cookie"},
     )
 
 

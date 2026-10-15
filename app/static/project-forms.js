@@ -5,8 +5,9 @@
   const messages = JSON.parse(messagesElement.textContent);
   const dialog = document.getElementById("content-discard-dialog");
   let pendingClose = null;
-  const containers = [...content.querySelectorAll(".add-form, .item-actions")]
+  let containers = [...content.querySelectorAll(".add-form, .item-actions")]
     .filter((container) => container.querySelector("form[data-content-form]"));
+  const initialized = new WeakSet();
   const dirty = (form) => form.hasAttribute?.("data-recovered-form") || [...form.elements].some((control) => {
     if (!control.name || ["hidden", "submit", "button", "reset"].includes(control.type)) return false;
     if (control.type === "password") return control.value !== "";
@@ -47,7 +48,12 @@
     });
     dialog.addEventListener("cancel", () => { pendingClose = null; });
   }
-  containers.forEach((container) => {
+  const initialize = () => {
+    containers = [...content.querySelectorAll(".add-form, .item-actions")]
+      .filter(container => container.querySelector("form[data-content-form]"));
+    containers.forEach((container) => {
+    if (initialized.has(container)) return;
+    initialized.add(container);
     container.querySelectorAll("[data-cancel-content]").forEach((button) => {
       button.hidden = false;
       button.addEventListener("click", () => close(container));
@@ -57,10 +63,13 @@
       event.preventDefault();
       close(container);
     });
-  });
+    });
+  };
+  initialize();
+  document.addEventListener("projmemo:notes-loaded", initialize);
   // Closing an edit menu follows the same discard policy as its Cancel button.
   document.addEventListener("click", (event) => {
-    if (dialog?.open) return;
+    if (dialog?.open || document.getElementById("draft-leave-dialog")?.open) return;
     // Changing the view moves the same DOM; it is not a request to cancel drafts.
     if (event.target.closest?.("[data-detail-view]")) return;
     // Page navigation has a single whole-page discard policy, not a second close dialog.
@@ -75,7 +84,7 @@
     }
   }, true);
   document.addEventListener("keydown", (event) => {
-    if (event.key !== "Escape" || dialog?.open) return;
+    if (event.key !== "Escape" || dialog?.open || document.getElementById("draft-leave-dialog")?.open) return;
     const containing = event.target.closest?.(".add-form, .item-actions");
     const current = containing && containers.includes(containing) && containing.open ? containing :
       [...containers].reverse().find((container) => container.matches(".item-actions") && container.open);

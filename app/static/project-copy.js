@@ -5,7 +5,10 @@
   if (!content || !messagesElement || !feedback) return;
   const messages = JSON.parse(messagesElement.textContent);
   let feedbackTimer;
+  const boundButtons = new WeakSet(), processedCodes = new WeakSet();
   const bind = (button) => {
+    if (boundButtons.has(button)) return;
+    boundButtons.add(button);
     let stateTimer;
     button.hidden = false;
     button.addEventListener("click", async () => {
@@ -32,27 +35,33 @@
       feedbackTimer = window.setTimeout(() => { feedback.hidden = true; }, 4000);
     });
   };
-  content.querySelectorAll("[data-copy-target]").forEach(bind);
-  content.querySelectorAll(".markdown-body pre > code").forEach((code, index) => {
-    let id = `projmemo-code-${index}`;
-    while (document.getElementById(id)) id += "-copy";
-    code.id = id;
-    const pre = code.parentElement;
-    const wrapper = document.createElement("div");
-    wrapper.className = "code-block";
-    const toolbar = document.createElement("div");
-    toolbar.className = "code-copy-toolbar";
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "copy-button";
-    button.dataset.copyTarget = id;
-    button.setAttribute("aria-label", messages.code);
-    const label = document.createElement("span");
-    label.textContent = messages.code;
-    button.append(label);
-    toolbar.append(button);
-    pre.before(wrapper);
-    wrapper.append(toolbar, pre);
-    bind(button);
-  });
+  const initialize = () => {
+    content.querySelectorAll("[data-copy-target]").forEach(bind);
+    content.querySelectorAll(".markdown-body pre > code").forEach((code, index) => {
+      if (processedCodes.has(code)) return;
+      processedCodes.add(code);
+      let id = `projmemo-code-${index}`;
+      while (document.getElementById(id)) id += "-copy";
+      code.id = id;
+      const pre = code.parentElement;
+      const wrapper = document.createElement("div");
+      wrapper.className = "code-block";
+      const toolbar = document.createElement("div");
+      toolbar.className = "code-copy-toolbar";
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "copy-button";
+      button.dataset.copyTarget = id;
+      button.setAttribute("aria-label", messages.code);
+      const label = document.createElement("span");
+      label.textContent = messages.code;
+      button.append(label);
+      toolbar.append(button);
+      pre.before(wrapper);
+      wrapper.append(toolbar, pre);
+      bind(button);
+    });
+  };
+  initialize();
+  document.addEventListener("projmemo:notes-loaded", initialize);
 })();

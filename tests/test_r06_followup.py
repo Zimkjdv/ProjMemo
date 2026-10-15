@@ -62,7 +62,7 @@ def test_account_expanders_keep_full_nonsecret_values_and_original_copy_targets(
 
 
 @pytest.mark.parametrize('language', ['zh-Hant', 'en'])
-def test_note_paging_is_progressive_and_keeps_all_server_content(tmp_path, monkeypatch, language):
+def test_note_paging_is_progressive_and_keeps_full_export_content(tmp_path, monkeypatch, language):
     monkeypatch.setenv('PROJMEMO_DB_PATH', str(tmp_path / 'pages.db'))
     from app.main import app
     from app.db import db_session
@@ -75,8 +75,10 @@ def test_note_paging_is_progressive_and_keeps_all_server_content(tmp_path, monke
                 [(int(project.rsplit('/', 1)[1]), f'Fixture note {i}', 'Fixture content') for i in range(51)])
         page = client.get(project)
         items = Elements(page.text).items
-        assert sum(tag == 'article' and 'note-card' in attrs.get('class', '') for tag, attrs in items) == 51
+        assert sum(tag == 'article' and 'note-card' in attrs.get('class', '') for tag, attrs in items) == 20
         assert all('hidden' not in attrs for tag, attrs in items if tag == 'article')
-        assert any(tag == 'nav' and 'data-note-pagination' in attrs and 'hidden' in attrs for tag, attrs in items)
+        assert any(tag == 'nav' and 'data-note-pagination' in attrs and 'hidden' not in attrs for tag, attrs in items)
         assert 'Notes per page' in page.text if language == 'en' else '每頁備註數量' in page.text
-        assert 'note-pagination.js?v=20261014-r06' in page.text
+        assert 'server-note-pagination.js?v=20261015-r05-paging' in page.text
+        exported = client.get(project + '/export.md').text
+        assert all(f'Fixture note {i}' in exported for i in range(51))

@@ -60,7 +60,7 @@ def queries(connection, target):
     connection.set_trace_callback(statements.append)
     project_detail(connection, target)
     connection.set_trace_callback(None)
-    names = ("project", "urls", "notes", "checklist", "environment", "accounts")
+    names = ("project", "urls", "checklist", "environment", "accounts", "notes")
     result = {name: (statement, ()) for name, statement in zip(names, statements)}
     result.update({
         "home": ("SELECT * FROM projects ORDER BY updated_at DESC, id DESC LIMIT 20 OFFSET 0", ()),
