@@ -3,25 +3,6 @@
   const messageElement = document.getElementById("project-form-messages");
   if (!form || !messageElement) return;
   const messages = JSON.parse(messageElement.textContent);
-  const fields = ["name", "description", "status", "owner", "tags"];
-  const draftKey = `projmemo-language-draft:${window.location.pathname}`;
-
-  // A language change reloads this page. Restore only that one in-tab draft.
-  try {
-    const saved = window.sessionStorage.getItem(draftKey);
-    window.sessionStorage.removeItem(draftKey);
-    const draft = saved ? JSON.parse(saved) : null;
-    if (draft) {
-      fields.forEach((name) => {
-        const input = form.elements.namedItem(name);
-        if (typeof draft[name] !== "string") return;
-        if (name === "status" && ![...input.options].some((option) => option.value === draft[name])) return;
-        input.value = draft[name];
-      });
-    }
-  } catch {
-    // Storage may be unavailable; the form and preview remain usable.
-  }
 
   const splitValues = (text) => [...new Set(text.split(/[,，、\n]/).map((value) => value.trim()).filter(Boolean))];
   const tokens = new Map();
@@ -35,6 +16,7 @@
     const canonical = document.createElement("input");
     canonical.type = "hidden";
     canonical.name = editor.name;
+    canonical.dataset.draftInitial = values.join(",");
     field.append(canonical);
     editor.removeAttribute("name");
     editor.value = "";
@@ -152,14 +134,5 @@
     form.elements.namedItem(name).addEventListener("input", updatePreview);
   });
   form.addEventListener("submit", () => tokens.forEach((field) => field.commit()));
-  document.querySelector(".language-switch")?.addEventListener("submit", () => {
-    tokens.forEach((field) => field.commit());
-    try {
-      const draft = Object.fromEntries(fields.map((name) => [name, form.elements.namedItem(name).value]));
-      window.sessionStorage.setItem(draftKey, JSON.stringify(draft));
-    } catch {
-      // Do not block language switching if browser storage is disabled.
-    }
-  });
   updatePreview();
 })();

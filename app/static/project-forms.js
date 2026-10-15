@@ -7,7 +7,7 @@
   let pendingClose = null;
   const containers = [...content.querySelectorAll(".add-form, .item-actions")]
     .filter((container) => container.querySelector("form[data-content-form]"));
-  const dirty = (form) => [...form.elements].some((control) => {
+  const dirty = (form) => form.hasAttribute?.("data-recovered-form") || [...form.elements].some((control) => {
     if (!control.name || ["hidden", "submit", "button", "reset"].includes(control.type)) return false;
     if (control.type === "password") return control.value !== "";
     if (["checkbox", "radio"].includes(control.type)) return control.checked !== control.defaultChecked;
@@ -21,6 +21,7 @@
   const finishClose = (container, returnFocus = true) => {
     const form = container.querySelector("form[data-content-form]");
     form.reset();
+    form.removeAttribute?.("data-recovered-form");
     // Even reset must never restore a password from an HTML default value.
     form.querySelectorAll('input[type="password"]').forEach((input) => { input.value = ""; });
     container.open = false;
@@ -62,6 +63,8 @@
     if (dialog?.open) return;
     // Changing the view moves the same DOM; it is not a request to cancel drafts.
     if (event.target.closest?.("[data-detail-view]")) return;
+    // Page navigation has a single whole-page discard policy, not a second close dialog.
+    if (event.target.closest?.("a[href], .language-switch, [data-note-page]")) return;
     for (const container of containers) {
       if (!container.matches(".item-actions") || !container.open || container.contains(event.target)) continue;
       if (!close(container, false)) {

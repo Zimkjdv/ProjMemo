@@ -6,7 +6,7 @@
     <title>{% block title %}ProjMemo{% endblock %}</title>
     <meta name="referrer" content="same-origin">
     <meta name="csrf-token" content="{{ csrf_token }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}?v=20261014-r06-followup">
+    <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}?v=20261015-r05">
   </head>
   <body>
     <header class="site-header">
@@ -29,9 +29,16 @@
       {% if request.query_params.get('notice') == 'saved' %}<div class="operation-success" role="status" tabindex="-1">{{ t('已儲存變更。') }}</div>{% endif %}
       {% block content %}{% endblock %}
     </main>
-    <script src="/static/language.js?v=20261012" defer></script>
+    <script src="/static/language.js?v=20261015-r05" defer></script>
     <script src="/static/vault-session.js?v=20261014" defer></script>
     <script src="/static/form-feedback.js?v=20261015" defer></script>
     <script src="/static/form-submit.js?v=20261015" defer></script>
+    <script type="application/json" id="draft-guard-messages">{{ {'discard': t('尚有未儲存的修改。確定捨棄並離開？')}|tojson }}</script>
+    <dialog id="draft-leave-dialog" class="content-discard-dialog" aria-labelledby="draft-leave-title">
+      <h3 id="draft-leave-title">{{ t('捨棄未儲存的修改？') }}</h3>
+      <p>{{ t('尚有未儲存的修改。確定捨棄並離開？') }}</p>
+      <div class="content-form-actions"><button type="button" class="button button-ghost" data-stay-page autofocus>{{ t('保留修改') }}</button><button type="button" class="button button-danger" data-leave-page>{{ t('捨棄並離開') }}</button></div>
+    </dialog>
+    <script src="/static/draft-guard.js?v=20261015" defer></script>
   </body>
 </html>

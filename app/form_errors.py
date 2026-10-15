@@ -89,8 +89,16 @@ class FormDocument(HTMLParser):
         self.handle_data(f"<!{decl}>")
 
 
-def restore_form(markup, action, values, message, fields, t):
+def restore_form(markup, action, values, message, fields, t, recovery_url=None):
     document = FormDocument(markup)
+    if recovery_url:
+        for node in document.root.walk():
+            if node.tag == "html":
+                node.attrs["data-recovery-url"] = recovery_url
+                node.raw = None
+            if node.tag == "input" and node.attrs.get("name") == "return_to":
+                node.attrs["value"] = recovery_url
+                node.raw = None
     form = next((node for node in document.root.walk()
                  if node.tag == "form" and node.attrs.get("action") == action), None)
     if form is None:
@@ -174,7 +182,12 @@ async def recover_form_error(request: Request, error, *, fields=None):
         errors = fields or getattr(error, "fields", {}) or {
             name: error.detail for name in LEGACY_FIELDS.get(error.detail, ())}
         localize = lambda message: translate_error(message, get_language(request))
-        markup = restore_form(response.body.decode("utf-8"), path, values, localize(error.detail), errors, localize)
+        project = response.context.get("project")
+        recovery_url = ("/settings/vault" if path.startswith("/settings/vault/") else
+                        "/settings/backup" if path.startswith("/settings/backup/") else
+                        f'/projects/{project["id"]}' + ("/edit" if path.endswith("/edit") and path.startswith("/projects/") else "")
+                        if project else "/projects/new")
+        markup = restore_form(response.body.decode("utf-8"), path, values, localize(error.detail), errors, localize, recovery_url)
         if markup is None:
             return None
         return HTMLResponse(markup, status_code=error.status_code, headers=NO_STORE_HEADERS)

@@ -1,4 +1,6 @@
 {
+  "捨棄並離開": "Discard and leave",
+  "尚有未儲存的修改。確定捨棄並離開？": "You have unsaved changes. Discard them and leave?",
   "已儲存變更。": "Changes saved.",
   "送出識別已失效，請先確認資料是否已保存，再重新整理。": "The submission token expired. Check whether your changes were saved before refreshing.",
   "此操作處理中或結果待確認，請勿重複新增，稍後重試。": "This operation is in progress or needs confirmation. Do not create it again; retry later.",
