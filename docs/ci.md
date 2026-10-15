@@ -6,6 +6,8 @@
 
 兩個 job 都執行 pip check、來源檢查、catalog 檢查、完整 Python 及 Node 測試。Python 使用明確隔離 `--basetemp=data/pytest-ci`，所有 app 測試使用 fixture DB；不連真實服務、不讀本機正式資料。Windows 跑真實 batch／normal／reload／port 衝突，Linux 明確略過 Windows 專用案例；Windows-only 的鎖寫入 CLI 不在 Linux 假裝可用。
 
+`data/` 被 Git 忽略，乾淨 runner 並沒有這個目錄；兩個 job 都會在 pytest 前明確建立父目錄，避免本機已有 data 而掩蓋 basetemp 建立失敗。此流程只建立 CI 私有資料夾，不會為了測試初始化正式 DB。
+
 ## 格式與靜態檢查
 
 ```powershell

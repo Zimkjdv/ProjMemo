@@ -32,6 +32,10 @@ def test_workflow_is_read_only_pinned_and_windows_gates_linux():
         assert "--basetemp=data/pytest-ci" in commands
         assert "upload-artifact" not in str(job)
     assert "fonts-wqy-zenhei" in str(jobs["linux"])
+    for name, job in jobs.items():
+        command = next(step["run"] for step in job["steps"] if "-m pytest" in step.get("run", ""))
+        creation = "New-Item -ItemType Directory -Path data" if name == "windows" else "mkdir -p data"
+        assert command.index(creation) < command.index("-m pytest")
 
 
 @pytest.mark.parametrize("name,text,expected", [

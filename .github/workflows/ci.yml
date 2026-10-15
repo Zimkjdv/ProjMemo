@@ -52,7 +52,9 @@ jobs:
           .\.venv\Scripts\python.exe scripts/check_catalogs.py
       - name: Python regression including real Windows launchers
         shell: pwsh
-        run: .\.venv\Scripts\python.exe -m pytest -q --basetemp=data/pytest-ci -p no:cacheprovider
+        run: |
+          New-Item -ItemType Directory -Path data -Force | Out-Null
+          .\.venv\Scripts\python.exe -m pytest -q --basetemp=data/pytest-ci -p no:cacheprovider
       - name: Node regression
         run: node --test tests/js/*.test.cjs
 
@@ -91,6 +93,8 @@ jobs:
           .venv/bin/python scripts/check_sources.py
           .venv/bin/python scripts/check_catalogs.py
       - name: Python compatibility and required CJK font
-        run: .venv/bin/python -m pytest -q --basetemp=data/pytest-ci -p no:cacheprovider
+        run: |
+          mkdir -p data
+          .venv/bin/python -m pytest -q --basetemp=data/pytest-ci -p no:cacheprovider
       - name: Node regression
         run: node --test tests/js/*.test.cjs
