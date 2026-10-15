@@ -6,6 +6,15 @@
 
 ## 2026-10-15
 
+### R07-A — 安裝與日常啟動分離
+
+原條目從 `cc94ca9:ROADMAP.MD` 完整移入；一般／開發模式、port、依賴及維運仍待 R07 後續項目，不提前勾選整批。
+
+- [x] `run-local.bat` 固定切換至腳本目錄，檢查 venv／pip 失敗；拆分首次安裝與日常啟動，避免每次啟動都升級 pip、連網安裝。
+- [x] 新增 `setup-local.bat` 明確處理 venv、pip 與安裝／匯入失敗的非零代碼；`run-local.bat` 不再 activate、建立 venv、升級 pip 或安裝套件，固定使用專案 Python。`--check` 可離線驗證且不開 DB，從其他目錄及含空白腳本路徑執行有回歸。
+- [x] 新增 [本機維運說明](docs/local-operations.md)，README 改為首次 setup／日常 run；port 探測與 reload 暫沿用舊版，下一項才調整。
+- [x] 完整 Python 375 項、Node 66 項通過。新增 5 項 Windows 真實 batch／隔離 venv 測試，包含離線檢查、非根目錄／空白路徑、venv 建立失敗、pip 缺失與無網路安裝失敗；不安裝到正式 venv、不開正式 DB。清除本項 pytest 暫存。
+
 ### R05 — 整體驗收與交付完成
 
 最後原驗收從 `e173566:ROADMAP.MD` 移入；R06-C 共用取消／敏感清空與焦點政策延續，這次另完成全部 R05，而不是把早期共用取消當作整批完成。R06 真正 Windows 縮放與 R08 實機剪貼簿／完整 PDF 視覺仍待驗收，不隨 R05 勾選。

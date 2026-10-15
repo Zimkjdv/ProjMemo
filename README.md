@@ -195,11 +195,19 @@ PDF 匯出會包含專案資料、重要 URL、備註中的 Markdown 內容、�
 
 ## 本機開發
 
-Windows 可執行：
+Windows 首次安裝或明確更新依賴時執行（需要 Python 與 Windows `py` launcher）：
+
+```bat
+setup-local.bat
+```
+
+日常啟動不安裝或升級套件，可從其他工作目錄呼叫完整腳本路徑：
 
 ```bat
 run-local.bat
 ```
+
+只檢查環境、不啟動服務或開啟資料庫：`run-local.bat --check`。缺少 `.venv`／依賴會顯示修復指引並以非零代碼結束，不會自動連網安裝。安裝腳本也會檢查 venv／pip／依賴失敗，不在失敗後繼續啟動。
 
 或手動執行：
 
@@ -212,7 +220,7 @@ python -m uvicorn app.main:app --reload
 
 `run-local.bat` 會從 `8000` 開始探測可用 port；若被占用則依序嘗試 `8001`、`8002` 等，終端機會顯示實際網址。手動執行 Uvicorn 不會自動換 port，需自行指定 `--port`。本機 SQLite 預設建立在 `data/projmemo.db`，此資料目錄已加入 `.gitignore`。
 
-請從專案根目錄啟動。目前保管庫 session 存於單一程序記憶體，請使用單 worker 並保持本機存取；`--reload` 是開發模式，重載會使解鎖失效。
+兩個 batch 腳本會固定切換至自己的目錄；手動 Python／Uvicorn 指令仍請從專案根目錄執行。目前保管庫 session 存於單一程序記憶體，請使用單 worker 並保持本機存取；`--reload` 是開發模式，重載會使解鎖失效。一般／開發模式與競爭安全 port 綁定另由 R07 下一項交付，目前啟動模式尚未改變。
 
 可用 `PROJMEMO_DB_PATH` 指定另一個 SQLite 路徑；PDF 字型可由 `PROJMEMO_PDF_FONT`、`PROJMEMO_PDF_BOLD_FONT` 指定。更換資料庫前請先停止程式並備份。
 
