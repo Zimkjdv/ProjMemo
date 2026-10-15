@@ -1,0 +1,26 @@
+{
+  "normalized_errors": [
+    {
+      "source": "validation.py",
+      "pattern": "此欄位不可超過 {rule} 個字元。",
+      "key": "此欄位不可超過 {limit} 個字元。",
+      "reason": "translate_error normalizes the numeric limit before translation."
+    },
+    {
+      "source": "schema_validation.py",
+      "pattern": "備份檔的「{table}」資料表欄位不完整，無法還原。",
+      "key": "備份檔的「{table}」資料表欄位不完整，無法還原。",
+      "reason": "translate_error keeps the schema table name as a named placeholder."
+    }
+  ],
+  "retained_unused": {},
+  "identity_keys": {
+    "Figma": "Brand name stays unchanged in both languages.",
+    "Git Repository": "English source label; Chinese override is in ZH_MESSAGES.",
+    "Known Issue": "English source label; Chinese override is in ZH_MESSAGES.",
+    "Workaround": "English source label; Chinese override is in ZH_MESSAGES.",
+    "Local": "English source label; Chinese override is in ZH_MESSAGES.",
+    "Staging": "English source label; Chinese override is in ZH_MESSAGES.",
+    "Production": "English source label; Chinese override is in ZH_MESSAGES."
+  }
+}

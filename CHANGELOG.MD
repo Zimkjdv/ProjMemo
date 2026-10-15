@@ -6,6 +6,15 @@
 
 ## 2026-10-15
 
+### R08-B — 雙語 catalog 檢查與維護流程
+
+原條目從 `7c1431f:ROADMAP.MD` 完整移入；第一項 `1a5559f` 確認推送後才開始這一項。
+
+- [x] 雙語 catalog 加入缺漏、未使用 key 與佔位符維護流程；使用者原文不自動翻譯。
+- [x] 新增唯讀 `scripts/check_catalogs.py`，掃描 Python／Jinja 字串與 UI 來源，檢查缺漏、unused 候選、重複 JSON key、空翻譯、具名佔位符／次數／格式／conversion 與 plural base。不 import app、不開 DB；動態錯誤正規化與英文來源 identity 以有原因、會檢查過期的 policy 登記，不以大白名單忽略缺漏。
+- [x] 人工核對並移除 24 個舊 UI key、補一個保管庫未設定錯誤英文，保留常數產生的密碼長度訊息。新增 16 項 mutation／CLI 回歸，確保 checker 真的會拒絕缺漏、錯格式及過期例外；既有雙語切換、選項與使用者原文回歸通過。靜態偵測範圍與人工 review 界線見 `docs/localization.md`。
+- [x] checker 通過，完整新鎖環境 Python 449 項、Node 66 項通過；兩項第三方警告保留。清除本項隔離 pytest 資料；沒有操作正式 DB 或修改使用者資料。
+
 ### R08-A — Markdown 特殊字元與資料一致性回歸
 
 原條目從 `7c1431f:ROADMAP.MD` 完整移入；本輪優先選擇 Markdown、雙語 catalog 與 CI 三項，其他 R08 不一併完成。
