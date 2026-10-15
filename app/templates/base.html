@@ -32,7 +32,8 @@
     <script src="/static/language.js?v=20261015-r05" defer></script>
     <script src="/static/vault-session.js?v=20261014" defer></script>
     <script src="/static/form-feedback.js?v=20261015" defer></script>
-    <script src="/static/form-submit.js?v=20261015-r05-paging" defer></script>
+    <script type="application/json" id="submission-messages">{{ {'stale': t('此表單可能已送出。請先確認已保存資料，再重新整理後進行新的修改；目前輸入不會自動重送。')}|tojson }}</script>
+    <script src="/static/form-submit.js?v=20261015-r05-final" defer></script>
     <script type="application/json" id="draft-guard-messages">{{ {'discard': t('尚有未儲存的修改。確定捨棄並離開？')}|tojson }}</script>
     <dialog id="draft-leave-dialog" class="content-discard-dialog" aria-labelledby="draft-leave-title">
       <h3 id="draft-leave-title">{{ t('捨棄未儲存的修改？') }}</h3>

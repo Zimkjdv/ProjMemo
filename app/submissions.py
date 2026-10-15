@@ -40,7 +40,7 @@ class SubmissionRegistry:
             issued = int(stamp)
             if len(token) > 160 or not nonce or not 0 <= self.clock() - issued < TTL or not hmac.compare_digest(signature, self._sign(stamp + "." + nonce, browser)):
                 raise ValueError
-        except (ValueError, AttributeError):
+        except (ValueError, AttributeError, TypeError):
             raise ApplicationError(409, "送出識別已失效，請先確認資料是否已保存，再重新整理。") from None
         with self.lock:
             self.entries = {key: entry for key, entry in self.entries.items() if entry[0] > self.clock()}

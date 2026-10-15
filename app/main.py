@@ -55,7 +55,10 @@ async def validation_error(request: Request, error: RequestValidationError):
     recovered = await recover_form_error(request, problem, fields=fields)
     if recovered is not None:
         return recovered
-    return await localized_http_error(request, HTTPException(422, problem.detail))
+    # Keep FastAPI's documented detail-array shape, but omit input and ctx.
+    return JSONResponse({"detail": [{"loc": list(item["loc"]), "type": item["type"],
+        "msg": translate_error("此欄位為必填或格式不正確。", get_language(request))}
+        for item in error.errors()]}, status_code=422, headers=NO_STORE_HEADERS)
 
 
 async def database_busy_error(request: Request, error: DatabaseBusyError) -> JSONResponse:
