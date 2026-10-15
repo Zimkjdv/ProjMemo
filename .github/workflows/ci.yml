@@ -57,6 +57,16 @@ jobs:
           .\.venv\Scripts\python.exe -m pytest -q --basetemp=data/pytest-ci -p no:cacheprovider
       - name: Node regression
         run: node --test tests/js/*.test.cjs
+      - name: Real Chromium and Firefox interaction regression
+        shell: pwsh
+        env:
+          PROJMEMO_TEST_EDGE: "1"
+        run: |
+          npm ci --ignore-scripts --no-fund --prefix tests/browser
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm exec --prefix tests/browser -- playwright install chromium firefox
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm test --prefix tests/browser
 
   linux:
     name: Linux compatibility and CJK font
@@ -98,3 +108,8 @@ jobs:
           .venv/bin/python -m pytest -q --basetemp=data/pytest-ci -p no:cacheprovider
       - name: Node regression
         run: node --test tests/js/*.test.cjs
+      - name: Real Chromium and Firefox interaction regression
+        run: |
+          npm ci --ignore-scripts --no-fund --prefix tests/browser
+          npm exec --prefix tests/browser -- playwright install --with-deps chromium firefox
+          npm test --prefix tests/browser

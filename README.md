@@ -238,6 +238,8 @@ python -m app.launcher
 
 雙語維護可執行 `python scripts/check_catalogs.py`；新增 UI 文字、動態訊息、unused key 與佔位符規範見 [catalog 維護](docs/localization.md)。Markdown 特殊字元與投影回歸見 [匯出契約](docs/markdown-export.md)。
 
+真實桌面瀏覽器另有獨立 npm 開發鎖與 [瀏覽器回歸指南](docs/browser-regression.md)：Chromium／Firefox，Windows CI 另驗證已安裝 Edge；每例自行建立隔離 DB 與空閒 loopback port，不連目前使用的服務。原生／JS、雙語表單及備份流程均可重跑；不代替 R06 的系統剪貼簿或真實 Windows 縮放驗收。
+
 日常 setup 只裝 runtime。開發測試先執行 `.\.venv\Scripts\python.exe -m pip install --require-hashes -r requirements-test.txt`，再執行 `.\.venv\Scripts\python.exe -m pytest tests -q`。若有安裝 Node.js，完整前端檢視、分頁、表單與密碼遮蔽測試可執行 `node --test tests/js/*.test.cjs`；Node.js 只用於開發測試，並非應用程式執行需求。架構邊界、HTTP 契約及交易回滾另有 `tests/test_architecture.py`；使用隔離 DB，初始化不得指向正式資料。套件鎖定、更新／離線重建與漏洞掃描見 [依賴維護](docs/dependencies.md)。
 
 ## 安全原則

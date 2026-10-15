@@ -1,0 +1,10 @@
+{
+  "name": "projmemo-browser-regression",
+  "private": true,
+  "scripts": {
+    "test": "playwright test -c playwright.config.cjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1"
+  }
+}

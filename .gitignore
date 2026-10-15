@@ -17,6 +17,9 @@ data/
 .env.*
 !.env.example
 
+# Opt-in browser development dependencies (not application runtime)
+node_modules/
+
 # IDE and OS files
 .idea/
 .vscode/

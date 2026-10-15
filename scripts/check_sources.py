@@ -26,7 +26,7 @@ def check(root):
     problems, scripts, count = [], [], 0
     for directory in ("app", "scripts", "tests", ".github"):
         for path in sorted((root / directory).rglob("*")):
-            if "__pycache__" in path.parts or path.suffix not in SUFFIXES:
+            if {"__pycache__", "node_modules"}.intersection(path.parts) or path.suffix not in SUFFIXES:
                 continue
             label = path.relative_to(root).as_posix()
             if path.is_symlink() or path.is_junction():

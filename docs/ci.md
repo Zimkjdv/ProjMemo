@@ -21,6 +21,10 @@ node --test tests/js/*.test.cjs
 
 這是可立即執行的基本格式／語法政策，不冒充全專案 Black／Ruff／mypy 或 ESLint 深度規則；不重排既有長行與 frozen HTTP 契約。Markdown 刻意的行尾空白不受這個格式規則影響。Node 仍只是開發／CI 需求，不是應用 runtime 依賴。
 
+## 真實瀏覽器回歸
+
+兩個 job 在 Python／Node 後，以獨立 `tests/browser/package-lock.json` 執行 `npm ci --ignore-scripts`、安裝對應 Playwright 引擎，最後執行互動測試。Windows 另啟用 runner 已安裝的 Edge（36 項），Linux 安裝瀏覽器系統依賴後執行 Chromium／Firefox（24 項）。不自動略過缺少引擎、不 retry 掩蓋不穩定、不指向外部／正式服務；詳細案例及隔離／清理規範見 [瀏覽器回歸](browser-regression.md)。系統剪貼簿與真實 Windows 縮放不包含在本項內。
+
 ## Linux／字型範圍
 
 Ubuntu 安裝 `fonts-wqy-zenhei`，明確指定 `/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc`。CI 必須成功由 ReportLab 載入實際 regular／bold fallback 字型，確認「專案備註交接清單環境設定」字形存在，不能跳過。另有缺字型明確失敗的隔離回歸。這只驗證解析／glyph 與 Python 相容性，不產生／抽取／視覺驗收完整 PDF；R08 的 PDF 長表格、跨頁、敏感匯出與實機字型品質仍待完成。

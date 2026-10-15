@@ -77,6 +77,17 @@ def test_invalid_utf8_source_is_reported(tmp_path):
     assert any("unreadable UTF-8" in problem for problem in check_sources.check(tmp_path))
 
 
+def test_source_checks_ignore_installed_browser_dependencies_but_check_our_tests(tmp_path):
+    browser = tmp_path / "tests/browser"
+    dependency = browser / "node_modules/example"
+    dependency.mkdir(parents=True)
+    (dependency / "invalid.js").write_text("not JS !!")
+    (browser / "fixture.cjs").write_text("void 0;\n")
+    assert check_sources.check(tmp_path) == []
+    (browser / "fixture.cjs").write_text("const = broken;\n")
+    assert any("invalid JavaScript syntax" in item for item in check_sources.check(tmp_path))
+
+
 def test_required_ci_cjk_font_is_real_and_contains_traditional_chinese():
     if os.getenv("PROJMEMO_CI_CJK_REQUIRED") != "1":
         pytest.skip("Explicit CJK environment check runs in the Linux CI job")
