@@ -38,7 +38,7 @@ def add_access_account(
     if secret_value and key is None:
         raise ApplicationError(status_code=423, detail="請先解鎖保管庫再保存實際密碼")
 
-    with db_session() as connection:
+    with db_session(write=True) as connection:
         get_project(connection, project_id)
         cursor = connection.execute(
             """
@@ -94,7 +94,7 @@ def update_access_account(
     if secret_value and key is None:
         raise ApplicationError(status_code=423, detail="請先解鎖保管庫再更新實際密碼")
 
-    with db_session() as connection:
+    with db_session(write=True) as connection:
         item = connection.execute(
             "SELECT project_id FROM access_accounts WHERE id = ?", (account_id,)
         ).fetchone()
@@ -129,7 +129,7 @@ def update_access_account(
 
 
 def delete_access_account(*, account_id: int) -> int:
-    with db_session() as connection:
+    with db_session(write=True) as connection:
         item = connection.execute(
             "SELECT project_id FROM access_accounts WHERE id = ?", (account_id,)
         ).fetchone()

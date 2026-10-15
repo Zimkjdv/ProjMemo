@@ -25,7 +25,7 @@ class DatabaseAccess:
             return
         with self._condition:
             if self._unavailable:
-                raise DatabaseBusyError("資料庫需要復原，請下載還原前備份並停止程式後復原。")
+                raise DatabaseBusyError("資料庫需要復原，請保留備份並停止程式後復原。")
             if self._restoring:
                 raise DatabaseBusyError("資料還原中，請稍後再試。")
             self._active += 1

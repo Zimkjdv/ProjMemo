@@ -5,7 +5,7 @@ import sqlite3
 from typing import Callable
 
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 
 @dataclass(frozen=True)
@@ -126,7 +126,29 @@ def migration_history(connection: sqlite3.Connection) -> None:
     )""")
 
 
+QUERY_INDEXES = (
+    "CREATE INDEX idx_projects_updated ON projects(updated_at DESC, id DESC)",
+    "CREATE INDEX idx_projects_status_updated ON projects(status, updated_at DESC, id DESC)",
+    "CREATE INDEX idx_urls_project_order ON project_urls(project_id, id DESC)",
+    "CREATE INDEX idx_notes_project_order ON notes(project_id, id DESC)",
+    "CREATE INDEX idx_checklist_project_order ON checklist_items(project_id, completed, id DESC)",
+    """CREATE INDEX idx_environment_project_order ON environment_variables(
+        project_id, CASE environment WHEN 'local' THEN 1 WHEN 'staging' THEN 2
+        WHEN 'production' THEN 3 ELSE 4 END, key COLLATE NOCASE)""",
+    """CREATE INDEX idx_accounts_project_order ON access_accounts(
+        project_id, CASE environment WHEN 'production' THEN 1 WHEN 'staging' THEN 2 ELSE 3 END,
+        label COLLATE NOCASE)""",
+)
+
+
+def query_indexes(connection: sqlite3.Connection) -> None:
+    """v3: measured project filtering/order paths; never rewrite business rows."""
+    for statement in QUERY_INDEXES:
+        connection.execute(statement)
+
+
 MIGRATIONS = (
     Migration(1, "baseline_schema", baseline_schema),
     Migration(2, "migration_history", migration_history),
+    Migration(3, "query_indexes", query_indexes),
 )

@@ -47,7 +47,7 @@ def setup(runtime: AppRuntime, master_password: str, confirm_password: str) -> b
     if master_password != confirm_password:
         raise ApplicationError(400, "兩次輸入的主密碼不一致")
     try:
-        with db_session() as connection:
+        with db_session(write=True) as connection:
             key = create_vault(connection, master_password)
     except VaultAlreadyInitialized as error:
         raise ApplicationError(409, "保管庫已設定，請直接解鎖") from error
@@ -87,7 +87,7 @@ def lock(runtime: AppRuntime, token: str | None) -> None:
 def update_export_policy(runtime: AppRuntime, token: str | None, allow_secret_export: bool) -> None:
     if allow_secret_export and current_vault_key(runtime, token) is None:
         raise ApplicationError(423, "請先解鎖保管庫，再開啟含密碼匯出")
-    with db_session() as connection:
+    with db_session(write=True) as connection:
         configured, _ = read_vault_settings(connection)
         if allow_secret_export and not configured:
             raise ApplicationError(400, "請先設定保管庫，再開啟含密碼匯出")

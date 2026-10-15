@@ -166,7 +166,7 @@ def create_project(
         raise ApplicationError(status_code=400, detail="專案名稱不可為空白")
     if status not in {value for value, _ in STATUS_OPTIONS}:
         status = "maintenance"
-    with db_session() as connection:
+    with db_session(write=True) as connection:
         cursor = connection.execute(
             """
             INSERT INTO projects (name, description, status, owner, tags)
@@ -191,7 +191,7 @@ def update_project(
         raise ApplicationError(status_code=400, detail="專案名稱不可為空白")
     if status not in {value for value, _ in STATUS_OPTIONS}:
         status = "maintenance"
-    with db_session() as connection:
+    with db_session(write=True) as connection:
         get_project(connection, project_id)
         connection.execute(
             """

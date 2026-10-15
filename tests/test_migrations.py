@@ -57,12 +57,14 @@ def test_fresh_database_runs_versions_in_order_without_empty_backup(tmp_path, mo
             step.apply(connection)
         patch_step(monkeypatch, step.version, observe)
     db.init_db(path)
-    assert calls == [(1, 0), (2, 1)]
+    assert calls == [(step.version, step.version - 1) for step in db.MIGRATIONS]
     assert not (path.parent / "backups").exists()
     validate_backup(path)
     with sqlite3.connect(path) as connection:
-        assert connection.execute("PRAGMA user_version").fetchone()[0] == db.SCHEMA_VERSION == 2
-        assert connection.execute("SELECT version, name FROM schema_migrations").fetchall() == [(2, "migration_history")]
+        assert connection.execute("PRAGMA user_version").fetchone()[0] == db.SCHEMA_VERSION
+        assert connection.execute("SELECT version, name FROM schema_migrations ORDER BY version").fetchall() == [
+            (step.version, step.name) for step in db.MIGRATIONS if step.version >= 2
+        ]
         assert connection.execute("SELECT allow_secret_export FROM app_settings").fetchone() == (0,)
         assert {row[0] for row in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")} == {
             *(name for name, _ in BASELINE_TABLES), "schema_migrations", "sqlite_sequence",
@@ -77,7 +79,7 @@ def test_legacy_upgrade_preserves_all_data_and_snapshot_is_pre_upgrade(tmp_path,
     validate_backup(path)
     saved, = snapshots(path)
     assert logical_state(saved) == before
-    assert f"v{version}-to-v2-" in saved.name
+    assert f"v{version}-to-v{db.SCHEMA_VERSION}-" in saved.name
     with sqlite3.connect(path) as connection:
         assert connection.execute("SELECT id, name FROM projects").fetchone() == (7, '原專案 / Old project')
         assert connection.execute("SELECT content_markdown FROM notes").fetchone() == ('**keep** `code`',)
@@ -143,7 +145,7 @@ def test_unknown_or_invalid_existing_schema_is_never_repaired_or_overwritten(tmp
 @pytest.mark.parametrize("mutation", [
     "DROP TABLE schema_migrations", "DELETE FROM schema_migrations",
     "UPDATE schema_migrations SET name='unexpected'", "UPDATE schema_migrations SET applied_at=''",
-    "UPDATE schema_migrations SET version=3", "PRAGMA user_version=1",
+    "UPDATE schema_migrations SET version=99 WHERE version=2", "PRAGMA user_version=1",
 ])
 def test_current_version_requires_matching_valid_history_for_startup_and_restore(tmp_path, mutation):
     path = tmp_path / "invalid-history.db"
@@ -285,7 +287,7 @@ def test_commit_failure_recovers_snapshot_even_if_explicit_rollback_fails(tmp_pa
 def test_post_migration_validation_failure_restores_original(tmp_path, monkeypatch):
     path = legacy_database(tmp_path / "post-check-fail.db")
     before = logical_state(path)
-    original = db.MIGRATIONS[-1].apply
+    original = next(step.apply for step in db.MIGRATIONS if step.version == 2)
     def incorrect_migration(connection):
         original(connection)
         connection.execute("UPDATE app_settings SET allow_secret_export=99")
@@ -300,22 +302,26 @@ def test_future_migration_only_applies_missing_version(tmp_path, monkeypatch):
     from app import migrations, schema_validation
     path = tmp_path / "future.db"
     db.init_db(path)
+    old_version = db.SCHEMA_VERSION
+    future_version = old_version + 1
     calls = []
     def upgrade(connection):
-        calls.append(3)
+        calls.append(future_version)
         connection.execute("ALTER TABLE projects ADD COLUMN fixture_only TEXT NOT NULL DEFAULT ''")
-    steps = (*db.MIGRATIONS, migrations.Migration(3, "test_only_future_schema", upgrade))
+    steps = (*db.MIGRATIONS, migrations.Migration(future_version, "test_only_future_schema", upgrade))
     for module in (db, migrations, schema_validation):
-        monkeypatch.setattr(module, "SCHEMA_VERSION", 3)
+        monkeypatch.setattr(module, "SCHEMA_VERSION", future_version)
         monkeypatch.setattr(module, "MIGRATIONS", steps)
     db.init_db(path)
     db.init_db(path)
-    assert calls == [3]
+    assert calls == [future_version]
     saved, = snapshots(path)
     with sqlite3.connect(saved) as connection:
-        assert connection.execute("PRAGMA user_version").fetchone() == (2,)
+        assert connection.execute("PRAGMA user_version").fetchone() == (old_version,)
     with sqlite3.connect(path) as connection:
-        assert connection.execute("SELECT version FROM schema_migrations ORDER BY version").fetchall() == [(2,), (3,)]
+        assert connection.execute("SELECT version FROM schema_migrations ORDER BY version").fetchall() == [
+            (version,) for version in range(2, future_version + 1)
+        ]
     validate_backup(path)
 
 
@@ -363,7 +369,7 @@ def test_upgrade_waits_for_admitted_transaction_and_excludes_other_operations(tm
     path = legacy_database(tmp_path / "concurrent.db")
     access = access_for(path)
     started, release = threading.Event(), threading.Event()
-    original = db.MIGRATIONS[-1].apply
+    original = next(step.apply for step in db.MIGRATIONS if step.version == 2)
     def paused(connection):
         started.set()
         assert release.wait(5)

@@ -14,6 +14,7 @@ from .schema_validation import (
     SchemaValidationError as BackupValidationError,
     validate_schema,
 )
+from .sqlite_policy import SQLITE_LOCK_WAIT_SECONDS, copy_database as _copy_database
 
 
 MAX_BACKUP_BYTES = 100 * 1024 * 1024
@@ -41,7 +42,7 @@ def is_recovery_backup_filename(filename: str) -> bool:
 
 def _read_only_connection(path: Path) -> sqlite3.Connection:
     uri = f"{path.resolve().as_uri()}?mode=ro"
-    connection = sqlite3.connect(uri, uri=True)
+    connection = sqlite3.connect(uri, uri=True, timeout=SQLITE_LOCK_WAIT_SECONDS)
     connection.execute("PRAGMA query_only = ON")
     return connection
 
@@ -92,18 +93,6 @@ def save_uploaded_backup(upload: BinaryIO, destination_directory: Path) -> Path:
     except Exception:
         temporary_path.unlink(missing_ok=True)
         raise
-
-
-def _copy_database(source_path: Path, destination_path: Path) -> None:
-    source = _read_only_connection(source_path)
-    try:
-        destination = sqlite3.connect(destination_path)
-        try:
-            source.backup(destination)
-        finally:
-            destination.close()
-    finally:
-        source.close()
 
 
 def create_database_backup(source_path: Path, destination_path: Path) -> None:

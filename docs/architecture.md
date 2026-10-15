@@ -20,6 +20,7 @@ app/main.py：create_app()、lifespan、middleware 與錯誤處理
 | 模組 | 責任與限制 |
 | --- | --- |
 | `main.py` | 組裝 app、掛載 static／七個 router、全域 CSRF 依賴及錯誤處理；啟動先遷移，再每 30 秒清理 session，停止時取消清理工作。不放 SQL／表單業務邏輯。 |
+| `sqlite_policy.py` | 明確的一秒 SQL lock wait、BUSY／LOCKED 判斷及有連續鎖等待上限的 SQLite backup API；不自動重播交易，不限制健康大檔案複製總時間。 |
 | `routers/` | 保留既有 URL、參數、表單預設值及回應格式。讀取 Request／cookie，呼叫服務，處理 HTML／JSON、下載、303 及安全 cookie／header；不執行 SQL 或自行提交交易。 |
 | `services/projects.py` | 專案搜尋、列表／分頁資料、基本資料修改、完整專案查詢及共用 `touch_project()`。目前仍載入完整內容，不是內容的伺服器端分頁。 |
 | `services/content.py`／`accounts.py` | 內容驗證、資料修改與專案更新時間在同一交易內；帳號 ID 先建立再加密，失敗整筆回滾。reveal 在解密前及回傳前檢查解鎖，避免到期後回傳明文。 |
@@ -38,14 +39,14 @@ app/main.py：create_app()、lifespan、middleware 與錯誤處理
 1. `LocalRequestSecurityMiddleware` 檢查本機 Host／來源及 Fetch Metadata；`DatabaseAccessMiddleware` 協調一般作業與還原。
 2. 全域 `require_csrf` 驗證所有寫入路由，FastAPI 解析既有表單型別；router 不增加安全繞過開關。
 3. router 呼叫服務。服務執行既有空值／enum／URL 等驗證，開啟 `db_session()`，讀取所屬專案或內容。
-4. 同一連線修改內容並呼叫 `touch_project(connection, project_id)`，由 `db_session()` 一次 commit；包括專案時間在內，任何一步例外都 rollback。基本資料修改的欄位與時間仍在同一 UPDATE。
+4. 寫入服務使用 `db_session(write=True)` 的 `BEGIN IMMEDIATE`，同一連線修改內容並呼叫 `touch_project(connection, project_id)`，一次 commit；包括專案時間在內，任何一步例外都 rollback。基本資料修改的欄位與時間仍在同一 UPDATE。普通讀取以 `BEGIN` 保持多查詢一致快照；鎖定逾時回覆禁止快取的雙語 503／Retry-After，不自動重送業務操作。
 5. router 依原有方式回傳 303、頁面、JSON 或下載。頁面共用 context 與 Markdown HTML 清理，不把密碼插入 HTML。
 
 還原／恢復下載是特殊流程：備份頁及還原前檔案保留存取能力，還原本身取得排他權，等待已接納作業完成，再快照、撤銷解鎖、替換、遷移及驗證。請遵循 [備份與復原操作](backup-recovery.md)，不要用一般內容交易包住還原。
 
 ## SQLite 資料模型
 
-現行 schema **v2**：八張業務表、一張遷移紀錄表。`projects.id` 是下列五類內容的父項，外鍵刪除規則為 CASCADE；目前沒有專案永久刪除路由。
+現行 schema **v3**：八張業務表、一張遷移紀錄表與七個查詢索引。`projects.id` 是下列五類內容的父項，外鍵刪除規則為 CASCADE；目前沒有專案永久刪除路由。
 
 | 表 | 內容 |
 | --- | --- |
@@ -59,7 +60,7 @@ app/main.py：create_app()、lifespan、middleware 與錯誤處理
 | `app_settings` | 單筆敏感匯出政策，預設關閉。 |
 | `schema_migrations` | 自 v2 起的版本、固定名稱、UTC 套用時間；與 `PRAGMA user_version` 一致。 |
 
-完整欄位定義在 `app/migrations.py`。`app/schema_validation.py` 供啟動／還原共用，`app/db.py` 負責逐版交易、升級前快照與錯誤復原。細節見 [SQLite 結構升級與復原](database-migrations.md)；本輪服務拆分不提高版本、不加索引、不切換 WAL 或重寫密文。
+完整欄位與索引定義在 `app/migrations.py`。`app/schema_validation.py` 供啟動／還原共用，`app/db.py` 負責逐版交易、升級前快照與錯誤復原。細節見 [SQLite 結構升級與復原](database-migrations.md)；v3 只新增量測過的索引，不切換 WAL 或重寫密文。效能、鎖等待與 UI 分頁／草稿評估見 [R03 量測報告](performance-r03.md)，實際 UI 伺服器端分頁仍待後續交付。
 
 ## 執行設定與安全界線
 

@@ -9,9 +9,12 @@ import sqlite3
 import tempfile
 from typing import Iterator
 
-from .database_access import access_for
+from .database_access import DatabaseBusyError, access_for
 from .migrations import MIGRATIONS, SCHEMA_VERSION
 from .schema_validation import validate_schema
+from .sqlite_policy import (
+    DATABASE_BUSY_MESSAGE, SQLITE_LOCK_WAIT_SECONDS, copy_database as _copy_database, is_lock_error,
+)
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -37,42 +40,41 @@ def database_path() -> Path:
 
 
 def connect(path: Path | None = None) -> sqlite3.Connection:
-    connection = sqlite3.connect(path or database_path())
+    connection = sqlite3.connect(path or database_path(), timeout=SQLITE_LOCK_WAIT_SECONDS)
     connection.row_factory = sqlite3.Row
     connection.execute("PRAGMA foreign_keys = ON")
     return connection
 
 
 @contextmanager
-def db_session(path: Path | None = None) -> Iterator[sqlite3.Connection]:
+def db_session(path: Path | None = None, *, write: bool = False) -> Iterator[sqlite3.Connection]:
     path = path or database_path()
-    with access_for(path).operation():
-        connection = connect(path)
+    access = access_for(path)
+    with access.operation():
+        connection = None
         try:
+            connection = connect(path)
+            connection.execute("BEGIN IMMEDIATE" if write else "BEGIN")
             yield connection
             connection.commit()
-        except Exception:
-            connection.rollback()
+        except Exception as error:
+            if connection is not None:
+                try:
+                    connection.rollback()
+                except sqlite3.Error as rollback_error:
+                    access.require_recovery()
+                    raise DatabaseBusyError("資料庫需要復原，請保留備份並停止程式後復原。") from rollback_error
+            if is_lock_error(error):
+                raise DatabaseBusyError(DATABASE_BUSY_MESSAGE) from error
             raise
         finally:
-            connection.close()
-
-
-def _copy_database(source_path: Path, destination_path: Path) -> None:
-    # Separate source connection: backing up an active write connection hangs.
-    source = sqlite3.connect(f"{source_path.resolve().as_uri()}?mode=ro", uri=True)
-    try:
-        destination = sqlite3.connect(destination_path)
-        try:
-            source.backup(destination)
-        finally:
-            destination.close()
-    finally:
-        source.close()
+            if connection is not None:
+                connection.close()
 
 
 def _validate_file(path: Path) -> int:
-    connection = sqlite3.connect(f"{path.resolve().as_uri()}?mode=ro", uri=True)
+    connection = sqlite3.connect(f"{path.resolve().as_uri()}?mode=ro", uri=True,
+                                 timeout=SQLITE_LOCK_WAIT_SECONDS)
     connection.row_factory = sqlite3.Row
     try:
         return validate_schema(connection)

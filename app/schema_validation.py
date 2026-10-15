@@ -1,8 +1,9 @@
 """Read-only schema/data checks shared by startup migrations and backup restore."""
 
 import sqlite3
+import re
 
-from .migrations import MIGRATIONS, SCHEMA_VERSION
+from .migrations import MIGRATIONS, QUERY_INDEXES, SCHEMA_VERSION
 from .vault import VaultError, validate_vault_metadata
 
 
@@ -119,7 +120,20 @@ def validate_schema(connection: sqlite3.Connection) -> int:
             raise SchemaValidationError("資料庫的遷移紀錄不完整或不相容。")
     if connection.execute("PRAGMA foreign_key_check").fetchone() is not None:
         raise SchemaValidationError("備份檔含有不一致的關聯資料，無法還原。")
+    if version >= 3:
+        for statement in QUERY_INDEXES:
+            name = statement.split()[2]
+            index = connection.execute("SELECT sql FROM sqlite_master WHERE type='index' AND name=?", (name,)).fetchone()
+            if index is None or _index_tokens(index[0]) != _index_tokens(statement):
+                raise SchemaValidationError("資料庫的查詢索引不完整或不相容。")
     return version
+
+
+def _index_tokens(statement: str) -> list[str]:
+    # Ignore formatting/keyword case, but not the case or whitespace of values
+    # inside SQL string literals (the CASE ordering must remain exact).
+    return [token if token.startswith("'") else token.casefold() for token in
+            re.findall(r"'(?:''|[^'])*'|[A-Za-z_][A-Za-z_0-9]*|\d+|[^\s;]", statement)]
 
 
 def _validate_vault_data(connection: sqlite3.Connection) -> None:

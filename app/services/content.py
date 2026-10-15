@@ -13,7 +13,7 @@ def add_url(*, project_id: int, type: str = 'other', title: str, url: str, note:
         raise ApplicationError(status_code=400, detail="URL 標題與網址不可為空白")
     if not url.strip().startswith(("http://", "https://")):
         raise ApplicationError(status_code=400, detail="網址必須以 http:// 或 https:// 開頭")
-    with db_session() as connection:
+    with db_session(write=True) as connection:
         get_project(connection, project_id)
         connection.execute(
             "INSERT INTO project_urls (project_id, type, title, url, note) VALUES (?, ?, ?, ?, ?)",
@@ -30,7 +30,7 @@ def update_url(*, url_id: int, type: str = 'other', title: str, url: str, note: 
         raise ApplicationError(status_code=400, detail="URL 標題與網址不可為空白")
     if not url.strip().startswith(("http://", "https://")):
         raise ApplicationError(status_code=400, detail="網址必須以 http:// 或 https:// 開頭")
-    with db_session() as connection:
+    with db_session(write=True) as connection:
         item = connection.execute(
             "SELECT project_id FROM project_urls WHERE id = ?", (url_id,)
         ).fetchone()
@@ -49,7 +49,7 @@ def update_url(*, url_id: int, type: str = 'other', title: str, url: str, note: 
 
 
 def delete_url(*, url_id: int) -> int:
-    with db_session() as connection:
+    with db_session(write=True) as connection:
         item = connection.execute(
             "SELECT project_id FROM project_urls WHERE id = ?", (url_id,)
         ).fetchone()
@@ -75,7 +75,7 @@ def add_note(
         priority = "normal"
     if not title.strip() or not content_markdown.strip():
         raise ApplicationError(status_code=400, detail="備註標題與內容不可為空白")
-    with db_session() as connection:
+    with db_session(write=True) as connection:
         get_project(connection, project_id)
         connection.execute(
             """
@@ -102,7 +102,7 @@ def update_note(
         priority = "normal"
     if not title.strip() or not content_markdown.strip():
         raise ApplicationError(status_code=400, detail="備註標題與內容不可為空白")
-    with db_session() as connection:
+    with db_session(write=True) as connection:
         item = connection.execute(
             "SELECT project_id FROM notes WHERE id = ?", (note_id,)
         ).fetchone()
@@ -123,7 +123,7 @@ def update_note(
 
 
 def delete_note(*, note_id: int) -> int:
-    with db_session() as connection:
+    with db_session(write=True) as connection:
         item = connection.execute(
             "SELECT project_id FROM notes WHERE id = ?", (note_id,)
         ).fetchone()
@@ -148,7 +148,7 @@ def add_checklist_item(
         category = "other"
     if not title.strip():
         raise ApplicationError(status_code=400, detail="交接項目不可為空白")
-    with db_session() as connection:
+    with db_session(write=True) as connection:
         get_project(connection, project_id)
         connection.execute(
             """
@@ -163,7 +163,7 @@ def add_checklist_item(
 
 
 def toggle_checklist(*, item_id: int) -> int:
-    with db_session() as connection:
+    with db_session(write=True) as connection:
         item = connection.execute(
             "SELECT project_id, completed FROM checklist_items WHERE id = ?", (item_id,)
         ).fetchone()
@@ -195,7 +195,7 @@ def update_checklist_item(
         category = "other"
     if not title.strip():
         raise ApplicationError(status_code=400, detail="交接項目不可為空白")
-    with db_session() as connection:
+    with db_session(write=True) as connection:
         item = connection.execute(
             "SELECT project_id FROM checklist_items WHERE id = ?", (item_id,)
         ).fetchone()
@@ -216,7 +216,7 @@ def update_checklist_item(
 
 
 def delete_checklist_item(*, item_id: int) -> int:
-    with db_session() as connection:
+    with db_session(write=True) as connection:
         item = connection.execute(
             "SELECT project_id FROM checklist_items WHERE id = ?", (item_id,)
         ).fetchone()
@@ -241,7 +241,7 @@ def add_environment_variable(
         environment = "local"
     if not key.strip():
         raise ApplicationError(status_code=400, detail="環境變數名稱不可為空白")
-    with db_session() as connection:
+    with db_session(write=True) as connection:
         get_project(connection, project_id)
         connection.execute(
             """
@@ -275,7 +275,7 @@ def update_environment_variable(
         environment = "local"
     if not key.strip():
         raise ApplicationError(status_code=400, detail="環境變數名稱不可為空白")
-    with db_session() as connection:
+    with db_session(write=True) as connection:
         item = connection.execute(
             "SELECT project_id FROM environment_variables WHERE id = ?", (variable_id,)
         ).fetchone()
@@ -303,7 +303,7 @@ def update_environment_variable(
 
 
 def delete_environment_variable(*, variable_id: int) -> int:
-    with db_session() as connection:
+    with db_session(write=True) as connection:
         item = connection.execute(
             "SELECT project_id FROM environment_variables WHERE id = ?", (variable_id,)
         ).fetchone()
