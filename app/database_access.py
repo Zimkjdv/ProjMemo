@@ -39,7 +39,14 @@ class DatabaseAccess:
                 self._condition.notify_all()
 
     @contextmanager
-    def maintenance(self):
+    def maintenance(self, *, reuse: bool = False):
+        # Only startup migrations explicitly reuse restore's exclusive lease.
+        # A second restore, or a normal admitted request, must not acquire it.
+        if reuse and _maintenance.get() is self:
+            yield
+            return
+        if _admitted.get() is self:
+            raise DatabaseBusyError("資料庫忙碌或需要復原，請先確認還原狀態。")
         with self._condition:
             if self._restoring or self._unavailable:
                 raise DatabaseBusyError("資料庫忙碌或需要復原，請先確認還原狀態。")
@@ -49,9 +56,11 @@ class DatabaseAccess:
                 self._restoring = False
                 raise DatabaseBusyError("資料庫仍有作業進行中，請稍後再還原。")
         token = _admitted.set(self)
+        maintenance_token = _maintenance.set(self)
         try:
             yield
         finally:
+            _maintenance.reset(maintenance_token)
             _admitted.reset(token)
             with self._condition:
                 self._restoring = False
@@ -63,6 +72,7 @@ class DatabaseAccess:
 
 
 _admitted = ContextVar("projmemo_database_operation", default=None)
+_maintenance = ContextVar("projmemo_database_maintenance", default=None)
 _registry_lock = threading.Lock()
 _registry: dict[Path, DatabaseAccess] = {}
 

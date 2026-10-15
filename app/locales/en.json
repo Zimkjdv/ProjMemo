@@ -372,6 +372,8 @@
   "還原失敗，已使用還原前備份回復原有資料。": "Restore failed. Your original data was recovered from the pre-restore backup.",
   "保管庫設定格式錯誤或參數不受支援，請使用完整且相容的備份。": "The vault configuration is invalid or unsupported. Use a complete, compatible backup.",
   "備份檔的資料版本不受支援，請先升級 ProjMemo。": "This backup uses an unsupported schema version. Upgrade ProjMemo first.",
+  "資料庫的遷移紀錄不完整或不相容。": "The database migration history is incomplete or incompatible.",
+  "資料庫版本與遷移紀錄不一致。": "The database version does not match its migration history.",
   "備份檔的保管庫資料表不完整，無法還原。": "The backup has incomplete vault tables and cannot be restored.",
   "備份檔的資料表結構不相容，無法還原。": "The backup has incompatible table definitions and cannot be restored.",
   "備份檔含有格式錯誤的資料，無法還原。": "The backup contains invalid data and cannot be restored.",

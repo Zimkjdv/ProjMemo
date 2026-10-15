@@ -12,6 +12,7 @@ ProjMemo 是一個以本機 Python `.venv` 執行的個人專案備註與交接�
 - [桌面 UI 設計與驗收](docs/desktop-ui.md)：目前操作規格、R06 原始規劃與實機驗收清單。
 - [保管庫安全說明](docs/vault-security.md)：主密碼、salt、加密金鑰及 session 的關係。
 - [本機請求保護](docs/local-web-security.md)：Host、來源、CSRF 與程式呼叫方式。
+- [資料庫升級與復原](docs/database-migrations.md)：schema 版本、逐版 migration、升級前快照及失敗處理。
 
 ## 主要目標
 
@@ -99,6 +100,7 @@ ProjMemo 是一個以本機 Python `.venv` 執行的個人專案備註與交接�
 - 每次還原前會自動保留一份可下載的還原前備份
 - 還原上傳限制為 100 MB
 - 還原前備份保存在目前資料庫所在目錄的 `backups/` 子目錄，最多顯示最近 10 份且不會自動刪除
+- 啟動／還原時會將已支援的舊 schema 逐版升級；升級前快照另存於 `backups/migrations/`，不列入還原前備份清單，也不會自動刪除。遷移或復原失敗時停止該次初始化，見 [資料庫升級與復原](docs/database-migrations.md)
 
 ### 6. 帳號與密碼保管庫
 
@@ -169,7 +171,7 @@ ProjMemo 是一個以本機 Python `.venv` 執行的個人專案備註與交接�
 - `vault_config`：salt、加密驗證資料及 Argon2id 參數；不保存主密碼或解密金鑰。
 - `app_settings`：是否允許額外的敏感匯出，預設關閉。
 
-實際 schema 以 `app/db.py` 為準。`PRAGMA user_version` 標記目前格式為 1，未標記的舊備份為 0；目前以啟動時建立缺少的表為主，通用版本化遷移仍在規劃。
+實際 schema 與逐版定義以 `app/migrations.py` 為準，由 `app/db.py` 管理交易、快照與失敗復原。`PRAGMA user_version` 現為 **2**：八張業務表加上 `schema_migrations` 紀錄表。支援未標記的 v0（完整五表或八表）與原 v1 八表資料庫升級；紀錄自 v2 起保存名稱與 UTC 執行時間，不補造 v1 歷史。已是最新版時不重複套用、不新增快照；版本／紀錄／結構不一致則拒絕啟動或還原。操作與限制見 [資料庫升級與復原](docs/database-migrations.md)。
 
 ## 技術方向
 

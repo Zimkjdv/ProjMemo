@@ -33,6 +33,7 @@ def test_supported_backup_preserves_decryption_and_legacy_schema(backup):
         row = connection.execute("SELECT * FROM access_accounts").fetchone()
         assert decrypt_secret(key, 1, 1, row["secret_ciphertext"], row["secret_nonce"]) == "test-only-account-secret"
         connection.execute("PRAGMA user_version = 0")
+        connection.execute("DROP TABLE schema_migrations")
     validate_backup(backup)  # Existing pre-versioned vault backup.
     with sqlite3.connect(backup) as connection:
         for table in ("access_accounts", "vault_config", "app_settings"):
@@ -92,6 +93,7 @@ def test_unlock_rejects_invalid_metadata_without_deriving_key(backup, monkeypatc
 
 def test_legacy_restore_creates_missing_vault_tables(backup, tmp_path, monkeypatch):
     with sqlite3.connect(backup) as connection:
+        connection.execute("DROP TABLE schema_migrations")
         for table in ("access_accounts", "vault_config", "app_settings"):
             connection.execute(f"DROP TABLE {table}")
         connection.execute("PRAGMA user_version = 0")
