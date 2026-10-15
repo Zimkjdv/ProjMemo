@@ -46,9 +46,11 @@ def valid_csrf_token(value: object) -> bool:
 
 @pass_context
 def csrf_input(context) -> Markup:
-    return Markup('<input type="hidden" name="csrf_token" value="{}">').format(
+    csrf = Markup('<input type="hidden" name="csrf_token" value="{}">').format(
         escape(context["csrf_token"]),
     )
+    token = context["request"].app.state.runtime.submissions.issue(context["csrf_token"])
+    return csrf + Markup('<input type="hidden" name="_submission_token" value="{}">').format(escape(token))
 
 
 async def require_csrf(request: Request) -> None:

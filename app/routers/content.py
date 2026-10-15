@@ -6,7 +6,9 @@ from fastapi.responses import RedirectResponse
 from ..presentation import redirect_to_project
 from ..services import content
 
-router = APIRouter()
+from ..submissions import MutationRoute
+
+router = APIRouter(route_class=MutationRoute)
 
 
 @router.post("/projects/{project_id}/urls")

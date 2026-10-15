@@ -7,7 +7,9 @@ from ..presentation import page_context, redirect_to_project, templates
 from ..runtime import VAULT_COOKIE_NAME, get_runtime
 from ..services import projects, vault
 
-router = APIRouter()
+from ..submissions import MutationRoute
+
+router = APIRouter(route_class=MutationRoute)
 
 
 @router.get("/", response_class=HTMLResponse)

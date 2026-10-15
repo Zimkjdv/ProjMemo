@@ -6,7 +6,7 @@ const vm = require("node:vm");
 
 const source = (name) => fs.readFileSync(path.join(__dirname, "../../app/static", name), "utf8");
 
-function detailHarness(savedView, blockedStorage = false) {
+function detailHarness(savedView, blockedStorage = false, search = "") {
   const makeParent = () => ({ children: [], append(element) {
     element.parentElement.children = element.parentElement.children.filter((child) => child !== element);
     this.children.push(element);
@@ -45,9 +45,14 @@ function detailHarness(savedView, blockedStorage = false) {
     getItem() { if (blockedStorage) throw Error("blocked"); return preference; },
     setItem(_, value) { if (blockedStorage) throw Error("blocked"); preference = value; },
   };
-  vm.runInNewContext(source("project-detail.js"), { document, localStorage, Event });
+  vm.runInNewContext(source("project-detail.js"), { document, localStorage, Event, URLSearchParams, window: { location: { search } } });
   return { content, sections, main, side, buttons, events, viewSwitch, preference: () => preference };
 }
+
+test("explicit return view wins over optional storage", () => {
+  assert.equal(detailHarness("cards", true, "?detail_view=list").content.dataset.view, "list");
+  assert.equal(detailHarness("list", false, "?detail_view=invalid").content.dataset.view, "list");
+});
 
 test("details use shortcut order, retain the same drafts, and return to the original columns", () => {
   const page = detailHarness(null);

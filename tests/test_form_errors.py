@@ -1,5 +1,6 @@
 from contextlib import closing
 import sqlite3
+import re
 
 import pytest
 
@@ -12,6 +13,13 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setenv("PROJMEMO_DB_PATH", str(tmp_path / "forms.db"))
     with TestClient(create_app()) as client:
         client.post("/projects/new", data={"name": "Fixture"})
+        original_post = client.post
+        def native_form_post(path, **kwargs):
+            if "text/html" in kwargs.get("headers", {}).get("Accept", ""):
+                token = re.search(r'name="_submission_token" value="([^"]+)"', client.get("/projects/new").text)[1]
+                kwargs["data"] = {**kwargs.get("data", {}), "_submission_token": token}
+            return original_post(path, **kwargs)
+        client.post = native_form_post
         yield client
 
 

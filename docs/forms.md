@@ -22,3 +22,9 @@
 列舉不再將未知值默默改成預設值，而是回報欄位錯誤。URL 需有合法 HTTP／HTTPS scheme、主機及有效 port；支援 localhost、IPv4／IPv6、IDNA 主機，拒絕空主機、空白、反斜線與內嵌帳密。只驗證結構、不連線測試或擷取網址。帳號 endpoint 可以是 `host:port`／SSH 主機，不強迫使用 HTTP URL。
 
 原生 HTML 表單失敗會在原操作頁展開對應表單並顯示雙語摘要／欄位錯誤；一般輸入經 HTML 跳脫回填，密碼與上傳檔案須重填。JSON 用戶端保留簡短 detail，不輸出驗證 input／ctx，不把密碼寫入草稿或錯誤訊息。CSRF／來源保護照常適用。
+
+## 送出與重試
+
+專案與五類內容表單使用 PRG、成功提示、原區段 anchor，並保留卡片／明細偏好。表單簽署 `_submission_token` 綁定目前瀏覽器的 CSRF；重送相同成功 token 只取得同一 redirect，不再次新增、編輯或翻轉完成狀態。驗證／DB 回滾錯誤可修正後重試；仍在執行或結果不明時先等候／檢查，不自動重新建立。
+
+單程序記憶體只保留 token、到期時間、path、狀態和安全 Location，不記錄輸入、密碼或其 hash。24 小時到期、程序重啟、簽章錯誤會拒絕，請先確認資料再刷新；10,000 筆滿時拒絕新送出，不淘汰未過期完成紀錄。不承諾多 worker／跨重啟 exactly-once。JavaScript 的停用按鈕只是輔助，關閉 JS 仍有伺服器 token 保護；JSON 腳本可選擇攜帶 token，未攜帶仍維持原行為。

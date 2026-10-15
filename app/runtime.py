@@ -3,6 +3,7 @@
 from dataclasses import dataclass, field
 
 from .vault import UnlockAttemptLimiter, VaultSessions
+from .submissions import SubmissionRegistry
 
 
 VAULT_COOKIE_NAME = "projmemo_vault"
@@ -10,6 +11,7 @@ VAULT_COOKIE_NAME = "projmemo_vault"
 
 @dataclass
 class AppRuntime:
+    submissions: SubmissionRegistry = field(default_factory=SubmissionRegistry)
     vault_sessions: VaultSessions = field(default_factory=VaultSessions)
     unlock_attempt_limiter: UnlockAttemptLimiter = field(default_factory=UnlockAttemptLimiter)
 

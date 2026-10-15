@@ -728,6 +728,7 @@ html.project-detail-page { scroll-padding-top: 0; }
 .form-feedback { margin: 0 0 18px; padding: 14px 16px; border: 1px solid #f1b5b5; border-radius: 10px; background: #fff5f5; color: #9c2525; }
 .form-feedback p { margin: 6px 0; }
 .field-error { display: block; color: #b42318; margin-top: 5px; font-weight: 500; }
+.operation-success { margin-bottom: 18px; padding: 12px 18px; border: 1px solid #b6dec8; border-radius: 10px; background: #effaf4; color: #166534; }
 [aria-invalid="true"] { border-color: #d92d20; }
 
 @media (max-width: 650px) {

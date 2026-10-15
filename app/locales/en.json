@@ -1,4 +1,8 @@
 {
+  "已儲存變更。": "Changes saved.",
+  "送出識別已失效，請先確認資料是否已保存，再重新整理。": "The submission token expired. Check whether your changes were saved before refreshing.",
+  "此操作處理中或結果待確認，請勿重複新增，稍後重試。": "This operation is in progress or needs confirmation. Do not create it again; retry later.",
+  "操作紀錄已滿，請稍後再試；本次未寫入。": "The submission registry is full. Retry later; nothing was written.",
   "此欄位格式不正確。": "This field has an invalid format.",
   "此欄位不可為空白。": "This field cannot be blank.",
   "請選擇有效選項。": "Select a valid option.",

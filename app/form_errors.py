@@ -113,6 +113,9 @@ def restore_form(markup, action, values, message, fields, t):
             node.attrs.pop("value", None)
             node.attrs.pop("checked", None)
             node.raw = None
+        elif name == "_submission_token" and isinstance(values.get(name), str):
+            node.attrs["value"] = values[name]
+            node.raw = None
         elif kind not in {"hidden", "submit", "button"}:
             value = values.get(name, "")
             value = value if isinstance(value, str) else ""

@@ -7,7 +7,9 @@ from ..presentation import redirect_to_project
 from ..runtime import VAULT_COOKIE_NAME, get_runtime
 from ..services import accounts
 
-router = APIRouter()
+from ..submissions import MutationRoute
+
+router = APIRouter(route_class=MutationRoute)
 
 
 @router.post("/projects/{project_id}/accounts")
