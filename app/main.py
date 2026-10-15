@@ -1,7 +1,8 @@
 """ProjMemo application assembly; HTTP adapters and services live separately."""
 
 import asyncio
-from contextlib import asynccontextmanager, suppress
+from contextlib import ExitStack, asynccontextmanager, suppress
+import logging
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -10,29 +11,57 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from .database_access import DatabaseAccessMiddleware, DatabaseBusyError
-from .db import init_db
+from .db import MigrationError, init_db
 from .errors import ApplicationError
 from .form_errors import recover_form_error
 from .i18n import get_language, translate_error
-from .routers import accounts, backups, content, exports, language, projects, vault
+from .operations import SafeDiagnosticsMiddleware, error_category, operational_log, prepare_storage
+from .routers import accounts, backups, content, exports, health, language, projects, vault
 from .runtime import AppRuntime
 from .web_security import LocalRequestSecurityMiddleware, NO_STORE_HEADERS, require_csrf
 
 
 @asynccontextmanager
 async def lifespan(application: FastAPI):
-    init_db()
+    application.state.startup_ready = False
+    resources = ExitStack()
+    logger = logging.getLogger("projmemo.operations")
+    try:
+        path = prepare_storage()
+        logger = resources.enter_context(operational_log(path))
+        application.state.operations_logger = logger
+        init_db()
+    except Exception as error:
+        code = error_category(error)
+        logger.error("startup_failed category=%s; preserve backups and consult docs/local-operations.md", code)
+        resources.close()
+        application.state.operations_logger = None
+        if isinstance(error, MigrationError):
+            raise MigrationError(f"ProjMemo startup failed [{code}]. Preserve backups; see docs/local-operations.md.",
+                                 snapshot_path=error.snapshot_path, recovered=error.recovered) from None
+        raise RuntimeError(f"ProjMemo startup failed [{code}]. Preserve backups; see docs/local-operations.md.") from None
+    application.state.startup_ready = True
+    logger.info("startup_ready")
     async def reap_sessions():
         while True:
             await asyncio.sleep(30)
-            application.state.runtime.vault_sessions.purge_expired()
+            try:
+                application.state.runtime.vault_sessions.purge_expired()
+            except Exception as error:
+                logger.error("session_cleanup_failed category=%s", error_category(error))
     reaper = asyncio.create_task(reap_sessions())
     try:
         yield
     finally:
+        application.state.startup_ready = False
         reaper.cancel()
-        with suppress(asyncio.CancelledError):
-            await reaper
+        try:
+            with suppress(asyncio.CancelledError):
+                await reaper
+        finally:
+            logger.info("shutdown_complete")
+            application.state.operations_logger = None
+            resources.close()
 
 
 async def localized_http_error(request: Request, error: HTTPException) -> JSONResponse:
@@ -80,8 +109,11 @@ def create_app(runtime: AppRuntime | None = None) -> FastAPI:
     application = FastAPI(title="ProjMemo", version="0.1.0", lifespan=lifespan,
                           dependencies=[Depends(require_csrf)])
     application.state.runtime = runtime if runtime is not None else AppRuntime()
+    application.state.startup_ready = False
+    application.state.operations_logger = None
     application.add_middleware(DatabaseAccessMiddleware)
     application.add_middleware(LocalRequestSecurityMiddleware)
+    application.add_middleware(SafeDiagnosticsMiddleware)
     application.mount(
         "/static",
         StaticFiles(directory=str(Path(__file__).resolve().parent / "static")),
@@ -91,7 +123,7 @@ def create_app(runtime: AppRuntime | None = None) -> FastAPI:
     application.add_exception_handler(ApplicationError, application_error)
     application.add_exception_handler(RequestValidationError, validation_error)
     application.add_exception_handler(DatabaseBusyError, database_busy_error)
-    for module in (language, projects, content, accounts, vault, backups, exports):
+    for module in (language, projects, content, accounts, vault, backups, exports, health):
         application.include_router(module.router)
     return application
 

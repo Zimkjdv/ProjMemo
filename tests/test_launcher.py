@@ -68,6 +68,7 @@ def test_normal_mode_passes_same_socket_and_forces_single_worker(monkeypatch):
         assert seen["config"].host == "127.0.0.1"
         assert seen["config"].workers == 1
         assert seen["config"].reload is False
+        assert seen["config"].access_log is False
 
 
 def test_dependency_failure_is_clear_without_exception_content(monkeypatch, capsys):
@@ -129,9 +130,29 @@ def test_real_server_reuses_bound_socket_when_first_port_busy(tmp_path, developm
             assert first < selected <= first + 99
             assert "ProjMemo" in response.text
             assert (tmp_path / "fixture.db").exists()
+            with httpx.Client(trust_env=False, timeout=2) as client:
+                assert client.get(f"http://127.0.0.1:{selected}/health/ready").json() == {"status": "ready"}
+                assert client.get(f"http://127.0.0.1:{selected}/?q=r07-secret-query-fixture").status_code == 200
         finally:
             if process.poll() is None:
                 subprocess.run(["taskkill", "/PID", str(process.pid), "/T", "/F"], capture_output=True, timeout=10)
             process.wait(timeout=10)
             reader.join(timeout=2)
             process.stdout.close()
+        assert "r07-secret-query-fixture" not in "".join(output)
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows launcher subprocess baseline")
+def test_real_startup_failure_is_nonzero_and_never_prints_database_contents(tmp_path):
+    secret = "r07-secret-corrupt-database-fixture"
+    path = tmp_path / "corrupt.db"
+    path.write_bytes(secret.encode())
+    with closing(launcher.bind_local_socket(0, 0)) as occupied:
+        first = occupied.getsockname()[1]
+        result = subprocess.run([sys.executable, "-m", "app.launcher", "--port", str(first)],
+            cwd=ROOT, env=os.environ | {"PROJMEMO_DB_PATH": str(path)},
+            capture_output=True, text=True, errors="replace", timeout=25)
+    assert result.returncode == 3, result.stdout + result.stderr
+    assert "DATABASE_INIT_FAILED" in result.stderr
+    assert secret not in result.stdout + result.stderr
+    assert path.read_bytes() == secret.encode()

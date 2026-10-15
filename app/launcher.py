@@ -71,7 +71,7 @@ def serve(reserved, *, development=False):
 
     port = reserved.getsockname()[1]
     config = uvicorn.Config(
-        "app.main:app", host=HOST, port=port, reload=development, workers=1,
+        "app.main:app", host=HOST, port=port, reload=development, workers=1, access_log=False,
         reload_dirs=[str(ROOT / "app")] if development else None,
         reload_excludes=[str(ROOT / name) for name in ("data", ".venv", "tests", ".git")] if development else None,
     )

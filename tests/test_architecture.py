@@ -48,7 +48,10 @@ def test_pre_refactor_paths_methods_fields_defaults_and_response_contract_are_un
     actual = http_contract(app)
     assert actual == expected
     routes = [route for route in app.routes if hasattr(route, "dependant")]
-    assert len(routes) == len(expected)
+    probes = [route for route in routes if route.path in {"/health/live", "/health/ready"}]
+    assert len(probes) == 2
+    assert all(route.methods == {"GET"} and not route.include_in_schema for route in probes)
+    assert len(routes) - len(probes) == len(expected)
     assert len({(route.path, tuple(sorted(route.methods))) for route in routes}) == len(routes)
     assert all(any(dependency.call.__name__ == "require_csrf" for dependency in route.dependant.dependencies)
                for route in routes)

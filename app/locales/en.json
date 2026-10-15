@@ -477,6 +477,7 @@
   "每頁備註數量": "Notes per page",
   "顯示全部": "Show all",
   "顯示第 {first}–{last} 筆備註，共 {count} 筆": "Notes {first}–{last} of {count}",
+  "服務暫時無法處理此操作，請確認資料目錄、磁碟空間與備份；保留追蹤碼供查核。": "This operation is temporarily unavailable. Check local storage, disk space and backups; keep the request ID for diagnostics.",
   "收合完整內容": "Collapse value",
   "重設列表": "Reset list",
   "重設檢視、每頁筆數與篩選": "Reset view, page size and filters",

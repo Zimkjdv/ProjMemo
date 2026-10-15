@@ -6,6 +6,16 @@
 
 ## 2026-10-15
 
+### R07-D — 安全維運日誌、健康檢查與儲存預檢
+
+原條目完整移入；個人桌面／loopback／單 worker 定位不變，整體 R07 驗收仍另外追蹤。
+
+- [x] 增加不洩漏敏感欄位的錯誤日誌、健康檢查、資料目錄／磁碟空間問題說明。
+- [x] `logs/projmemo.log` 有界輪替（約 1 MiB × 4）與終端摘要，只記新建 request ID、method、路由模板、status／固定分類；不記欄位、query、動態值、cookie、Authorization、例外文字或原始 traceback。停用 launcher 的 raw access log，維持雙語安全 500／503；已開始串流失敗不送第二個回應。日誌 I/O 失敗使用固定提示，結束關閉自有 handler。
+- [x] `/health/live` 不碰 DB，`/health/ready` 只回簡單狀態，唯讀檢查啟動、schema／可讀、還原／復原准入與基本空間。遺失 DB 不重建、不升級；沿用 Host／CSRF，全新 GET probe 不加入業務 OpenAPI，歷史契約不變。
+- [x] 啟動預檢目錄／既有檔案權限、私人 probe 寫入／fsync／刪除與 64 MiB 基本剩餘量，不寫既有 DB；失敗固定分類並非零退出。保留 migration 例外類型／復原屬性，但不展開原錯誤內容。文件明列大型快照／還原需額外空間、temp 可能不同磁碟，探針不等於完整 integrity 或寫入成功保證。
+- [x] 完整新依賴 Python 419 項、Node 66 項通過。新增 21 項 operations 回歸及一項真實啟動失敗；包括雙語敏感 sentinel、還原／復原／遺失／損壞／版本／低空間、日誌輪替／寫入故障、檔案 handle 釋放與不刪既有資料。Windows normal／reload 真實健康檢查通過且 query 不進終端。新增 `docs/operations-health.md`，更新架構與維運說明，清除本項 pytest 暫存；正式資料未用於測試。
+
 ### R07-C — 依賴分離、雜湊鎖與實際漏洞查核
 
 原條目完整移入；「本次未查核」是原規劃背景，這輪已實際查核並修補，不沿用舊結論。

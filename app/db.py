@@ -31,10 +31,15 @@ class MigrationError(sqlite3.DatabaseError):
         self.recovered = recovered
 
 
+def configured_database_path() -> Path:
+    """Return configuration without creating directories (also used by probes)."""
+    configured_path = os.getenv("PROJMEMO_DB_PATH")
+    return Path(configured_path) if configured_path else DEFAULT_DB_PATH
+
+
 def database_path() -> Path:
     """Return the configured database path and create its parent directory."""
-    configured_path = os.getenv("PROJMEMO_DB_PATH")
-    path = Path(configured_path) if configured_path else DEFAULT_DB_PATH
+    path = configured_database_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     return path
 

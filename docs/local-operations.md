@@ -18,4 +18,8 @@ Windows 使用 `setup-local.bat` 建立／檢查 `.venv` 並安裝專案依賴�
 
 ## 依賴維護
 
-目前支援 Windows x64／CPython 3.12。setup 只安裝含雜湊的 runtime 鎖，測試需另外明確安裝 `requirements-test.txt`。版本閉包、更新／離線安裝與 2026-10-15 實際安全掃描見 [依賴維護](dependencies.md)。勿對正在執行的服務熱更新 venv；先停止、備份，再 setup。維運日誌／健康檢查仍由 R07 後續條目交付。
+目前支援 Windows x64／CPython 3.12。setup 只安裝含雜湊的 runtime 鎖，測試需另外明確安裝 `requirements-test.txt`。版本閉包、更新／離線安裝與 2026-10-15 實際安全掃描見 [依賴維護](dependencies.md)。勿對正在執行的服務熱更新 venv；先停止、備份，再 setup。
+
+## 健康與故障處理
+
+`/health/live` 是程序存活，`/health/ready` 才確認啟動／DB 可讀及操作准入；不回傳敏感資料或自動重建 DB。啟動前檢查父目錄可寫與 64 MiB 基本剩餘空間，失敗以固定分類停止。安全日誌在 DB 同目錄 `logs/`，約 1 MiB × 4 輪替，不包含請求欄位與例外內容；完整分類、故障處理與檢查限制見 [健康與日誌](operations-health.md)。

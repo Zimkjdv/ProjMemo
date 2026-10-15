@@ -6,7 +6,7 @@
 
 ```text
 app/main.py：create_app()、lifespan、middleware 與錯誤處理
-  └─ routers/：projects、content、accounts、vault、backups、exports、language
+  └─ routers/：projects、content、accounts、vault、backups、exports、language、health
        ├─ presentation.py：模板、繁中／英文 context、安全 Markdown、轉址
        └─ services/：projects、workspace、content、accounts、vault、backups、exports
             ├─ db.py／database_access.py：交易與程序內排他作業
@@ -19,7 +19,8 @@ app/main.py：create_app()、lifespan、middleware 與錯誤處理
 
 | 模組 | 責任與限制 |
 | --- | --- |
-| `main.py` | 組裝 app、掛載 static／七個 router、全域 CSRF 依賴及錯誤處理；啟動先遷移，再每 30 秒清理 session，停止時取消清理工作。不放 SQL／表單業務邏輯。 |
+| `main.py` | 組裝 app、掛載 static／八個 router、全域 CSRF 依賴及錯誤處理；啟動先儲存預檢與日誌、遷移，再每 30 秒清理 session，停止時取消工作並關閉自有日誌。不放 SQL／表單業務邏輯。 |
+| `launcher.py`／`operations.py` | loopback／單 worker／持有式 socket；安全錯誤摘要、64 MiB 基本空間與可寫預檢、唯讀 readiness，不存放請求內容或密碼。 |
 | `sqlite_policy.py` | 明確的一秒 SQL lock wait、BUSY／LOCKED 判斷及有連續鎖等待上限的 SQLite backup API；不自動重播交易，不限制健康大檔案複製總時間。 |
 | `routers/` | 保留既有 URL、參數、表單預設值及回應格式。讀取 Request／cookie，呼叫服務，處理 HTML／JSON、下載、303 及安全 cookie／header；不執行 SQL 或自行提交交易。 |
 | `services/projects.py`／`workspace.py` | 共用專案與非備註投影、列表／搜尋、修改與 `touch_project()`；`ProjectData` 保持完整，workspace 另採 COUNT／LIMIT／OFFSET 提供 UI 專用 10／20／50 分頁與深頁錯誤回復。 |
@@ -32,7 +33,7 @@ app/main.py：create_app()、lifespan、middleware 與錯誤處理
 | `errors.py`／`validation.py`／`form_errors.py` | 服務獨立的業務／欄位錯誤與六類統一輸入規則；HTTP 邊界依原生 HTML／JSON 回覆，展開原表單、跳脫一般值，永不回填或持久化密碼。 |
 | `runtime.py`／`submissions.py` | 每個 app 的 session／限流／單次送出 registry；token 綁定 CSRF，並發單次執行、成功重播 303，不保存表單。單程序、24 小時、最多 10,000 筆，重啟／過期拒絕，不是多人權限或跨重啟 exactly-once。 |
 
-正式入口仍是 `app.main:app`，啟動方式不變。`create_app(runtime=None)` 方便隔離測試及依賴替換；建立 app 不會連線或建立 DB，真正初始化在 lifespan。
+ASGI 入口仍是 `app.main:app`；日常透過 `run-local.bat`／`python -m app.launcher`，開發才使用 `run-dev.bat`。launcher 固定 loopback、單 worker，持有已綁定 socket 交給 Uvicorn，日常不安裝套件。`create_app(runtime=None)` 方便隔離測試及依賴替換；建立 app 不會連線或建立 DB，真正儲存預檢、日誌及初始化在 lifespan。
 
 ## 一次內容修改的流程
 
@@ -67,12 +68,14 @@ app/main.py：create_app()、lifespan、middleware 與錯誤處理
 | 設定 | 使用方式 |
 | --- | --- |
 | `PROJMEMO_DB_PATH` | 由 `db.py` 讀取，預設為專案根目錄下 `data/projmemo.db`；相對路徑依目前工作目錄解析，因此建議使用絕對路徑。切換前先停止程式並備份。 |
-| `PROJMEMO_PORT` | `run-local.bat` 使用；未指定時從 8000 探測空閒 port。直接啟動 Uvicorn 仍須用 `--port`，它不會自動讀取此設定換 port；探測到綁定之間仍可能競爭，屬 R07 待辦。 |
+| `PROJMEMO_PORT` | launcher 的起始 port（預設 8000，`--port` 優先），真實 bind／持有，衝突時最多 100 個 port，`--port-end` 可縮小範圍；不先探測再釋放。 |
 | `PROJMEMO_PDF_FONT`／`PROJMEMO_PDF_BOLD_FONT` | 指定 PDF 的 CJK 字型；未指定時依作業系統候選字型尋找。Windows 候選位置使用系統 `WINDIR`（缺少時為 `C:\Windows`）。 |
 
 維持 `127.0.0.1`、**單程序／單 worker**。AppRuntime 隔離只代表不同 app 不共用解鎖與限流物件；DB 路徑仍由程序環境設定，DB 排他 registry 和 CSRF 簽章也有程序範圍，不能據此宣稱多租戶、任意多 app 共用 DB 或多 worker 安全。
 
 主密碼僅用於當次金鑰派生與驗證，解鎖金鑰保留於 app 記憶體 session；cookie 僅保存不透明 token。來源／CSRF 規則及 15 分鐘安全界線維持原設計，詳見 [本機請求保護](local-web-security.md)、[保管庫安全說明](vault-security.md)。`--reload` 重載及程式重啟都會使解鎖失效。資料目錄、快照與敏感輸出不得提交 Git。
+
+R07 的 `SafeDiagnosticsMiddleware` 外包既有本機／資料庫 middleware，以伺服器追蹤碼與固定錯誤分類記錄失敗，關閉 Uvicorn raw access log。`/health/live` 不碰 DB；`/health/ready` 自行檢查唯讀連線及 maintenance／recovery 准入，故兩者不使用普通資料 middleware 的外層 lease，仍沿用 Host／來源規則與全域 CSRF dependency。兩個 GET probe 不加入業務 OpenAPI，歷史契約快照保持原樣，測試明確驗證新增路由。詳見 [維運健康與日誌](operations-health.md)。
 
 ## 測試與後續修改
 

@@ -70,6 +70,11 @@ class DatabaseAccess:
         with self._condition:
             self._unavailable = True
 
+    def accepting_requests(self):
+        """Availability must not reuse a caller's admitted maintenance context."""
+        with self._condition:
+            return not self._restoring and not self._unavailable
+
 
 _admitted = ContextVar("projmemo_database_operation", default=None)
 _maintenance = ContextVar("projmemo_database_maintenance", default=None)
@@ -99,6 +104,7 @@ class DatabaseAccessMiddleware:
         # Restore takes its own exclusive lease. Recovery files stay accessible
         # even if automatic rollback fails and ordinary data access is blocked.
         bypass = (path.startswith("/static/")
+                  or path in {"/health/live", "/health/ready"}
                   or path.startswith("/settings/backup/files/")
                   or path == "/settings/backup"
                   or path == "/settings/backup/restore")
