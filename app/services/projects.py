@@ -6,6 +6,7 @@ from urllib.parse import urlencode
 
 from ..db import db_session
 from ..errors import ApplicationError
+from ..validation import normalize_fields
 from ..options import STATUS_OPTIONS
 from ..project_data import ProjectData
 from .vault import read_vault_settings
@@ -162,10 +163,7 @@ def create_project(
     owner: str = '',
     tags: str = '',
 ) -> int:
-    if not name.strip():
-        raise ApplicationError(status_code=400, detail="專案名稱不可為空白")
-    if status not in {value for value, _ in STATUS_OPTIONS}:
-        status = "maintenance"
+    name, description, status, owner, tags = normalize_fields("project", locals())
     with db_session(write=True) as connection:
         cursor = connection.execute(
             """
@@ -187,10 +185,7 @@ def update_project(
     owner: str = '',
     tags: str = '',
 ) -> int:
-    if not name.strip():
-        raise ApplicationError(status_code=400, detail="專案名稱不可為空白")
-    if status not in {value for value, _ in STATUS_OPTIONS}:
-        status = "maintenance"
+    name, description, status, owner, tags = normalize_fields("project", locals())
     with db_session(write=True) as connection:
         get_project(connection, project_id)
         connection.execute(

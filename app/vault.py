@@ -16,6 +16,7 @@ from cryptography.hazmat.primitives.kdf.argon2 import Argon2id
 
 
 MASTER_PASSWORD_MIN_LENGTH = 16
+MASTER_PASSWORD_MAX_LENGTH = 1024
 VAULT_SESSION_TTL_SECONDS = 15 * 60
 KDF_MEMORY_COST = 64 * 1024
 KDF_ITERATIONS = 1
@@ -45,6 +46,8 @@ class VaultRateLimited(VaultError):
 
 
 def validate_master_password(password: str) -> None:
+    if len(password) > MASTER_PASSWORD_MAX_LENGTH:
+        raise VaultError("主密碼不可超過 1024 個字元")
     if len(password) < MASTER_PASSWORD_MIN_LENGTH:
         raise VaultError(f"主密碼至少需要 {MASTER_PASSWORD_MIN_LENGTH} 個字元")
 
@@ -108,6 +111,9 @@ def create_vault(connection: Any, password: str) -> bytes:
 
 
 def unlock_vault(connection: Any, password: str) -> bytes:
+    # Reject excessive input before a database read or Argon2 allocation.
+    if len(password) > MASTER_PASSWORD_MAX_LENGTH:
+        raise VaultError("主密碼不可超過 1024 個字元")
     row = connection.execute("SELECT * FROM vault_config WHERE id = 1").fetchone()
     if row is None:
         raise VaultNotInitialized("尚未設定密碼保管庫")

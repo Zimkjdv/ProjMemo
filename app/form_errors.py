@@ -13,7 +13,7 @@ from fastapi import Request
 from fastapi.responses import HTMLResponse
 
 from .errors import ApplicationError
-from .i18n import translator
+from .i18n import translator, translate_error, get_language
 from .web_security import NO_STORE_HEADERS
 
 VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}
@@ -170,7 +170,8 @@ async def recover_form_error(request: Request, error, *, fields=None):
         t = translator(request)
         errors = fields or getattr(error, "fields", {}) or {
             name: error.detail for name in LEGACY_FIELDS.get(error.detail, ())}
-        markup = restore_form(response.body.decode("utf-8"), path, values, t(error.detail), errors, t)
+        localize = lambda message: translate_error(message, get_language(request))
+        markup = restore_form(response.body.decode("utf-8"), path, values, localize(error.detail), errors, localize)
         if markup is None:
             return None
         return HTMLResponse(markup, status_code=error.status_code, headers=NO_STORE_HEADERS)

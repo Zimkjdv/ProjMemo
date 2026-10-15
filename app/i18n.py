@@ -40,6 +40,9 @@ def translator(request: Request):
 
 def translate_error(message: str, language: str) -> str:
     """Translate application errors, including the backup schema's table name."""
+    length = re.fullmatch(r"此欄位不可超過 (\d+) 個字元。", message)
+    if length:
+        return translate("此欄位不可超過 {limit} 個字元。", language, limit=length[1])
     match = re.fullmatch(r"備份檔的「([^」]+)」資料表欄位不完整，無法還原。", message)
     if match:
         return translate("備份檔的「{table}」資料表欄位不完整，無法還原。", language, table=match[1])

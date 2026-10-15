@@ -14,6 +14,7 @@ ProjMemo 是一個以本機 Python `.venv` 執行的個人專案備註與交接�
 - [本機請求保護](docs/local-web-security.md)：Host、來源、CSRF 與程式呼叫方式。
 - [資料庫升級與復原](docs/database-migrations.md)：schema 版本、逐版 migration、升級前快照及失敗處理。
 - [程式架構](docs/architecture.md)：路由／服務邊界、共用資料、SQLite、請求流程及執行設定。
+- [表單與驗證](docs/forms.md)：後端字數上限、網址／列舉驗證、正規化與安全回填。
 - [R03 量測與分頁評估](docs/performance-r03.md)：可重跑的 SQL／HTML 量測、索引代價、鎖策略及後續 UI 分頁設計。
 
 ## 主要目標

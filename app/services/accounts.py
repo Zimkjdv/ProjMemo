@@ -2,7 +2,7 @@
 
 from ..db import db_session
 from ..errors import ApplicationError
-from ..options import ACCESS_ACCOUNT_CATEGORIES, ACCESS_ENVIRONMENTS
+from ..validation import normalize_fields
 from ..runtime import AppRuntime
 from ..vault import VaultError, decrypt_secret, encrypt_secret
 from .projects import get_project, touch_project
@@ -26,14 +26,7 @@ def add_access_account(
     secret_reference: str = '',
     secret_value: str = '',
 ) -> int:
-    if not label.strip():
-        raise ApplicationError(status_code=400, detail="帳號或服務名稱不可為空白")
-    if category not in {value for value, _ in ACCESS_ACCOUNT_CATEGORIES}:
-        category = "other"
-    if environment not in {value for value, _ in ACCESS_ENVIRONMENTS}:
-        environment = "other"
-    if len(secret_value) > 4096:
-        raise ApplicationError(status_code=400, detail="密碼欄位不可超過 4096 個字元")
+    label, category, environment, endpoint, database_name, username, role_scope, purpose, owner, secret_reference, secret_value = normalize_fields("account", locals())
     key = current_vault_key(runtime, token) if secret_value else None
     if secret_value and key is None:
         raise ApplicationError(status_code=423, detail="請先解鎖保管庫再保存實際密碼")
@@ -80,14 +73,7 @@ def update_access_account(
     secret_value: str = '',
     delete_secret: bool = False,
 ) -> int:
-    if not label.strip():
-        raise ApplicationError(status_code=400, detail="帳號或服務名稱不可為空白")
-    if category not in {value for value, _ in ACCESS_ACCOUNT_CATEGORIES}:
-        category = "other"
-    if environment not in {value for value, _ in ACCESS_ENVIRONMENTS}:
-        environment = "other"
-    if len(secret_value) > 4096:
-        raise ApplicationError(status_code=400, detail="密碼欄位不可超過 4096 個字元")
+    label, category, environment, endpoint, database_name, username, role_scope, purpose, owner, secret_reference, secret_value = normalize_fields("account", locals())
     if delete_secret and secret_value:
         raise ApplicationError(status_code=400, detail="不能同時刪除並更新密碼")
     key = current_vault_key(runtime, token) if secret_value else None

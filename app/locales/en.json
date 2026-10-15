@@ -1,4 +1,10 @@
 {
+  "此欄位格式不正確。": "This field has an invalid format.",
+  "此欄位不可為空白。": "This field cannot be blank.",
+  "請選擇有效選項。": "Select a valid option.",
+  "此欄位不可超過 {limit} 個字元。": "This field must not exceed {limit} characters.",
+  "請輸入有效的 HTTP／HTTPS 網址（不可包含帳號密碼）。": "Enter a valid HTTP/HTTPS URL without embedded credentials.",
+  "主密碼不可超過 1024 個字元": "The master password must not exceed 1024 characters",
   "請檢查輸入資料": "Check your input",
   "非敏感輸入已保留；密碼請重新輸入。": "Non-sensitive input is preserved. Please enter passwords again.",
   "此欄位為必填或格式不正確。": "This field is required or has an invalid format.",

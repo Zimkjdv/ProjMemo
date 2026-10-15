@@ -2,17 +2,12 @@
 
 from ..db import db_session
 from ..errors import ApplicationError
-from ..options import URL_TYPES, NOTE_CATEGORIES, PRIORITIES, CHECKLIST_CATEGORIES, ENVIRONMENTS
+from ..validation import normalize_fields
 from .projects import get_project, touch_project
 
 
 def add_url(*, project_id: int, type: str = 'other', title: str, url: str, note: str = '') -> int:
-    if type not in {value for value, _ in URL_TYPES}:
-        type = "other"
-    if not title.strip() or not url.strip():
-        raise ApplicationError(status_code=400, detail="URL 標題與網址不可為空白")
-    if not url.strip().startswith(("http://", "https://")):
-        raise ApplicationError(status_code=400, detail="網址必須以 http:// 或 https:// 開頭")
+    type, title, url, note = normalize_fields("url", locals())
     with db_session(write=True) as connection:
         get_project(connection, project_id)
         connection.execute(
@@ -24,12 +19,7 @@ def add_url(*, project_id: int, type: str = 'other', title: str, url: str, note:
 
 
 def update_url(*, url_id: int, type: str = 'other', title: str, url: str, note: str = '') -> int:
-    if type not in {value for value, _ in URL_TYPES}:
-        type = "other"
-    if not title.strip() or not url.strip():
-        raise ApplicationError(status_code=400, detail="URL 標題與網址不可為空白")
-    if not url.strip().startswith(("http://", "https://")):
-        raise ApplicationError(status_code=400, detail="網址必須以 http:// 或 https:// 開頭")
+    type, title, url, note = normalize_fields("url", locals())
     with db_session(write=True) as connection:
         item = connection.execute(
             "SELECT project_id FROM project_urls WHERE id = ?", (url_id,)
@@ -69,12 +59,7 @@ def add_note(
     content_markdown: str,
     priority: str = 'normal',
 ) -> int:
-    if category not in {value for value, _ in NOTE_CATEGORIES}:
-        category = "note"
-    if priority not in {value for value, _ in PRIORITIES}:
-        priority = "normal"
-    if not title.strip() or not content_markdown.strip():
-        raise ApplicationError(status_code=400, detail="備註標題與內容不可為空白")
+    category, title, content_markdown, priority = normalize_fields("note", locals())
     with db_session(write=True) as connection:
         get_project(connection, project_id)
         connection.execute(
@@ -96,12 +81,7 @@ def update_note(
     content_markdown: str,
     priority: str = 'normal',
 ) -> int:
-    if category not in {value for value, _ in NOTE_CATEGORIES}:
-        category = "note"
-    if priority not in {value for value, _ in PRIORITIES}:
-        priority = "normal"
-    if not title.strip() or not content_markdown.strip():
-        raise ApplicationError(status_code=400, detail="備註標題與內容不可為空白")
+    category, title, content_markdown, priority = normalize_fields("note", locals())
     with db_session(write=True) as connection:
         item = connection.execute(
             "SELECT project_id FROM notes WHERE id = ?", (note_id,)
@@ -144,10 +124,7 @@ def add_checklist_item(
     owner: str = '',
     note: str = '',
 ) -> int:
-    if category not in {value for value, _ in CHECKLIST_CATEGORIES}:
-        category = "other"
-    if not title.strip():
-        raise ApplicationError(status_code=400, detail="交接項目不可為空白")
+    category, title, description, owner, note = normalize_fields("checklist", locals())
     with db_session(write=True) as connection:
         get_project(connection, project_id)
         connection.execute(
@@ -191,10 +168,7 @@ def update_checklist_item(
     owner: str = '',
     note: str = '',
 ) -> int:
-    if category not in {value for value, _ in CHECKLIST_CATEGORIES}:
-        category = "other"
-    if not title.strip():
-        raise ApplicationError(status_code=400, detail="交接項目不可為空白")
+    category, title, description, owner, note = normalize_fields("checklist", locals())
     with db_session(write=True) as connection:
         item = connection.execute(
             "SELECT project_id FROM checklist_items WHERE id = ?", (item_id,)
@@ -237,10 +211,7 @@ def add_environment_variable(
     source_or_owner: str = '',
     is_secret: bool = False,
 ) -> int:
-    if environment not in {value for value, _ in ENVIRONMENTS}:
-        environment = "local"
-    if not key.strip():
-        raise ApplicationError(status_code=400, detail="環境變數名稱不可為空白")
+    key, environment, description, source_or_owner = normalize_fields("environment", locals())
     with db_session(write=True) as connection:
         get_project(connection, project_id)
         connection.execute(
@@ -271,10 +242,7 @@ def update_environment_variable(
     source_or_owner: str = '',
     is_secret: bool = False,
 ) -> int:
-    if environment not in {value for value, _ in ENVIRONMENTS}:
-        environment = "local"
-    if not key.strip():
-        raise ApplicationError(status_code=400, detail="環境變數名稱不可為空白")
+    key, environment, description, source_or_owner = normalize_fields("environment", locals())
     with db_session(write=True) as connection:
         item = connection.execute(
             "SELECT project_id FROM environment_variables WHERE id = ?", (variable_id,)
