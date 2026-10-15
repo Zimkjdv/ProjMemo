@@ -50,7 +50,7 @@ def test_status_and_html_use_current_remaining_time_and_expired_requests_fail(tm
     monkeypatch.setenv("PROJMEMO_DB_PATH", str(tmp_path / "sessions.db"))
     now = [0.0]
     sessions = VaultSessions(clock=lambda: now[0], wall_clock=lambda: 5000)
-    monkeypatch.setattr(main, "vault_sessions", sessions)
+    monkeypatch.setattr(main.app.state.runtime, "vault_sessions", sessions)
     with TestClient(main.app, follow_redirects=False) as client:
         project = client.post("/projects/new", data={"name": "Session fixture"}).headers["location"]
         password = "fixture master phrase for sessions"
@@ -83,13 +83,14 @@ def test_expiry_during_decryption_does_not_return_plaintext(tmp_path: Path, monk
 
     monkeypatch.setenv("PROJMEMO_DB_PATH", str(tmp_path / "pending.db"))
     now = [0.0]
-    monkeypatch.setattr(main, "vault_sessions", VaultSessions(ttl_seconds=10, clock=lambda: now[0]))
-    decrypt = main.decrypt_secret
+    monkeypatch.setattr(main.app.state.runtime, "vault_sessions", VaultSessions(ttl_seconds=10, clock=lambda: now[0]))
+    from app.services import accounts
+    decrypt = accounts.decrypt_secret
     def expire_after_decrypt(*args):
         result = decrypt(*args)
         now[0] = 10
         return result
-    monkeypatch.setattr(main, "decrypt_secret", expire_after_decrypt)
+    monkeypatch.setattr(accounts, "decrypt_secret", expire_after_decrypt)
     with TestClient(main.app, follow_redirects=False) as client:
         project = client.post("/projects/new", data={"name": "Pending fixture"}).headers["location"]
         password = "fixture master phrase for delayed response"

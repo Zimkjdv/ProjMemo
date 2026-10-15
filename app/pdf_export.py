@@ -8,6 +8,11 @@ from pathlib import Path
 import re
 from typing import Any
 
+from .options import (
+    STATUS_OPTIONS, URL_TYPES, NOTE_CATEGORIES, PRIORITIES, CHECKLIST_CATEGORIES,
+    ENVIRONMENTS, ACCESS_ACCOUNT_CATEGORIES, ACCESS_ENVIRONMENTS,
+)
+
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
 from reportlab.lib.pagesizes import A4
@@ -34,29 +39,6 @@ LINE = colors.HexColor("#E4E7EC")
 PRIMARY = colors.HexColor("#3857D6")
 PRIMARY_SOFT = colors.HexColor("#EEF2FF")
 PALE = colors.HexColor("#F7F8FA")
-URL_TYPES = [
-    ("production", "正式環境"),
-    ("staging", "測試環境"),
-    ("git", "Git Repository"),
-    ("figma", "Figma"),
-    ("api_docs", "API 文件"),
-    ("other", "其他"),
-]
-NOTE_CATEGORIES = [
-    ("note", "一般備註"),
-    ("caution", "注意事項"),
-    ("known_issue", "Known Issue"),
-    ("workaround", "Workaround"),
-]
-PRIORITIES = [("normal", "一般"), ("high", "重要"), ("critical", "關鍵")]
-CHECKLIST_CATEGORIES = [
-    ("account", "帳號與權限"),
-    ("deployment", "部署"),
-    ("environment", "環境"),
-    ("service", "第三方服務"),
-    ("other", "其他"),
-]
-ENVIRONMENTS = [("local", "Local"), ("staging", "Staging"), ("production", "Production")]
 
 
 class PDFExportError(RuntimeError):
@@ -426,7 +408,7 @@ def generate_project_pdf(
         Paragraph("Project overview and handover reference", styles["subtitle"]),
     ]
 
-    status_text = {"maintenance": "維護中", "completed": "已結案", "handover": "移交中"}.get(
+    status_text = dict(STATUS_OPTIONS).get(
         project["status"], project["status"]
     )
     metadata_rows = [
@@ -506,14 +488,8 @@ def generate_project_pdf(
         ))
     if access_accounts:
         rows = [[Paragraph(label, styles["table_header"]) for label in ("帳號／類型", "環境／端點／用途", "使用者／權限／密碼")]]
-        category_labels = {
-            "database": "資料庫帳號", "website": "網站／測試帳號", "server": "主機／SSH",
-            "cloud": "雲端／IAM", "service": "第三方服務", "other": "其他",
-        }
-        access_environment_labels = {
-            "local": "Local", "development": "開發", "test": "測試",
-            "staging": "Staging", "production": "Production", "other": "其他",
-        }
+        category_labels = dict(ACCESS_ACCOUNT_CATEGORIES)
+        access_environment_labels = dict(ACCESS_ENVIRONMENTS)
         for account in access_accounts:
             identity = (
                 f"<b>{escape(str(account['label']))}</b><br/>"

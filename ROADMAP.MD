@@ -14,10 +14,10 @@
 
 | 層次 | 現況 | 改善方向 |
 | --- | --- | --- |
-| 路由與流程 | `app/main.py` 同時處理路由、SQL、驗證、選項與 Markdown 匯出，超過 1,500 行 | 依功能漸進拆分，避免一次重寫 |
+| 路由與流程 | `app/main.py` 僅組裝應用；七個 router 與六個 service 分開，列舉／匯出資料共用 | 新功能維持邊界及 HTTP／交易回歸，不重回單一大型入口 |
 | 資料 | SQLite 八張業務表與遷移紀錄表，schema v2；`app/migrations.py` 逐版定義，`app/db.py` 執行 | 持續補舊版升級回歸，量測後再加入索引；不改個人版資料庫 |
 | 保管庫 | `app/vault.py` 處理 Argon2id、AES-GCM 與程序內 session | 強化輸入邊界、過期清理及單程序限制 |
-| 匯出／備份 | PDF、備份已有獨立模組；Markdown 仍在 main | 共用資料投影、列舉與測試案例 |
+| 匯出／備份 | Markdown／PDF／備份獨立模組，由服務協調；共用 `ProjectData` 與列舉 | 補跨平台字型／長文件等完整匯出驗收 |
 | UI | Jinja2 模板、集中 CSS、功能別 JS | 統一表單回饋、選單操作、長內容及桌面密度 |
 | 文件／品質 | README、安全說明、Python 與 Node 測試 | 補架構／維運文件、CI、真實匯出及失敗路徑測試 |
 
@@ -34,12 +34,10 @@
 
 ### R03 — 資料模型演進與可維護架構
 
-schema 版本、逐版 migration、升級前快照與失敗復原已完成；原始勾選條目保留原文移至 [CHANGELOG.MD](CHANGELOG.MD)，操作與後續新增遷移規範見 [SQLite 結構升級與復原](docs/database-migrations.md)。本輪只交付這一子項，下列服務拆分、查詢量測及整體重構驗收仍保留。
+schema 遷移與路由／服務拆分已完成，對應原始待辦及相容性驗收保留原文移至 [CHANGELOG.MD](CHANGELOG.MD)。分層與共用資料見 [程式架構](docs/architecture.md)，升級／復原見 [SQLite 結構升級與復原](docs/database-migrations.md)。R03 尚未整批完成；以下查詢量測與大量內容的伺服器端分頁評估繼續追蹤。
 
-- [ ] 漸進抽出 projects、內容項目、vault、backup、exports 路由與服務；讓路由負責請求／回應，服務負責交易及業務規則。抽共用的「更新專案時間」、列舉及匯出資料結構，減少 `main.py` 與 `pdf_export.py` 重複映射。
 - [ ] 以代表性大量資料測量查詢，再補 `project_id`／排序索引與鎖定等待策略；不要未測量就切換 WAL 或資料庫。
 - [ ] **R06 量測後續**：250 筆備註的前端分頁仍保留約 1.4 MB 完整 HTML；實際資料量持續增加時，評估 UI 專用的伺服器端分頁／按需載入與模板渲染成本。共用匯出需維持完整資料，跨請求草稿政策須與 R05 一起設計，不僅靠隱藏 DOM 或未量測的索引推測改善。
-- [ ] **驗收**：既有 URL、頁面、匯出內容及加密 AAD 保持兼容；遷移測試覆蓋舊資料；重構前後回歸通過。
 
 R04 已隨 R06-B 完成，期限、session 清理及同步驗收紀錄移至 [CHANGELOG.MD](CHANGELOG.MD)，安全界線見 [保管庫安全說明](docs/vault-security.md)。
 
@@ -80,10 +78,9 @@ R06-C 已交付內容頁的共用取消／捨棄確認、敏感欄位清空及�
 - [ ] 補表單錯誤等回歸及更多標準桌面瀏覽器的完整互動驗收；過期 session、重複解鎖、延遲 reveal、CSRF、完整備份驗證及還原異常流程已有隔離測試。來源政策與原生表單的衝突已修正，並完成實際瀏覽器中英文切換驗證；Header／token 測試不能取代瀏覽器驗收。補實際 Windows 瀏覽器剪貼簿貼回驗收，內嵌瀏覽器的虛擬剪貼簿與頁面 Clipboard API 無法互通。
 - [ ] PDF 專用測試目前只檢查置中常數，生命週期等測試使用替身；補真實 PDF 生成、文字抽取與頁面視覺檢查。涵蓋長表格、跨頁、CJK、程式碼、缺字型及敏感／一般匯出。
 - [ ] Markdown 匯出補標題／連結／表格特殊字元案例，驗證可讀性及與 UI、PDF 資訊一致性。
-- [ ] 補 `docs/architecture.md` 與操作復原指南：八張表、請求流程、環境變數、單程序限制、舊版升級與備份復原步驟。README 保持目前用法，Roadmap 只放未完成項目，完成後移至 Changelog。
 - [ ] 雙語 catalog 加入缺漏、未使用 key 與佔位符維護流程；使用者原文不自動翻譯。
 
-R08 文件子項註記：舊版升級與備份復原步驟已交付於 `docs/database-migrations.md` 與 `docs/backup-recovery.md`；現有八張業務表另加一張遷移紀錄表。上列原始驗收文字保留，整體架構／請求流程文件仍待完成，不將 R08 整批標記完成。
+R08 文件子項已隨 R03 交付 `docs/architecture.md`、`docs/database-migrations.md` 與 `docs/backup-recovery.md`，原始完整勾選文字移至 Changelog；其他測試／CI／PDF 視覺及真實桌面驗收仍待完成，不將 R08 整批標記完成。
 
 ## P2：依需求擴充
 

@@ -29,13 +29,14 @@ def project_name(path):
 
 def test_initialization_failure_recovers_original_and_keeps_downloadable_snapshot(databases, monkeypatch):
     current, incoming = databases
-    from app.main import app, vault_sessions
+    from app.main import app
+    vault_sessions = app.state.runtime.vault_sessions
     with TestClient(app, follow_redirects=False) as client:
         token = vault_sessions.issue(b"x" * 32)
         def fail_after_replacement(path):
             assert project_name(path) == "replacement"
             raise sqlite3.DatabaseError("simulated initialization failure")
-        monkeypatch.setattr("app.main.init_db", fail_after_replacement)
+        monkeypatch.setattr("app.services.backups.init_db", fail_after_replacement)
         response = client.post("/settings/backup/restore", files={"backup_file": ("incoming.sqlite3", incoming.read_bytes())})
         assert response.status_code == 500
         assert "已使用還原前備份回復" in response.text
@@ -90,7 +91,8 @@ def test_failed_rollback_blocks_data_access_but_keeps_recovery_download(database
 
 def test_restore_excludes_new_requests_and_second_restore(databases, monkeypatch):
     current, incoming = databases
-    from app.main import app, vault_sessions
+    from app.main import app
+    vault_sessions = app.state.runtime.vault_sessions
     started, release = threading.Event(), threading.Event()
     with TestClient(app, follow_redirects=False) as client:
         token = vault_sessions.issue(b"x" * 32)
@@ -98,7 +100,7 @@ def test_restore_excludes_new_requests_and_second_restore(databases, monkeypatch
             started.set()
             assert release.wait(5)
             init_db(path)
-        monkeypatch.setattr("app.main.init_db", paused_initialize)
+        monkeypatch.setattr("app.services.backups.init_db", paused_initialize)
         with ThreadPoolExecutor(max_workers=1) as workers:
             restoring = workers.submit(client.post, "/settings/backup/restore",
                                        files={"backup_file": ("incoming.sqlite3", incoming.read_bytes())})

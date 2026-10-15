@@ -6,6 +6,25 @@
 
 ## 2026-10-15
 
+### R03 — 路由／服務分層與共用專案資料（第二子項）
+
+原始待辦與驗收來源：`45369b5:ROADMAP.MD`。本輪只完成路由／服務拆分及已交付遷移／重構的相容性驗收；查詢與索引量測、大量內容的伺服器端分頁評估仍留在 Roadmap，不將整批 R03 勾選完成。
+
+- [x] 漸進抽出 projects、內容項目、vault、backup、exports 路由與服務；讓路由負責請求／回應，服務負責交易及業務規則。抽共用的「更新專案時間」、列舉及匯出資料結構，減少 `main.py` 與 `pdf_export.py` 重複映射。
+- [x] **驗收**：既有 URL、頁面、匯出內容及加密 AAD 保持兼容；遷移測試覆蓋舊資料；重構前後回歸通過。
+- [x] `app/main.py` 從 1,631 行減至 70 行，保留 `app.main:app` 入口、啟動遷移、session 清理、middleware 與全域 CSRF。新增七個 router、六個 service；路由不執行 SQL，服務不依賴 FastAPI／Request／Response。業務錯誤由入口轉成既有雙語、禁止快取的 HTTP 回應；保管庫表單仍在原頁顯示錯誤。
+- [x] 內容與帳號修改共用 `touch_project()`，仍與內容同一交易提交／回滾；帳號加密失敗不留下半套 metadata。`options.py` 是 UI／Markdown／PDF 單一列舉來源，`ProjectData` 是完整資料投影，`ExportArtifact` 由路由包成下載回應。普通匯出不載入密文或解密，敏感匯出獨立檢查政策、解鎖與確認，並使用新的帳號投影；UI 分頁不裁切文件資料。
+- [x] 保管庫 session／限流改由每個 app 的 `AppRuntime` 管理，可透過 `create_app()` 建立隔離測試實例；不是多人權限或多 worker 支援，DB 路徑及其他程序內保護仍有共用限制。既有測試只將替身位置改到實際擁有者，未刪除原安全、UI、備份或遷移斷言。schema 仍為 v2，不新增 migration、不改加密 AAD／salt／密文格式，也不改模板、CSS 或前端功能。
+- [x] 驗證：重構前 172 項 Python 回歸通過，重構後完整 212 項 Python、50 項 Node 通過；新增 40 項涵蓋固定的重構前 HTTP 契約、路由／服務邊界、共用列舉、app 狀態隔離、16 種內容操作的時間更新與整筆回滾、加密失敗、完整且不解密的普通匯出及雙語業務錯誤。另用相同假資料與固定 ReportLab 非內容時間資訊，普通／敏感 Markdown 分別 2,509／2,686 字元、實際 PDF 86,528／94,822 bytes，與 `45369b5` 舊版完全一致；不是跨平台字型或所有 PDF 視覺排版驗收。既有 anyio deprecation warning 保留。
+- [x] 本輪測試均使用隔離 DB，未以正式庫驗證；清除本輪四個 pytest 暫存目錄及一次性抽取／格式整理腳本，保留正式資料、既有備份與範例，資料檔不隨 Git 發布。
+
+### R08 — 隨 R03 交付的架構／復原文件子項
+
+保留 `45369b5:ROADMAP.MD` 原始勾選文字；只完成這一文件子項，R08 的 CI、跨平台／視覺及其他測試待辦不受影響。
+
+- [x] 補 `docs/architecture.md` 與操作復原指南：八張表、請求流程、環境變數、單程序限制、舊版升級與備份復原步驟。README 保持目前用法，Roadmap 只放未完成項目，完成後移至 Changelog。
+- [x] [程式架構](docs/architecture.md) 說明模組責任、請求／交易流程、八張業務表與新增的遷移紀錄表、執行設定及單程序界線，並串連既有 [資料庫升級](docs/database-migrations.md) 與 [備份復原](docs/backup-recovery.md)。README 文件索引、架構與完整 Node 測試指令同步更新。
+
 ### R03 — SQLite schema 版本化遷移（第一子項）
 
 原始待辦來源：`d401272:ROADMAP.MD`。本輪只完成 schema 演進；R03 路由／服務拆分、查詢量測與整體重構驗收仍留在 Roadmap，不將整批 R03 勾選完成。

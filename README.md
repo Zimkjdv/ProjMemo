@@ -13,6 +13,7 @@ ProjMemo 是一個以本機 Python `.venv` 執行的個人專案備註與交接�
 - [保管庫安全說明](docs/vault-security.md)：主密碼、salt、加密金鑰及 session 的關係。
 - [本機請求保護](docs/local-web-security.md)：Host、來源、CSRF 與程式呼叫方式。
 - [資料庫升級與復原](docs/database-migrations.md)：schema 版本、逐版 migration、升級前快照及失敗處理。
+- [程式架構](docs/architecture.md)：路由／服務邊界、共用資料、SQLite、請求流程及執行設定。
 
 ## 主要目標
 
@@ -176,6 +177,7 @@ ProjMemo 是一個以本機 Python `.venv` 執行的個人專案備註與交接�
 ## 技術方向
 
 - Backend：FastAPI
+- Architecture：`app/main.py` 組裝應用，`routers/` 處理 HTTP、`services/` 管理交易與業務；共用 `ProjectData` 與列舉供 UI／Markdown／PDF 使用
 - Initial UI：Jinja2 + HTML/CSS
 - Database：SQLite
 - Local runtime：Python `.venv`
@@ -219,7 +221,7 @@ python -m uvicorn app.main:app --reload --port $env:PROJMEMO_PORT
 
 ## 測試
 
-Python 回歸測試可執行 `.\.venv\Scripts\python.exe -m pytest tests -q`。若有安裝 Node.js，前端檢視切換與密碼遮蔽測試可執行 `node --test tests/js/detail_views.test.cjs`；Node.js 只用於開發測試，並非應用程式執行需求。
+Python 回歸測試可執行 `.\.venv\Scripts\python.exe -m pytest tests -q`。若有安裝 Node.js，完整前端檢視、分頁、表單與密碼遮蔽測試可執行 `node --test tests/js/*.test.cjs`；Node.js 只用於開發測試，並非應用程式執行需求。架構邊界、HTTP 契約及交易回滾另有 `tests/test_architecture.py`；使用隔離 DB，初始化不得指向正式資料。
 
 ## 安全原則
 

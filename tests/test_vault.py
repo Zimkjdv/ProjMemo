@@ -92,7 +92,7 @@ def test_vault_encrypts_secrets_and_regular_exports_never_include_them(
             observed_pdf_calls.append((args, kwargs))
             return b"%PDF-1.4\nregular export fixture"
 
-        monkeypatch.setattr("app.main.generate_project_pdf", fake_pdf)
+        monkeypatch.setattr("app.services.exports.generate_project_pdf", fake_pdf)
         pdf_response = client.get(f"/projects/{project_id}/export.pdf")
         assert pdf_response.status_code == 200
         safe_accounts = observed_pdf_calls[-1][0][5]
@@ -166,7 +166,7 @@ def test_sensitive_export_requires_policy_unlock_and_confirmation(tmp_path: Path
             observed_pdf_calls.append((args, kwargs))
             return b"%PDF-1.4\nexport fixture"
 
-        monkeypatch.setattr("app.main.generate_project_pdf", fake_pdf)
+        monkeypatch.setattr("app.services.exports.generate_project_pdf", fake_pdf)
         safe_pdf = client.get(f"/projects/{project_id}/export.pdf")
         assert safe_pdf.status_code == 200
         safe_accounts = observed_pdf_calls[-1][0][5]
@@ -234,7 +234,7 @@ def test_master_password_setup_requires_matching_long_values(tmp_path: Path, mon
 
 
 def test_markdown_html_is_sanitized_before_rendering() -> None:
-    from app.main import markdown_filter
+    from app.presentation import markdown_filter
 
     rendered = markdown_filter(
         '<script>fetch("/accounts/1/reveal")</script>\n\n'

@@ -57,14 +57,14 @@ def test_backup_ui_preserves_restore_confirmation_and_recovery_access(tmp_path: 
         if state == "error":
             def failed_restore(*args, **kwargs):
                 raise BackupRestoreError("還原失敗，且自動回復未能完成。請保留並下載還原前備份。", snapshots[0].name, False)
-            monkeypatch.setattr("app.main.restore_database", failed_restore)
+            monkeypatch.setattr("app.services.backups.restore_database", failed_restore)
             response = client.post("/settings/backup/restore", files={"backup_file": ("fixture.sqlite3", database.read_bytes())})
             assert response.status_code == 500
         else:
             if state == "unavailable":
                 def unavailable_database():
                     raise DatabaseBusyError("UI fixture database unavailable")
-                monkeypatch.setattr("app.main.db_session", unavailable_database)
+                monkeypatch.setattr("app.services.backups.db_session", unavailable_database)
             url = f"/settings/backup?restored=true&recovery={snapshots[0].name}" if state == "success" else "/settings/backup"
             response = client.get(url)
             assert response.status_code == 200
