@@ -27,7 +27,7 @@ node --test tests/js/*.test.cjs
 
 ## Linux／字型範圍
 
-Ubuntu 安裝 `fonts-wqy-zenhei`，明確指定 `/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc`。CI 必須成功由 ReportLab 載入實際 regular／bold fallback 字型，確認「專案備註交接清單環境設定」字形存在，不能跳過。另有缺字型明確失敗的隔離回歸。這只驗證解析／glyph 與 Python 相容性，不產生／抽取／視覺驗收完整 PDF；R08 的 PDF 長表格、跨頁、敏感匯出與實機字型品質仍待完成。
+Ubuntu 安裝 `fonts-wqy-zenhei`，明確指定 `/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc`。CI 必須成功由 ReportLab 載入實際 regular／bold fallback 字型，確認「專案備註交接清單環境設定」字形存在，不能跳過。另有缺字型明確失敗的隔離回歸。R08-E 起完整 Python suite 另執行真實 PDF 生成、pypdf 抽字、PDFium 每頁渲染／字元邊界、長表格／單列跨頁、程式碼、普通／敏感及真實 HTTP 政策，不能只靠此 glyph 檢查。人工 Poppler 逐頁視覺驗收仍是獨立步驟，見 [PDF 驗收](pdf-verification.md)；雲端不保存或上傳假敏感檔。
 
 此相容性 job 使用相同已鎖閉包測試，未宣稱 Windows 解析的鎖會包含所有 Linux optional extras，亦未宣稱 Linux／Docker 正式部署完成。
 

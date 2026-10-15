@@ -22,7 +22,6 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.pdfmetrics import registerFontFamily
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import (
-    KeepTogether,
     LongTable,
     Paragraph,
     Preformatted,
@@ -39,6 +38,7 @@ LINE = colors.HexColor("#E4E7EC")
 PRIMARY = colors.HexColor("#3857D6")
 PRIMARY_SOFT = colors.HexColor("#EEF2FF")
 PALE = colors.HexColor("#F7F8FA")
+CONTENT_WIDTH = A4[0] - 36 * mm - 12  # SimpleDocTemplate's two 6pt frame paddings.
 
 
 class PDFExportError(RuntimeError):
@@ -158,6 +158,7 @@ def _styles(font_name: str) -> dict[str, ParagraphStyle]:
         ),
         "list": ParagraphStyle(
             "ProjMemoList", parent=base, fontName=font_name, fontSize=9,
+            bulletFontName=font_name, bulletFontSize=9,
             leading=13.5, textColor=INK, leftIndent=13, firstLineIndent=-10,
             spaceAfter=2, wordWrap="CJK",
         ),
@@ -273,7 +274,8 @@ def _markdown_flowables(content: str, styles: dict[str, ParagraphStyle]) -> list
             column_count = max((len(row) for row in rows), default=1)
             for row in rows:
                 row.extend([Paragraph("&#160;", styles["table"])] * (column_count - len(row)))
-            table = LongTable(rows, repeatRows=1, hAlign="LEFT")
+            table = LongTable(rows, colWidths=[CONTENT_WIDTH / column_count] * column_count,
+                              repeatRows=1, splitInRow=1, hAlign="LEFT")
             table.setStyle(
                 TableStyle([
                     ("BACKGROUND", (0, 0), (-1, 0), PRIMARY),
@@ -350,7 +352,13 @@ def _header_footer(canvas: Any, document: Any, project_name: str, font_name: str
     canvas.line(18 * mm, page_height - 14 * mm, page_width - 18 * mm, page_height - 14 * mm)
     canvas.setFillColor(MUTED)
     canvas.setFont(font_name, 7.5)
-    canvas.drawString(18 * mm, page_height - 11 * mm, f"ProjMemo  /  {project_name}")
+    header = f"ProjMemo  /  {project_name}".replace("\n", " ").replace("\r", " ")
+    maximum = page_width - 36 * mm
+    if pdfmetrics.stringWidth(header, font_name, 7.5) > maximum:
+        while header and pdfmetrics.stringWidth(header + "...", font_name, 7.5) > maximum:
+            header = header[:-1]
+        header += "..."  # The full project title remains in the body and PDF metadata.
+    canvas.drawString(18 * mm, page_height - 11 * mm, header)
     canvas.line(18 * mm, 15 * mm, page_width - 18 * mm, 15 * mm)
     canvas.drawString(18 * mm, 10 * mm, "Project handover notes")
     canvas.drawRightString(page_width - 18 * mm, 10 * mm, f"{document.page}")
@@ -362,7 +370,9 @@ def _section_heading(title: str, styles: dict[str, ParagraphStyle]) -> list[Any]
 
 
 def _make_table(rows: list[list[Any]], widths: list[float] | None = None) -> Table:
-    table = LongTable(rows, colWidths=widths, repeatRows=1, hAlign="LEFT")
+    if widths:
+        widths = [width * CONTENT_WIDTH / sum(widths) for width in widths]
+    table = LongTable(rows, colWidths=widths, repeatRows=1, splitInRow=1, hAlign="LEFT")
     table.setStyle(
         TableStyle([
             ("BACKGROUND", (0, 0), (-1, 0), PRIMARY),
@@ -416,7 +426,8 @@ def generate_project_pdf(
         [Paragraph("負責人", styles["metadata_label"]), Paragraph(escape(project["owner"] or "未指定"), styles["metadata_value"])],
         [Paragraph("標籤", styles["metadata_label"]), Paragraph(escape(project["tags"] or "未設定"), styles["metadata_value"])],
     ]
-    metadata = Table(metadata_rows, colWidths=[28 * mm, 145 * mm], hAlign="LEFT")
+    metadata = LongTable(metadata_rows, colWidths=[CONTENT_WIDTH * 28 / 173, CONTENT_WIDTH * 145 / 173],
+                         splitInRow=1, hAlign="LEFT")
     metadata.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (0, -1), PALE),
         ("BOX", (0, 0), (-1, -1), .4, LINE),
@@ -460,7 +471,7 @@ def generate_project_pdf(
                 f" · {escape(dict(PRIORITIES).get(note['priority'], note['priority']))}</font>",
                 styles["note_title"],
             )
-            story.append(KeepTogether([note_intro]))
+            story.append(note_intro)  # KeepWithNext also links to the first content block.
             story.extend(_markdown_flowables(note["content_markdown"], styles))
     else:
         story.append(Paragraph("尚未建立備註。", styles["small"]))
@@ -512,7 +523,9 @@ def generate_project_pdf(
             if account["owner"]:
                 identity_lines.append(f"負責人：{escape(str(account['owner']))}")
             if include_secrets and account.get("secret_value") is not None:
-                secret_text = escape(str(account["secret_value"])).replace("\n", "<br/>")
+                # Paragraph normally collapses whitespace, which would change a password.
+                # NBSP preserves visible spaces; Markdown remains the lossless text format.
+                secret_text = escape(str(account["secret_value"])).replace(" ", "&#160;").replace("\n", "<br/>")
                 identity_lines.append(f"密碼：{secret_text}")
             elif account["has_secret"]:
                 identity_lines.append("密碼：已保存於 ProjMemo 保管庫（未匯出）")
