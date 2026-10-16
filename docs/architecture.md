@@ -61,7 +61,7 @@ ASGI 入口仍是 `app.main:app`；日常透過 `run-local.bat`／`python -m app
 | `app_settings` | 單筆敏感匯出政策，預設關閉。 |
 | `schema_migrations` | 自 v2 起的版本、固定名稱、UTC 套用時間；與 `PRAGMA user_version` 一致。 |
 
-完整欄位與索引定義在 `app/migrations.py`。`app/schema_validation.py` 供啟動／還原共用，`app/db.py` 負責逐版交易、升級前快照與錯誤復原。細節見 [SQLite 結構升級與復原](database-migrations.md)；v3 只新增量測過的索引，不切換 WAL 或重寫密文。效能、鎖等待與 UI 分頁／草稿評估見 [R03 量測報告](performance-r03.md)，實際 UI 伺服器端分頁仍待後續交付。
+完整欄位與索引定義在 `app/migrations.py`。`app/schema_validation.py` 供啟動／還原共用，`app/db.py` 負責逐版交易、升級前快照與錯誤復原。細節見 [SQLite 結構升級與復原](database-migrations.md)；v3 只新增量測過的索引，不切換 WAL 或重寫密文。效能、鎖等待與當時的 UI 分頁／草稿評估見 [R03 量測報告](performance-r03.md)；實際 UI 伺服器端分頁及草稿保護已由 R05 交付，現行行為見 [備註分頁](note-paging.md)。
 
 ## 執行設定與安全界線
 

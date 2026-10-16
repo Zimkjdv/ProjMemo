@@ -9,7 +9,7 @@ ProjMemo 是一個以本機 Python `.venv` 執行的個人專案備註與交接�
 - [GitHub：Zimkjdv/ProjMemo](https://github.com/Zimkjdv/ProjMemo)
 - [ROADMAP.MD](ROADMAP.MD)：待辦、已知缺口、優先級與驗收標準。
 - [CHANGELOG.MD](CHANGELOG.MD)：依日期整理的已完成進度。
-- [桌面 UI 設計與驗收](docs/desktop-ui.md)：目前操作規格、R06 原始規劃與實機驗收清單。
+- [桌面 UI 設計與驗收](docs/desktop-ui.md)：目前操作規格、R06 原始規劃與實機驗收紀錄。
 - [Windows 實機驗收操作](docs/desktop-acceptance.md)：獨立假資料服務、系統剪貼簿貼回及真正縮放的操作與驗收界線。
 - [保管庫安全說明](docs/vault-security.md)：主密碼、salt、加密金鑰及 session 的關係。
 - [本機請求保護](docs/local-web-security.md)：Host、來源、CSRF 與程式呼叫方式。
@@ -261,4 +261,4 @@ python -m app.launcher
 
 已完成的階段紀錄移至 [CHANGELOG.MD](CHANGELOG.MD)，未完成項目統一維護於 [ROADMAP.MD](ROADMAP.MD)。目前專案本身支援新增、檢視與編輯，尚未提供整個專案刪除；標籤可透過搜尋文字比對，尚無獨立標籤篩選器。
 
-P0、R03／R04／R05／R07／R08 已完成。R08 的 Markdown、catalog、CI、真實瀏覽器互動與真實 PDF 生成／抽字／渲染／Windows 視覺驗收已交付；PDF 字型修正後的 Linux／CJK 雲端補驗，以及 R06-B 的實際 Windows 系統剪貼簿手動貼回與雙語失敗回饋，亦於 2026-10-16 通過，結果及界線見 CHANGELOG 與各指南。仍保留 R06 真正 Windows 縮放待驗收，不因 R08 完成整批勾選。套用新依賴前先停止舊服務，再執行一次 `setup-local.bat`，日常用 `run-local.bat`。Docker 待本機功能穩定後再進行；多人協作與手機排版不屬於目前個人版範圍。
+P0、R03／R04／R05／R06／R07／R08 已完成。R08 的 Markdown、catalog、CI、真實瀏覽器互動與真實 PDF 生成／抽字／渲染／Windows 視覺驗收已交付；PDF 字型修正後的 Linux／CJK 雲端補驗，以及 R06-B 的實際 Windows 系統剪貼簿手動貼回與雙語失敗回饋，亦於 2026-10-16 通過。R06 另外完成 Windows Chrome 真正 125%／150% 的 72 組版面、120 組表單、鍵盤／長文與人工錨點確認，最後還原原本 100%；原驗收文字及方法見 CHANGELOG 與實機指南，不以等效寬度或工具虛擬剪貼簿代替。套用新依賴前先停止舊服務，再執行一次 `setup-local.bat`，日常用 `run-local.bat`。Docker 待本機功能穩定後另行安排；多人協作與手機排版不屬於目前個人版範圍。

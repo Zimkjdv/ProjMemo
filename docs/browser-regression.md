@@ -38,10 +38,10 @@ Linux 改用 `.venv/bin/python`，安裝引擎時使用 `playwright install --wi
 
 `8b979b8` 的 [run 38709940208](https://github.com/Zimkjdv/ProjMemo/actions/runs/38709940208) 最終成功：Windows 三瀏覽器 36 項、Python 462 項（1 個 Linux 專用 skip）、Node 66 項；Linux 兩引擎 24 項、Python 452 項（11 個 Windows 專用 skip）、Node 66 項及 CJK glyph。保留既有兩個第三方棄用警告。本機 Edge 另有 12 項通過；Firefox 的本機啟動限制仍如實保留，由真正 Windows runner 的 Firefox 結果補驗，不把本機未執行算成功。
 
-來源 `3e482af:ROADMAP.MD` 的原條目保留如下，避免拆分時遺失範圍；最後一句依使用者要求與 R06-B 一起保留待驗收，不因本輪瀏覽器測試勾選完成：
+來源 `3e482af:ROADMAP.MD` 的原條目保留如下，避免拆分時遺失範圍；最後一句當時依使用者要求與 R06-B 一起保留待驗收，不因該輪瀏覽器測試勾選完成；後續補驗結果見下段：
 
 > 補表單錯誤等回歸及更多標準桌面瀏覽器的完整互動驗收；過期 session、重複解鎖、延遲 reveal、CSRF、完整備份驗證及還原異常流程已有隔離測試。來源政策與原生表單的衝突已修正，並完成實際瀏覽器中英文切換驗證；Header／token 測試不能取代瀏覽器驗收。補實際 Windows 瀏覽器剪貼簿貼回驗收，內嵌瀏覽器的虛擬剪貼簿與頁面 Clipboard API 無法互通。
 
-既有過期／延遲 reveal／CSRF／還原異常的隔離 Python／Node 測試仍保留；本套瀏覽器案例不是每個異常分支的替代品。R06-B 系統剪貼簿已於 2026-10-16 另以使用者實際 Windows Chrome 手動貼回、四類原文逐字比對與 32 組故障提示補驗，原句於 Changelog 完整勾選移錄，方法見 [實機操作](desktop-acceptance.md)。這不表示本套 headless CI 取得 OS 剪貼簿能力；R06 真正 Windows 縮放仍由 ROADMAP 追蹤。
+既有過期／延遲 reveal／CSRF／還原異常的隔離 Python／Node 測試仍保留；本套瀏覽器案例不是每個異常分支的替代品。R06-B 系統剪貼簿已於 2026-10-16 另以使用者實際 Windows Chrome 手動貼回、四類原文逐字比對與 32 組故障提示補驗，原句於 Changelog 完整勾選移錄。R06 真正 Chrome 125%／150% 縮放及人工鍵盤錨點亦於同日另行完成並還原 100%，方法及範圍見 [實機操作](desktop-acceptance.md)。這不表示本套 headless CI 取得 OS 剪貼簿或真正桌面縮放驗收能力，兩者仍須分開執行。
 
 官方工具規範：[Playwright CI](https://playwright.dev/docs/ci)、[瀏覽器引擎](https://playwright.dev/docs/browsers)。fixture 刻意不採用可重用的既有 webServer，避免本機資料混入測試。
