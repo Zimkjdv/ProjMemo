@@ -2,12 +2,27 @@
 
 ## 支援範圍
 
-目前驗證基線是 Windows x64、CPython 3.12（本輪 3.12.10）；SQLite 來自該 Python 發行版，並非 pip 套件。setup 明確使用 `py -3.12`，啟動檢查拒絕其他 minor 版。Node 只供前端測試，不是 runtime。Linux／Docker／其他 Python 版本尚未認證，不能將 Windows 鎖定結果當作跨平台保證。
+產鎖與本機基線是 Windows x64、CPython 3.12（3.12.10）；SQLite 來自該 Python 發行版，並非 pip 套件。setup 明確使用 `py -3.12`，啟動檢查拒絕其他 minor 版。Node 只供前端測試，不是 runtime。Linux／CJK 的獨立驗收結果及手動 gate 見 [CI 說明](ci.md)；不將 Windows 產鎖或單次 Linux 結果當成所有平台、Docker／其他 Python 版本的通用保證。
 
-`requirements.in` 是人工維護的直接 runtime 需求；`requirements.txt` 是含全部間接依賴與 SHA-256 的生成鎖。`requirements-test.in` 加入 pytest／httpx 並受 runtime 鎖約束，生成完整 `requirements-test.txt`。日常 setup 只安裝 runtime；開發者額外執行：
+## 檔案配置
+
+根目錄僅保留 `requirements.txt` 作為正式安裝入口，其餘四份原清單保留名稱並集中管理，不刪除內容或合併用途：
+
+```text
+requirements.txt                         正式 runtime 完整雜湊鎖
+requirements/
+  requirements.in                        人工維護的直接 runtime 需求
+  requirements-test.in                   runtime + pytest／httpx／PDF 測試需求
+  requirements-test.txt                  完整測試雜湊鎖（含 runtime）
+  requirements-tools.txt                 產鎖及安全掃描工具清單
+```
+
+`.in` 是人工維護來源，兩份生成鎖固定全部間接依賴及 SHA-256。`requirements/requirements-test.in` 的 `-r requirements.in` 相對於同目錄解析，`-c ../requirements.txt` 則約束到根目錄正式鎖；不要改成依執行工作目錄猜測的路徑。CI 專用 pip bootstrap 仍在 `.github/requirements-bootstrap.txt`，不屬於日常應用安裝，也不與 runtime／test 鎖合併。
+
+以下指令均從專案根目錄執行。日常 `setup-local.bat` 仍只安裝根目錄 runtime；開發者額外執行：
 
 ```powershell
-.\.venv\Scripts\python.exe -m pip install --require-hashes -r requirements-test.txt
+.\.venv\Scripts\python.exe -m pip install --require-hashes -r requirements/requirements-test.txt
 .\.venv\Scripts\python.exe -m pip check
 ```
 
@@ -19,16 +34,16 @@
 
 ```powershell
 py -3.12 -m venv data/dependency-tools
-.\data\dependency-tools\Scripts\python.exe -m pip install -r requirements-tools.txt
-.\data\dependency-tools\Scripts\python.exe -m piptools compile --strip-extras --no-header --no-annotate --no-emit-index-url --no-emit-trusted-host --output-file=data/runtime-pins.txt requirements.in
+.\data\dependency-tools\Scripts\python.exe -m pip install -r requirements/requirements-tools.txt
+.\data\dependency-tools\Scripts\python.exe -m piptools compile --strip-extras --no-header --no-annotate --no-emit-index-url --no-emit-trusted-host --output-file=data/runtime-pins.txt requirements/requirements.in
 .\data\dependency-tools\Scripts\python.exe scripts/hash_lock.py data/runtime-pins.txt requirements.txt
-.\data\dependency-tools\Scripts\python.exe -m piptools compile --strip-extras --no-header --no-annotate --no-emit-index-url --no-emit-trusted-host --output-file=data/test-pins.txt requirements-test.in
-.\data\dependency-tools\Scripts\python.exe scripts/hash_lock.py data/test-pins.txt requirements-test.txt
+.\data\dependency-tools\Scripts\python.exe -m piptools compile --strip-extras --no-header --no-annotate --no-emit-index-url --no-emit-trusted-host --output-file=data/test-pins.txt requirements/requirements-test.in
+.\data\dependency-tools\Scripts\python.exe scripts/hash_lock.py data/test-pins.txt requirements/requirements-test.txt
 .\data\dependency-tools\Scripts\python.exe -m pip_audit --require-hashes -r requirements.txt
-.\data\dependency-tools\Scripts\python.exe -m pip_audit --require-hashes -r requirements-test.txt
+.\data\dependency-tools\Scripts\python.exe -m pip_audit --require-hashes -r requirements/requirements-test.txt
 ```
 
-只編輯 `.in` 的直接版本；必要時有意識使用 `--upgrade-package NAME` 更新間接依賴，不能任意手改生成雜湊。先重新產生 runtime 再產生 test，審查差異、套件官方變更與公告。`hash_lock.py` 對完整固定閉包取得官方 PyPI 版本 JSON 的發行檔 SHA-256，檢查名稱／版本與格式；全部成功才原子替換鎖，不需下載每個平台的 archive 來算雜湊。pip 安裝時仍驗證實際檔案。不支援 URL／editable／含標記的非平坦輸入。也可使用 pip-tools 原生 `--generate-hashes`，但勿在失敗後把部分結果當作完成。`requirements-tools.txt` 僅釘選維護工具直接版本，不冒充完整工具環境鎖；正式應用及測試閉包才由雜湊鎖完整固定。
+只編輯 `requirements/*.in` 的直接版本；必要時有意識使用 `--upgrade-package NAME` 更新間接依賴，不能任意手改生成雜湊。先重新產生根目錄 runtime 鎖再產生 `requirements/` 中的 test 鎖，審查差異、套件官方變更與公告。`hash_lock.py` 對完整固定閉包取得官方 PyPI 版本 JSON 的發行檔 SHA-256，檢查名稱／版本與格式；全部成功才原子替換鎖，不需下載每個平台的 archive 來算雜湊。pip 安裝時仍驗證實際檔案。不支援 URL／editable／含標記的非平坦輸入。也可使用 pip-tools 原生 `--generate-hashes`，但勿在失敗後把部分結果當作完成。`requirements/requirements-tools.txt` 僅釘選維護工具直接版本，不冒充完整工具環境鎖；正式應用及測試閉包才由雜湊鎖完整固定。
 
 在新的隔離 3.12 venv 以 `--require-hashes` 安裝，再執行 `pip check`、完整 Python／Node 回歸、HTTP 契約、保管庫與備份／migration、真實 normal／reload socket 測試。確認後提交 `.in`、兩份鎖與審計紀錄，再停止舊服務執行 setup 更新正式 venv。失敗時切回舊 Git／鎖並重建 venv；不要降版資料庫，資料復原依備份／migration 文件操作。
 

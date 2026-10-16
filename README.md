@@ -243,7 +243,7 @@ python -m app.launcher
 
 真實 PDF 的生成、抽字、CJK／邊界與逐頁渲染見 [PDF 驗收指南](docs/pdf-verification.md)，含可重跑假資料工具。額外 PDF 工具僅在測試鎖，日常 runtime 不需要 pypdf／PDFium／Poppler；一般匯出仍不含密碼。
 
-日常 setup 只裝 runtime。開發測試先執行 `.\.venv\Scripts\python.exe -m pip install --require-hashes -r requirements-test.txt`，再執行 `.\.venv\Scripts\python.exe -m pytest tests -q`。若有安裝 Node.js，完整前端檢視、分頁、表單與密碼遮蔽測試可執行 `node --test tests/js/*.test.cjs`；Node.js 只用於開發測試，並非應用程式執行需求。架構邊界、HTTP 契約及交易回滾另有 `tests/test_architecture.py`；使用隔離 DB，初始化不得指向正式資料。套件鎖定、更新／離線重建與漏洞掃描見 [依賴維護](docs/dependencies.md)。
+日常 setup 只裝根目錄 `requirements.txt` 的 runtime；人工需求、測試鎖與維護工具清單集中在 `requirements/`，沒有合併到正式安裝。開發測試先執行 `.\.venv\Scripts\python.exe -m pip install --require-hashes -r requirements/requirements-test.txt`，再執行 `.\.venv\Scripts\python.exe -m pytest tests -q`。若有安裝 Node.js，完整前端檢視、分頁、表單與密碼遮蔽測試可執行 `node --test tests/js/*.test.cjs`；Node.js 只用於開發測試，並非應用程式執行需求。架構邊界、HTTP 契約及交易回滾另有 `tests/test_architecture.py`；使用隔離 DB，初始化不得指向正式資料。套件鎖定、更新／離線重建與漏洞掃描見 [依賴維護](docs/dependencies.md)。
 
 ## 安全原則
 

@@ -18,7 +18,7 @@ Windows 使用 `setup-local.bat` 建立／檢查 `.venv` 並安裝專案依賴�
 
 ## 依賴維護
 
-目前支援 Windows x64／CPython 3.12。setup 只安裝含雜湊的 runtime 鎖，測試需另外明確安裝 `requirements-test.txt`。版本閉包、更新／離線安裝與 2026-10-15 實際安全掃描見 [依賴維護](dependencies.md)。勿對正在執行的服務熱更新 venv；先停止、備份，再 setup。
+目前支援 Windows x64／CPython 3.12。setup 只安裝根目錄 `requirements.txt` 的含雜湊 runtime 鎖，測試需另外明確安裝 `requirements/requirements-test.txt`；其餘人工需求及維護工具清單也集中在 `requirements/`。版本閉包、更新／離線安裝與 2026-10-15 實際安全掃描見 [依賴維護](dependencies.md)。勿對正在執行的服務熱更新 venv；先停止、備份，再 setup。
 
 ## 健康與故障處理
 

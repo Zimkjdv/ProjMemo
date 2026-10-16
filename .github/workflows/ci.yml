@@ -47,7 +47,7 @@ jobs:
           python -m venv .venv
           .\.venv\Scripts\python.exe -m pip install --require-hashes -r .github/requirements-bootstrap.txt
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          .\.venv\Scripts\python.exe -m pip install --require-hashes -r requirements-test.txt
+          .\.venv\Scripts\python.exe -m pip install --require-hashes -r requirements/requirements-test.txt
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           .\.venv\Scripts\python.exe -m pip check
       - name: Source and catalog checks
@@ -103,7 +103,7 @@ jobs:
         run: |
           python -m venv .venv
           .venv/bin/python -m pip install --require-hashes -r .github/requirements-bootstrap.txt
-          .venv/bin/python -m pip install --require-hashes -r requirements-test.txt
+          .venv/bin/python -m pip install --require-hashes -r requirements/requirements-test.txt
           .venv/bin/python -m pip check
       - name: Source and catalog checks
         run: |

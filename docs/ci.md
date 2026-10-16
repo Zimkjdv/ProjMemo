@@ -2,7 +2,7 @@
 
 `.github/workflows/ci.yml` 在 main push、pull request 或手動執行時檢查程式，不部署服務。依 2026-10-15 使用者要求，push／PR 與預設手動執行只跑 Windows baseline；Linux compatibility and CJK font 須在 Actions → Run workflow 明確勾選 `run_linux`，且 Windows 成功後才執行。延後的修正後補驗已於 2026-10-16 完成，仍保留此手動 gate。Linux skipped 表示該次未驗證，不是成功；不跳過真正 Windows batch／reload 回歸。
 
-目前固定 CPython 3.12.10 x64、Node 24.19.0，runner 為 windows-2025／ubuntu-24.04；應用／測試閉包使用含雜湊的 `requirements-test.txt`，pip bootstrap 另由 `.github/requirements-bootstrap.txt` 釘選並驗證雜湊。升級版本須同時審查鎖與 CI 基線，不能只改版本號後略過回歸。OS runner image 本身會更新，並非整個 OS 的 bit-for-bit 快照。
+目前固定 CPython 3.12.10 x64、Node 24.19.0，runner 為 windows-2025／ubuntu-24.04；兩個 job 的應用／測試閉包均使用含雜湊的 `requirements/requirements-test.txt`，根目錄 `requirements.txt` 保留為日常正式安裝入口。pip bootstrap 仍另由 `.github/requirements-bootstrap.txt` 釘選並驗證雜湊。升級版本須同時審查鎖與 CI 基線，不能只改版本號後略過回歸。OS runner image 本身會更新，並非整個 OS 的 bit-for-bit 快照。
 
 兩個 job 都執行 pip check、來源檢查、catalog 檢查、完整 Python 及 Node 測試。Python 使用明確隔離 `--basetemp=data/pytest-ci`，所有 app 測試使用 fixture DB；不連真實服務、不讀本機正式資料。Windows 跑真實 batch／normal／reload／port 衝突，Linux 明確略過 Windows 專用案例；Windows-only 的鎖寫入 CLI 不在 Linux 假裝可用。
 

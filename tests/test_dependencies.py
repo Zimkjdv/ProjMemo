@@ -1,7 +1,9 @@
 """The supported Windows/Python lock is complete and test tooling stays opt-in."""
 
+import os
 from pathlib import Path
 import re
+import subprocess
 import sys
 
 import pytest
@@ -27,17 +29,53 @@ def pins(name):
 
 def test_runtime_and_test_locks_are_complete_and_share_identical_runtime_versions():
     runtime = pins("requirements.txt")
-    tests = pins("requirements-test.txt")
+    tests = pins("requirements/requirements-test.txt")
     assert "pytest" not in runtime and "httpx" not in runtime
     assert all(tests[name] == version for name, version in runtime.items())
     assert "pytest" in tests and "httpx" in tests
     assert "pip-audit" not in runtime and "pip-tools" not in runtime
 
 
+def test_only_runtime_install_entry_remains_at_root_and_inputs_resolve_relative_paths():
+    names = {"requirements.in", "requirements-test.in", "requirements-test.txt", "requirements-tools.txt"}
+    directory = ROOT / "requirements"
+    assert {path.name for path in directory.iterdir() if path.is_file()} == names
+    assert {path.name for path in ROOT.glob("requirements*") if path.is_file()} == {"requirements.txt"}
+    source = directory / "requirements-test.in"
+    directives = [line.split(maxsplit=1) for line in source.read_text(encoding="utf-8").splitlines()
+                  if line.startswith(("-r ", "-c "))]
+    assert directives == [["-r", "requirements.in"], ["-c", "../requirements.txt"]]
+    assert (source.parent / directives[0][1]).resolve() == directory / "requirements.in"
+    assert (source.parent / directives[1][1]).resolve() == ROOT / "requirements.txt"
+
+
+@pytest.mark.parametrize("name", ["requirements.in", "requirements-test.in"])
+def test_moved_inputs_are_parsed_by_real_pip_from_another_working_directory(tmp_path, name):
+    result = subprocess.run(
+        [sys.executable, "-m", "pip", "install", "--dry-run", "--no-index", "--no-deps",
+         "--no-input", "-r", str(ROOT / "requirements" / name)],
+        cwd=tmp_path,
+        env={**os.environ, "PIP_CONFIG_FILE": os.devnull, "PIP_DISABLE_PIP_VERSION_CHECK": "1"},
+        capture_output=True, text=True, errors="replace", timeout=30,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "Would install" not in result.stdout
+
+
+def test_hash_cli_help_uses_current_lock_destinations():
+    result = subprocess.run([sys.executable, str(ROOT / "scripts/hash_lock.py"), "--help"],
+                            capture_output=True, text=True, errors="replace", timeout=15)
+    assert result.returncode == 0, result.stdout + result.stderr
+    help_text = " ".join(result.stdout.split())
+    assert "requirements.txt (runtime)" in help_text
+    assert "requirements/requirements-test.txt (tests)" in help_text
+
+
 def test_setup_selects_supported_python_and_checks_hashes():
     text = (ROOT / "setup-local.bat").read_text()
     assert "py -3.12 -m venv" in text
     assert "--require-hashes" in text
+    assert '-r "%~dp0requirements.txt"' in text
     assert "requirements-test.txt" not in text
 
 

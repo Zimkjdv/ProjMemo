@@ -57,7 +57,8 @@ def render(pins_text):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("pins", type=Path)
-    parser.add_argument("output", type=Path)
+    parser.add_argument("output", type=Path,
+                        help="requirements.txt (runtime) or requirements/requirements-test.txt (tests)")
     args = parser.parse_args()
     if sys.version_info[:2] != (3, 12) or sys.platform != "win32":
         parser.error("Generate this lock on Windows with Python 3.12")

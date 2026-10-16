@@ -25,7 +25,7 @@ PDF 是閱讀格式，不保證複製後保留每種 tab／CRLF／自動折行�
 
 ## 重跑及人工檢查
 
-只更新含雜湊測試鎖，runtime `requirements.txt` 不變。先在 Python 3.12 開發 venv 安裝 `requirements-test.txt`；pypdf 6.20.1／pypdfium2 5.14.0 不由日常 setup 安裝，也不被 app import。
+只更新含雜湊測試鎖，runtime `requirements.txt` 不變。先在 Python 3.12 開發 venv 安裝 `requirements/requirements-test.txt`；pypdf 6.20.1／pypdfium2 5.14.0 不由日常 setup 安裝，也不被 app import。2026-10-16 目錄整理僅搬移測試鎖，下列既有審計的檔案 SHA-256 與套件版本維持相同。
 
 本輪由 `.in` 以 pip-tools 7.6.2 重新解析、hash_lock 取得 PyPI SHA-256，再以 `--require-hashes` 安裝及 pip check。pip-audit 2.10.1 對測試鎖執行結果 exit 0，JSON 列出 39 個依賴且均無已知漏洞，包含兩個新增 PDF 套件；鎖有 40 個 pin，其中 packaging 未列於該報告，不能把未列出的項目算本次已掃描。這不是安全保證，也不涵蓋外部 Poppler／OS。對應測試鎖 SHA-256：`f92d467b6d37180fec09ebb1836367c9e7ccf16b7466a5e502af0d3814528dee`。
 

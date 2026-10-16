@@ -4,7 +4,7 @@
 
 ## 隔離範例服務
 
-使用已安裝 `requirements-test.txt` 的開發 venv，從專案根目錄執行：
+使用已安裝 `requirements/requirements-test.txt` 的開發 venv，從專案根目錄執行：
 
 ```powershell
 python -m tests.desktop_fixture

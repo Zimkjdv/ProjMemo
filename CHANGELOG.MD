@@ -6,6 +6,14 @@
 
 ## 2026-10-16
 
+### 依賴清單目錄整理
+
+- [x] 根目錄保留 `requirements.txt` 作為正式安裝入口；其餘四份原檔搬至 `requirements/`：`requirements.in`、`requirements-test.in`、`requirements-test.txt`、`requirements-tools.txt`。保留用途、不合併清單；正式鎖、測試鎖、runtime 來源及工具清單經 Git 內容比對完全相同，沒有升降套件版本或重新產生雜湊。
+- [x] 測試來源仍以同目錄的 `-r requirements.in` 引入 runtime，constraint 改為 `-c ../requirements.txt` 指向根目錄正式鎖。新增根目錄／子目錄布局、相對引用、從不同工作目錄透過真正 pip 離線 dry-run 解析，以及產鎖 CLI help 的回歸；既有版本／完整雜湊與日常 setup 只裝 runtime 的檢查保留。
+- [x] Windows／Linux CI 安裝路徑同步為 `requirements/requirements-test.txt`，新增雙 job 路徑斷言；保留既有 Linux 手動 gate，未自動執行 Linux 補驗。`setup-local.bat` 原本的根目錄入口無須變更，另加斷言保護；`hash_lock.py --help`、README、依賴維護／更新／審計指令、CI、本機維運、桌面與 PDF 驗收文件皆同步。
+- [x] 驗證：完整 Python 484 passed／1 個既有 Linux 專用 skip、Node 66 passed，來源／catalog、pip check、文件格式及本機連結檢查通過。兩份完整鎖以 `--dry-run --no-index --require-hashes` 離線驗證不需安裝；新增 4 個路徑／真實 pip／CLI 回歸，CLI help 比對忽略 argparse 的顯示折行。保留原 2 項第三方棄用警告，未加 skip、升級套件、熱更新正式環境或把舊審計當成本次掃描。
+- [x] 確認先前三個 `pytest-r06-*` 暫存目錄已由使用者手動刪除，逐一核對不存在；不改寫先前工具政策拒絕的歷史。本輪依賴檔整理未更新正式 `.venv`、未讀寫正式 DB／備份，測試使用既有獨立驗證環境。
+
 ### R06 — 真正桌面縮放驗收完成與文件結案
 
 剩餘三條原驗收從 `b1a58f4:ROADMAP.MD` 完整移入如下，只將 `[ ]` 改為 `[x]`；R06-D 歷史清單的兩條對應驗收也在取得本次結果後才更新狀態。R08／R06-B 已先逐項驗證、提交並推送；本項不是將其餘待辦整批勾選。
