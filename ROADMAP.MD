@@ -1,6 +1,6 @@
 # ProjMemo Roadmap
 
-更新日期：2026-10-15。初始盤點基準：`d4721a4`；專案內頁 UI 補充分析基準：`6c05ec0`。依程式、模板、測試與 Git 紀錄分析；後續實作完成即移至 [CHANGELOG.MD](CHANGELOG.MD)。使用說明見 [README.md](README.md)。
+更新日期：2026-10-16。初始盤點基準：`d4721a4`；專案內頁 UI 補充分析基準：`6c05ec0`。依程式、模板、測試與 Git 紀錄分析；後續實作完成即移至 [CHANGELOG.MD](CHANGELOG.MD)。使用說明見 [README.md](README.md)。
 
 狀態格式：待實作或待驗收的工作使用 `- [ ]`；完成實作與該項驗證後，搬至 Changelog 時保留項目 ID，改用 `- [x]`。部分完成只搬移已完成的部分，剩餘工作與驗收限制繼續在本文件追蹤，不將整批直接勾選為完成。
 
@@ -57,9 +57,7 @@ R07 四項實作與整體驗收已逐項交付，原始五條 checkbox 完整移
 
 以上兩條為同一待驗收範圍（第二條保留原瀏覽器條目的剩餘原文），依使用者要求留待與 R06 其他實機驗收一起處理。一般瀏覽器互動回歸已移至 Changelog R08-D，現行規範見 [瀏覽器回歸](docs/browser-regression.md)；不因本輪測試而勾選 R06-B。
 
-- [ ] **R08-E Linux／CJK GitHub Actions 補驗（依使用者要求延後）**：`254057c` 的 run 38713819658 Windows 全數通過，但 Linux 真實 PDF 抽字／清單 glyph 有三項失敗；已加入依實際 glyph 選擇圓點／減號的修正及回歸。Linux OS／字型的雲端驗收本輪不再執行，不能標記已通過；下次 Actions → Run workflow 明確勾選 `run_linux`，Windows 成功後再驗證 Linux 完整 Python／Node／兩瀏覽器與 PDF。push／PR 只跑 Windows，保留 Linux job 與原本檢查，不用 skip 測試隱藏缺陷。
-
-R08 文件子項已隨 R03 交付架構／復原指南；R08-A／B／C／D 及 R08-E Windows 交付已移至 Changelog，原條目與拆分界線保留。真實瀏覽器規範見 [瀏覽器回歸](docs/browser-regression.md)，真實生成／抽字／渲染與本輪 Windows 逐頁視覺結果見 [PDF 驗收](docs/pdf-verification.md)。只保留使用者指定延後的系統剪貼簿與 Linux／CJK 雲端補驗；不將 R06-B 原驗收、整批 R06 或 Linux 補驗勾選。
+R08 文件子項已隨 R03 交付架構／復原指南；R08-A／B／C／D、R08-E Windows 交付及 2026-10-16 的 Linux／CJK 雲端補驗已移至 Changelog，原條目與拆分界線保留。修正後 `5d74156` 的 [run 38839868250](https://github.com/Zimkjdv/ProjMemo/actions/runs/38839868250) 在明確啟用 `run_linux` 後，Windows 與 Linux 兩個 job 皆成功；仍維持 push／PR 只跑 Windows、Linux 手動選擇的政策。真實瀏覽器規範見 [瀏覽器回歸](docs/browser-regression.md)，PDF 範圍見 [PDF 驗收](docs/pdf-verification.md)。本節只保留與 R06 一起驗收的系統剪貼簿，不將 R06-B 原驗收或整批 R06 一併勾選。
 
 ## P2：依需求擴充
 

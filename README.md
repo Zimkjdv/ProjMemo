@@ -234,7 +234,7 @@ python -m app.launcher
 
 ## 測試
 
-[GitHub CI 與檢查規範](docs/ci.md)：push／PR 預設只跑 Windows baseline；Linux／CJK 依使用者要求留待下次，手動 Run workflow 勾選 `run_linux` 且 Windows 成功後才執行，相同依賴鎖。skipped 不算驗收通過；本機可先執行 `python scripts/check_sources.py`。CI 不部署、不上傳資料庫。
+[GitHub CI 與檢查規範](docs/ci.md)：push／PR 預設只跑 Windows baseline；Linux／CJK 需手動 Run workflow 勾選 `run_linux` 且 Windows 成功後才執行，使用相同依賴鎖。2026-10-16 已完成 PDF glyph 修正後的兩平台完整補驗，手動 gate 保留；skipped 不算該次驗收通過。本機可先執行 `python scripts/check_sources.py`。CI 不部署、不上傳資料庫。
 
 雙語維護可執行 `python scripts/check_catalogs.py`；新增 UI 文字、動態訊息、unused key 與佔位符規範見 [catalog 維護](docs/localization.md)。Markdown 特殊字元與投影回歸見 [匯出契約](docs/markdown-export.md)。
 
@@ -260,4 +260,4 @@ python -m app.launcher
 
 已完成的階段紀錄移至 [CHANGELOG.MD](CHANGELOG.MD)，未完成項目統一維護於 [ROADMAP.MD](ROADMAP.MD)。目前專案本身支援新增、檢視與編輯，尚未提供整個專案刪除；標籤可透過搜尋文字比對，尚無獨立標籤篩選器。
 
-P0、R03／R04／R05／R07 已完成。R08 的 Markdown、catalog、CI、真實瀏覽器互動與真實 PDF 生成／抽字／渲染／本輪 Windows 視覺驗收已交付；結果及界線見 CHANGELOG 與各指南。保留使用者指定延後的 R06-B 系統剪貼簿（與 R06 縮放一起驗收），以及 PDF 字型修正後的 Linux／CJK 雲端補驗。後者須手動啟用 `run_linux`，本輪不冒稱 Linux 成功。套用新依賴前先停止舊服務，再執行一次 `setup-local.bat`，日常用 `run-local.bat`。Docker 待本機功能穩定後再進行；多人協作與手機排版不屬於目前個人版範圍。
+P0、R03／R04／R05／R07 已完成。R08 的 Markdown、catalog、CI、真實瀏覽器互動與真實 PDF 生成／抽字／渲染／Windows 視覺驗收已交付；PDF 字型修正後的 Linux／CJK 雲端補驗亦於 2026-10-16 通過，結果及界線見 CHANGELOG 與各指南。仍保留 R06-B 系統剪貼簿與 R06 真正 Windows 縮放待驗收，不因 CI 成功整批勾選。套用新依賴前先停止舊服務，再執行一次 `setup-local.bat`，日常用 `run-local.bat`。Docker 待本機功能穩定後再進行；多人協作與手機排版不屬於目前個人版範圍。

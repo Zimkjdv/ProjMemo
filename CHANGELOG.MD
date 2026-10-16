@@ -4,6 +4,17 @@
 
 完成條目統一使用 `- [x]`，從 Roadmap 移入時保留項目 ID；未完成或尚待驗收的部分以 `- [ ]` 在 Roadmap 追蹤，本文件的歷史清單亦保留相應未完成標記。勾選表示該條目已完成，不代表已 commit／push；不可將部分驗收或歷史進度一併勾選。
 
+## 2026-10-16
+
+### R08-E — Linux／CJK GitHub Actions 修正後補驗
+
+原條目來源 `5d74156:ROADMAP.MD`，以下完整保留原始文字並勾選移入。「依使用者要求延後」、「本輪不再執行」及「下次」描述 2026-10-15 的安排，不代表本次仍未驗收；這次接續 R08／R06，明確啟用 Linux 後才確認完成。先前失敗與 Windows 上的字型重現紀錄不改寫為 Linux 成功。
+
+- [x] **R08-E Linux／CJK GitHub Actions 補驗（依使用者要求延後）**：`254057c` 的 run 38713819658 Windows 全數通過，但 Linux 真實 PDF 抽字／清單 glyph 有三項失敗；已加入依實際 glyph 選擇圓點／減號的修正及回歸。Linux OS／字型的雲端驗收本輪不再執行，不能標記已通過；下次 Actions → Run workflow 明確勾選 `run_linux`，Windows 成功後再驗證 Linux 完整 Python／Node／兩瀏覽器與 PDF。push／PR 只跑 Windows，保留 Linux job 與原本檢查，不用 skip 測試隱藏缺陷。
+- [x] 從 GitHub Actions 對 `main` 的 `5d7415671019e83e033105ae02da95d4e91f7455` 手動執行並勾選 `run_linux`：[run 38839868250](https://github.com/Zimkjdv/ProjMemo/actions/runs/38839868250) 最終 success；Windows job `116777254100` 成功後，Linux job `116778604490` 亦成功，不以啟動／queued／skipped 當成驗收。
+- [x] Windows：Python 476 passed／1 Linux 專用 skip、Node 66 passed、Chromium／Firefox／Edge 36 passed。Ubuntu 24.04：Python 466 passed／11 Windows 專用 skip、Node 66 passed、Chromium／Firefox 24 passed；實際安裝 `fonts-wqy-zenhei 0.9.45-8`，必需 CJK glyph 與真實 PDF 生成／抽字／渲染／跨頁及 HTTP 匯出政策全部通過。兩邊均保留原 2 項第三方棄用警告，未新增 skip 或放寬斷言。
+- [x] pip check、來源與雙語 catalog 檢查兩平台通過；核對實際 job 日誌與 run commit。僅更新驗收文件，保留現有手動 Linux gate、不改應用／依賴／測試；本機來源／catalog、pip check 與 diff 檢查亦通過。未讀寫正式 DB，未產生本機 pytest 暫存；R06 系統剪貼簿及真正縮放仍待完成。本項先提交並推送，才開始下一項。
+
 ## 2026-10-15
 
 ### R08-E — 真實 PDF 生成、抽字、跨頁與 Windows 視覺驗收

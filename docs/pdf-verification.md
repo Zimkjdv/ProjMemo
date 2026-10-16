@@ -40,7 +40,9 @@ python -m scripts.verify_pdf --output data/pdf-review-NEW --poppler
 
 2026-10-15 本機 Windows／Microsoft JhengHei 樣本：空專案 1 頁、混合 7 頁、超長單列 9 頁、長標題 8 頁、敏感 1 頁，共 26 頁。PDFium 及 Poppler 全部渲染、抽字與幾何通過，逐張 contact sheet 核對全部頁面；沒有裁切／缺字／重疊，重複表頭與長列結尾完整。長標題本身會占多行，續頁與較多留白是分頁的正常結果，不為減頁刪內容。原 12 項 PDF 版本的完整 Python 473 passed／1 Linux 專用 skip、Node 66 passed；後續另加三個 glyph 選擇案例，最終數量以 Changelog 為準，保留原兩項第三方棄用警告。
 
-`254057c` 的 [run 38713819658](https://github.com/Zimkjdv/ProjMemo/actions/runs/38713819658) Windows 全數通過，但 Linux 三項 PDF 字型抽字失敗，不冒稱整個 run 成功。修正後在 Windows 額外載入 Ubuntu 24.04 同版 `fonts-wqy-zenhei 0.9.45-8`（regular／bold 均指定該檔），15 項 PDF 回歸通過，五份 25 頁亦完成自動抽字／幾何／雙引擎渲染。這只是 Windows 上的字型重現，不是 Linux OS 或 Linux 視覺認證。依使用者要求，Linux／CJK GitHub Actions 留待下次手動勾選 `run_linux` 後補驗，Roadmap 保留待辦。
+`254057c` 的 [run 38713819658](https://github.com/Zimkjdv/ProjMemo/actions/runs/38713819658) Windows 全數通過，但 Linux 三項 PDF 字型抽字失敗，不冒稱整個 run 成功。修正後在 Windows 額外載入 Ubuntu 24.04 同版 `fonts-wqy-zenhei 0.9.45-8`（regular／bold 均指定該檔），15 項 PDF 回歸通過，五份 25 頁亦完成自動抽字／幾何／雙引擎渲染。這只是 Windows 上的字型重現，不是 Linux OS 或 Linux 視覺認證。2026-10-15 依使用者要求，Linux／CJK GitHub Actions 當時延至下次補驗，未提前勾選。
+
+2026-10-16 已對修正後 `5d7415671019e83e033105ae02da95d4e91f7455` 手動啟用 `run_linux`：[run 38839868250](https://github.com/Zimkjdv/ProjMemo/actions/runs/38839868250) 的 Windows 與 Ubuntu 24.04 兩個 job 皆 success。Linux 使用上述實際文泉驛字型，完整 Python 466 passed／11 Windows 專用 skip，包含全部 PDF 回歸與必需 CJK glyph；兩瀏覽器 24 項與 Node 66 項亦通過。此為真正 Linux OS 的生成／抽字／PDFium 自動渲染補驗，不挪用 Windows 結果；沒有放寬缺字、控制字元或頁面幾何斷言。Linux 人工逐頁視覺檢查並未於本輪執行，不宣稱所有平台／字型都已獲視覺認證。原 Roadmap 補驗條目完整移入 Changelog，手動 gate 保留。
 
 review 目錄含假敏感資料，與 pytest 暫存一樣只供本機驗證；不提交 PDF／PNG／抽字／DB 或上傳 CI artifact。驗收後先確認程序結束，再精確清除本輪目錄，保留正式資料與備份。
 

@@ -1,6 +1,6 @@
 # CI 與可重現驗證
 
-`.github/workflows/ci.yml` 在 main push、pull request 或手動執行時檢查程式，不部署服務。依 2026-10-15 使用者要求，push／PR 與預設手動執行只跑 Windows baseline；Linux compatibility and CJK font 保留但延後，須在 Actions → Run workflow 明確勾選 `run_linux`，且 Windows 成功後才執行。Linux skipped 表示本次未驗證，不是成功；不跳過真正 Windows batch／reload 回歸。
+`.github/workflows/ci.yml` 在 main push、pull request 或手動執行時檢查程式，不部署服務。依 2026-10-15 使用者要求，push／PR 與預設手動執行只跑 Windows baseline；Linux compatibility and CJK font 須在 Actions → Run workflow 明確勾選 `run_linux`，且 Windows 成功後才執行。延後的修正後補驗已於 2026-10-16 完成，仍保留此手動 gate。Linux skipped 表示該次未驗證，不是成功；不跳過真正 Windows batch／reload 回歸。
 
 目前固定 CPython 3.12.10 x64、Node 24.19.0，runner 為 windows-2025／ubuntu-24.04；應用／測試閉包使用含雜湊的 `requirements-test.txt`，pip bootstrap 另由 `.github/requirements-bootstrap.txt` 釘選並驗證雜湊。升級版本須同時審查鎖與 CI 基線，不能只改版本號後略過回歸。OS runner image 本身會更新，並非整個 OS 的 bit-for-bit 快照。
 
@@ -41,7 +41,7 @@ Ubuntu 安裝 `fonts-wqy-zenhei`，明確指定 `/usr/share/fonts/truetype/wqy/w
 
 ## 2026-10-15 真實驗收
 
-以下 R08-C 為當時已通過的歷史結果。後續 R08-E `254057c` 的 [run 38713819658](https://github.com/Zimkjdv/ProjMemo/actions/runs/38713819658) Windows 473 Python／36 browser／66 Node 成功，但 Linux 新 PDF 測試三項失敗，原因為文泉驛缺少 U+2022。已補實際 glyph 選擇與三個單元案例；依使用者要求，修正後 Linux 雲端驗收延至下次，不重跑或冒稱已通過。下次須明確啟用 `run_linux`，確認完整 run 後才搬移 Roadmap 待辦。本機載入同版字型的成功不能取代 Linux OS／GitHub Actions 驗收。
+以下 R08-C 為當時已通過的歷史結果。後續 R08-E `254057c` 的 [run 38713819658](https://github.com/Zimkjdv/ProjMemo/actions/runs/38713819658) Windows 473 Python／36 browser／66 Node 成功，但 Linux 新 PDF 測試三項失敗，原因為文泉驛缺少 U+2022。已補實際 glyph 選擇與三個單元案例；當時依使用者要求，修正後 Linux 雲端驗收延至下次，未冒稱已通過。本機載入同版字型的成功不能取代 Linux OS／GitHub Actions 驗收。2026-10-16 實際補驗結果另記於下方，不覆寫這段歷史。
 
 驗收 commit `24d61fc41dd8045c292378a753091f3f34d80c74`，[run 38706234351](https://github.com/Zimkjdv/ProjMemo/actions/runs/38706234351) 最終 conclusion 為 success，兩個 job 皆成功：
 
@@ -51,3 +51,14 @@ Ubuntu 安裝 `fonts-wqy-zenhei`，明確指定 `/usr/share/fonts/truetype/wqy/w
 | Linux compatibility and CJK font | 451 passed、11 skipped | 66 passed | CJK 實際載入及 glyph 通過；11 項 skip 明確為 Windows 專用案例。 |
 
 兩邊保留 2 項第三方 httpx／AnyIO 棄用警告。首次 run 38705872022 發現乾淨 checkout 缺少 data 父目錄，並非藉由略過測試修正；已加入目錄建立與回歸斷言後重新推送，以上成功 run 對應的是修正後 commit，不挪用前一個失敗 run 的結果。完整 PDF 視覺／實機剪貼簿不在此驗收內。
+
+## 2026-10-16 Linux／CJK 修正後補驗
+
+對 `main` 手動 Run workflow 並明確勾選 `run_linux`，[run 38839868250](https://github.com/Zimkjdv/ProjMemo/actions/runs/38839868250) 對應 `5d7415671019e83e033105ae02da95d4e91f7455`，最終 success。Windows job `116777254100` 成功後，Linux job `116778604490` 才執行並成功；已核對兩個 job 的實際日誌。
+
+| 環境 | Python | Node | 真實瀏覽器 |
+| --- | --- | --- | --- |
+| Windows baseline | 476 passed、1 Linux 專用 skipped | 66 passed | Chromium／Firefox／Edge：36 passed |
+| Linux compatibility and CJK font | 466 passed、11 Windows 專用 skipped | 66 passed | Chromium／Firefox：24 passed |
+
+兩邊 pip check、來源／catalog 通過，保留 2 項第三方棄用警告。Ubuntu 實際使用 `fonts-wqy-zenhei 0.9.45-8`，必需 CJK 檢查與完整 PDF 回歸均成功，補上先前 glyph 修正後尚未在 Linux OS 跑過的缺口。沒有刪除／降低原失敗測試或新增 skip；工作流與依賴鎖不變。這不是 Linux 正式部署、人工逐頁視覺或 R06 真正 Windows 縮放／系統剪貼簿認證。
