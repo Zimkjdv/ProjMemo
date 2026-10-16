@@ -10,6 +10,7 @@ ProjMemo 是一個以本機 Python `.venv` 執行的個人專案備註與交接�
 - [ROADMAP.MD](ROADMAP.MD)：待辦、已知缺口、優先級與驗收標準。
 - [CHANGELOG.MD](CHANGELOG.MD)：依日期整理的已完成進度。
 - [桌面 UI 設計與驗收](docs/desktop-ui.md)：目前操作規格、R06 原始規劃與實機驗收清單。
+- [Windows 實機驗收操作](docs/desktop-acceptance.md)：獨立假資料服務、系統剪貼簿貼回及真正縮放的操作與驗收界線。
 - [保管庫安全說明](docs/vault-security.md)：主密碼、salt、加密金鑰及 session 的關係。
 - [本機請求保護](docs/local-web-security.md)：Host、來源、CSRF 與程式呼叫方式。
 - [資料庫升級與復原](docs/database-migrations.md)：schema 版本、逐版 migration、升級前快照及失敗處理。
