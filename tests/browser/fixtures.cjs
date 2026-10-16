@@ -47,7 +47,7 @@ const test = base.extend({
           new Promise(resolve => setTimeout(resolve, 5000)),
         ]);
       }
-      if (child.exitCode === null) { child.kill(); throw new Error('Fixture did not shut down gracefully'); }
+      if (child.exitCode === null) { child.kill(); throw new Error('Fixture did not shut down gracefully: ' + errors); }
     }
   },
   page: async ({ page, appURL }, use) => {
@@ -56,8 +56,15 @@ const test = base.extend({
     // Keep test data loopback-only. Fixture links must never be visited externally.
     await page.route('**/*', route => new URL(route.request().url()).origin === appURL
       ? route.continue() : route.abort());
-    await use(page);
-    expect(errors, 'uncaught browser errors').toEqual([]);
+    try {
+      await use(page);
+      expect(errors, 'uncaught browser errors').toEqual([]);
+    } finally {
+      // This extension's appURL dependency tears down before the original page
+      // fixture. Close our test page first so late navigation/asset requests
+      // cannot keep the private server alive during its bounded EOF shutdown.
+      await page.close();
+    }
   },
 });
 

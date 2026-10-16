@@ -53,6 +53,35 @@ a:hover { text-decoration: underline; }
 .lifecycle-confirmation .checkbox-label { margin: 16px 0; }
 .lifecycle-page .security-hint, .lifecycle-page .lifecycle-hint { margin: 0; }
 
+/* Search and handover: desktop-first, native GET controls. */
+.filter-bar.search-filter-bar { display: block; }
+.filter-main { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.filter-main .search-field { flex: 1 1 280px; }
+.filter-main .filter-select select { width: auto; max-width: 180px; }
+.search-help { margin: 10px 3px 0; color: var(--muted); font-size: .76rem; }
+.advanced-search { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.advanced-search > summary { width: fit-content; cursor: pointer; color: var(--primary); font-size: .83rem; font-weight: 650; }
+.advanced-filter-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 14px; }
+.advanced-filter-fields label { min-width: 0; }
+.advanced-search .field-help { margin-bottom: 0; }
+.project-card-owner { margin: 4px 0 10px; color: #475467; font-size: .8rem; overflow-wrap: anywhere; }
+.project-card-owner > span { color: var(--muted); margin-right: 5px; }
+.handover-progress { min-width: 0; margin: 10px 0 14px; }
+.handover-progress > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: .77rem; color: #475467; }
+.handover-progress strong { color: var(--ink); }
+.handover-progress progress { display: block; width: 100%; height: 7px; margin-top: 7px; accent-color: #3857d6; border: 0; border-radius: 6px; overflow: hidden; background: #e9edf5; }
+.handover-progress progress::-webkit-progress-bar { background: #e9edf5; }
+.handover-progress progress::-webkit-progress-value { background: #3857d6; border-radius: 6px; }
+.handover-progress progress::-moz-progress-bar { background: #3857d6; }
+.handover-progress small { display: block; margin-top: 5px; color: var(--muted); font-size: .73rem; }
+.project-list-progress { min-width: 190px; }
+.project-list-progress .handover-progress { margin: 0 0 5px; }
+.project-list-progress > a { font-size: .75rem; }
+.checklist-filters { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 18px; }
+.checklist-filters a { padding: 6px 10px; border: 1px solid var(--line); border-radius: 7px; color: #475467; font-size: .78rem; }
+.checklist-filters a[aria-current="page"] { background: #e2e9ff; border-color: #bdcbed; color: #253c97; }
+.advanced-search summary:focus-visible, .checklist-filters a:focus-visible { outline: 3px solid #263f9b; outline-offset: 3px; }
+
 /* Site navigation */
 .site-header { position: sticky; z-index: 20; top: 0; border-bottom: 1px solid var(--line); background: rgba(255, 255, 255, .94); backdrop-filter: blur(12px); }
 .header-inner { min-height: 68px; display: flex; align-items: center; justify-content: space-between; }

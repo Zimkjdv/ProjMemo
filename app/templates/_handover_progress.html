@@ -1,0 +1,9 @@
+{% macro handover_progress_bar(progress) -%}
+<div class="handover-progress">
+  {% if progress.total %}
+  <div><span>{{ t('交接完成度') }}</span><strong>{{ progress.completed }}/{{ progress.total }} · {{ progress.percent }}%</strong></div>
+  <progress max="{{ progress.total }}" value="{{ progress.completed }}" aria-label="{{ t('已完成 {completed} 項，共 {total} 項', completed=progress.completed, total=progress.total) }}">{{ progress.percent }}%</progress>
+  <small>{{ t('尚有 {count} 項未完成', count=progress.pending) if progress.pending else t('交接項目已全部完成') }}</small>
+  {% else %}<span class="muted">{{ t('尚無交接項目') }}</span>{% endif %}
+</div>
+{%- endmacro %}

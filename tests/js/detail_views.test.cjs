@@ -33,10 +33,11 @@ function detailHarness(savedView, blockedStorage = false, search = "") {
   }));
   const viewSwitch = { hidden: true, querySelectorAll: () => buttons };
   const events = [];
+  const checklistLinks = [{ href: "http://127.0.0.1/projects/1?checklist=pending#handover" }];
   const document = {
     getElementById: () => content,
     querySelector: (selector) => selector === ".detail-view-switch" ? viewSwitch : null,
-    querySelectorAll: () => ["important-links", "project-notes", "handover", "environment", "access-accounts"]
+    querySelectorAll: (selector) => selector === ".checklist-filters a" ? checklistLinks : ["important-links", "project-notes", "handover", "environment", "access-accounts"]
       .map((id) => ({ getAttribute: () => `#${id}` })),
     dispatchEvent: (event) => events.push(event.type),
   };
@@ -45,13 +46,19 @@ function detailHarness(savedView, blockedStorage = false, search = "") {
     getItem() { if (blockedStorage) throw Error("blocked"); return preference; },
     setItem(_, value) { if (blockedStorage) throw Error("blocked"); preference = value; },
   };
-  vm.runInNewContext(source("project-detail.js"), { document, localStorage, Event, URLSearchParams, window: { location: { search } } });
-  return { content, sections, main, side, buttons, events, viewSwitch, preference: () => preference };
+  vm.runInNewContext(source("project-detail.js"), { document, localStorage, Event, URL, URLSearchParams, window: { location: { search, href: "http://127.0.0.1/projects/1" } } });
+  return { content, sections, main, side, buttons, events, viewSwitch, checklistLinks, preference: () => preference };
 }
 
 test("explicit return view wins over optional storage", () => {
   assert.equal(detailHarness("cards", true, "?detail_view=list").content.dataset.view, "list");
   assert.equal(detailHarness("list", false, "?detail_view=invalid").content.dataset.view, "list");
+});
+
+test("handover filter links retain the selected view even without browser storage", () => {
+  const page = detailHarness("cards", true);
+  page.buttons[1].handlers.click();
+  assert.equal(page.checklistLinks[0].href, "/projects/1?checklist=pending&detail_view=list#handover");
 });
 
 test("details use shortcut order, retain the same drafts, and return to the original columns", () => {

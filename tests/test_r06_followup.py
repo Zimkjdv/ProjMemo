@@ -33,7 +33,7 @@ def test_list_preferences_use_applied_state_and_clear_links_remain_authoritative
         assert 'data-reset-list-preferences' in page.text
         assert 'href="/?view=list&amp;page_size=20&amp;page=1"' in page.text
         assert 'Reset list' in page.text if language == 'en' else '重設列表' in page.text
-        assert 'list-preferences.js?v=20261016-r09' in page.text
+        assert 'list-preferences.js?v=20261016-r10' in page.text
 
 
 @pytest.mark.parametrize('language', ['zh-Hant', 'en'])
@@ -79,6 +79,6 @@ def test_note_paging_is_progressive_and_keeps_full_export_content(tmp_path, monk
         assert all('hidden' not in attrs for tag, attrs in items if tag == 'article')
         assert any(tag == 'nav' and 'data-note-pagination' in attrs and 'hidden' not in attrs for tag, attrs in items)
         assert 'Notes per page' in page.text if language == 'en' else '每頁備註數量' in page.text
-        assert 'server-note-pagination.js?v=20261015-r05-paging' in page.text
+        assert 'server-note-pagination.js?v=20261016-r10' in page.text
         exported = client.get(project + '/export.md').text
         assert all(f'Fixture note {i}' in exported for i in range(51))

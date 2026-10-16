@@ -40,6 +40,15 @@ test("declined draft discard does not fetch or replace DOM",async()=>{
   assert.equal(p.calls.length,0);assert.equal(p.section.childNodes[0],"original draft");
 });
 
+test("page-size changes preserve the pending handover filter",async()=>{
+  const p=harness();
+  p.handlers.submit({target:{matches:()=>true,action:"http://127.0.0.1/projects/1#project-notes",
+    elements:{notes_size:{value:"50"},checklist:{value:"pending"}}},preventDefault(){}});
+  await flush();
+  const request=p.calls.find(call=>typeof call==="object");
+  assert.match(request.url,/checklist=pending/);assert.match(request.url,/notes_size=50/);
+});
+
 for(const problem of [{fail:true},{badFragment:true}])test("failed/unexpected response retains drafts and offers explicit native fallback "+JSON.stringify(problem),async()=>{
   const p=harness(problem);p.click();await flush();
   assert.equal(p.section.replacements,0);assert.equal(p.section.childNodes[0],"original draft");

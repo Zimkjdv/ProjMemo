@@ -53,6 +53,8 @@ def csrf_input(context) -> Markup:
     result = csrf + Markup('<input type="hidden" name="_submission_token" value="{}">').format(escape(token))
     pager = context.get("note_page")
     if pager:
+        if context.get("checklist_filter") == "pending":
+            result += Markup('<input type="hidden" name="_checklist_filter" value="pending">')
         view = context["request"].query_params.get("detail_view", "cards")
         for name, value in (("_notes_page", pager["number"]), ("_notes_size", pager["size"]),
                             ("_detail_view", view if view in {"cards", "list"} else "cards")):

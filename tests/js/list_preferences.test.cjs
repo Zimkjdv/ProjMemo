@@ -37,7 +37,7 @@ test("bare home restores the last applied state with encoded filters, hash, and 
 });
 
 test("any explicit list parameter takes precedence, including blank filters and a shared page", () => {
-  for (const query of ["?q=", "?status=", "?view=cards", "?page_size=50", "?page=2", "?collection=active"]) {
+  for (const query of ["?q=", "?status=", "?view=cards", "?page_size=50", "?page=2", "?collection=active", "?owner=", "?tag=", "?search_scope=basic", "?handover="]) {
     const page = harness("http://127.0.0.1:52878/" + query);
     assert.deepEqual(page.replacements, []);
     assert.deepEqual(JSON.parse(page.data.get(key)), defaults);
@@ -76,4 +76,19 @@ test("archive and trash never restore or overwrite active-list preferences", () 
     assert.deepEqual(JSON.parse(page.data.get(key)), saved);
     assert.deepEqual(page.reads, ["list-preferences"]);
   }
+});
+
+test("advanced applied filters restore safely and old saved states remain compatible", () => {
+  const value = { ...saved, owner: "Fixture team", tag: "C++ & UI", search_scope: "all", handover: "pending" };
+  const restored = harness(undefined, value);
+  const url = new URL(restored.replacements[0], "http://127.0.0.1");
+  for (const name of ["owner", "tag", "search_scope", "handover"]) assert.equal(url.searchParams.get(name), value[name]);
+  const applied = harness("http://127.0.0.1/?tag=C%2B%2B", null, value);
+  assert.deepEqual(JSON.parse(applied.data.get(key)), value);
+});
+
+test("invalid advanced values are not persisted and blank URLs override saved filters", () => {
+  const page = harness("http://127.0.0.1/?owner=", saved,
+    { ...defaults, owner: "x".repeat(1001), tag: 42, search_scope: "unsafe", handover: "unsafe" });
+  assert.deepEqual(JSON.parse(page.data.get(key)), defaults);
 });

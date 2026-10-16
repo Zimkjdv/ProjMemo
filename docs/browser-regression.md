@@ -1,6 +1,6 @@
 # R08 桌面瀏覽器回歸
 
-測試在獨立 Chromium／Firefox 引擎執行，不以 DOM 替身、TestClient 或 Header 測試代替瀏覽器。`tests/browser/package-lock.json` 固定 Playwright 1.64.1 與 npm integrity；僅開發／CI 使用，不改應用 runtime。原工作區每語言六項，R09 追加生命週期與無 JavaScript 兩項：兩引擎共 32 項，啟用 Edge 則 48 項；零自動 retry，任一失敗即非通過。歷史 run 數量不追改。
+測試在獨立 Chromium／Firefox 引擎執行，不以 DOM 替身、TestClient 或 Header 測試代替瀏覽器。`tests/browser/package-lock.json` 固定 Playwright 1.64.1 與 npm integrity；僅開發／CI 使用，不改應用 runtime。原工作區每語言六項，R09 追加兩項、R10 再追加搜尋與原生交接兩項：兩引擎共 40 項，啟用 Edge 則 60 項；零自動 retry，任一失敗即非通過。歷史 run 數量不追改。
 
 ## 重跑
 
@@ -17,6 +17,10 @@ Linux 改用 `.venv/bin/python`，安裝引擎時使用 `playwright install --wi
 
 測試自行啟動 Python fixture，先覆寫 DB 路徑為新建 `data/r08-browser-*` 私有目錄，再匯入應用。socket 綁定 loopback port 0 並保留到 Uvicorn 接手，不探測後重綁、不重用現有服務、沒有可指向正式主機的 base URL 參數。每例建立 55 筆假備註和一條 example.invalid URL，結束以 stdin EOF 正常關閉並清除私有 DB／日誌／復原點。若程序被強制終止可能留存目錄，先確認測試程序結束再刪除該輪精確路徑，不能批次清除整個 data。
 
+R10 補強 fixture 結束順序：先關閉該例測試頁面，再讓 `appURL` 的 EOF 停機流程執行；另先確認偏好已保存及重設頁載入完成，不以尚未執行 defer 腳本的 DOM 當作偏好持久化成功。只關頁仍不足以解決本機逾時，階段診斷抓到 Python 3.12 Proactor 的 `_call_connection_lost` 在 `socket.shutdown` 拋出 WinError 10054、尚未執行 `_server._detach()`，伺服器停在 shutdown。
+
+因此 Windows **測試服務程序**改用 Selector event-loop policy；Linux 不變，不安裝／修補依賴，不更動正式 launcher 或 app 的 loop／timeout。保留 5 秒停止判定、零 retry、EOF／停機／暫存清理階段診斷，任何清理失敗仍算失敗。Selector 下的互動結果不冒充正式 Proactor 入口的連線重設／停機容錯驗收；後者在 Roadmap 另列補驗，未在 R10 擅自更改正式執行策略。
+
 ## 驗收內容
 
 | 每語言／引擎案例 | 檢查 |
@@ -29,6 +33,8 @@ Linux 改用 `.venv/bin/python`，安裝引擎時使用 `playwright install --wi
 | 保管庫 | 假主密碼設定、假帳號加密保存、顯示／鎖定、錯誤解鎖不回填、正確重試；一般 Markdown 不含明文，瀏覽器儲存不含假密碼 |
 | R09 生命週期 | 假資料封存、分類入口、垃圾桶、復原到已封存、取消封存、錯誤名稱拒絕並重新確認、永久刪除及復原點列表 |
 | R09 無 JavaScript | 原生展開確認、完整名稱／勾選、POST 封存及管理頁狀態更新 |
+| R10 搜尋與進度 | 五類內容搜尋、負責人／完整標籤／未完成交接的交集、卡片／明細、偏好還原／明確空值／重設、直接勾選交接；1280／1440／1920 寬度無整頁橫向溢出，進階條件維持全寬而非被 flex 擠成側欄 |
+| R10 原生交接 | 無 JavaScript 新增／切換未完成、備註 10 筆換頁、完成最後一項後空結果與全部數量，切回全部可見已完成內容 |
 
 瀏覽器網路限制只允許當例 loopback origin；不造訪 example.invalid，不連外部帳號。失敗上下文只含假資料，存於忽略的 `data/r08-browser-results`；關閉 trace／錄影／自動失敗截圖，R09 案例另明確保存管理頁與垃圾桶確認頁的純假資料截圖供視覺檢查。CI 不上傳資料 artifacts。安裝依賴／引擎本身需要網路。
 

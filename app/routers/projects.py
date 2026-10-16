@@ -23,7 +23,9 @@ def index(
     page: int = 1,
 ) -> HTMLResponse:
     values = projects.list_projects(q=q, status=status, view=view, page_size=page_size, page=page,
-                                   collection=request.query_params.get("collection", "active"))
+                                   collection=request.query_params.get("collection", "active"),
+                                   **{key: request.query_params.get(key, "")
+                                      for key in ("owner", "tag", "search_scope", "handover")})
     return templates.TemplateResponse(request, "index.html", page_context(request, **values))
 
 
@@ -60,7 +62,8 @@ def show_project(request: Request, project_id: int) -> HTMLResponse:
     values = load_workspace(project_id,
         page=getattr(request.state, "notes_page", request.query_params.get("notes_page", "1")),
         size=getattr(request.state, "notes_size", request.query_params.get("notes_size", "20")),
-        edit_note_id=getattr(request.state, "editing_note_id", None), notes_only=fragment)
+        edit_note_id=getattr(request.state, "editing_note_id", None), notes_only=fragment,
+        checklist_filter=getattr(request.state, "checklist_filter", request.query_params.get("checklist", "")))
     if fragment:
         return templates.TemplateResponse(request, "_project_notes.html", page_context(request, **values),
             headers={"X-ProjMemo-Fragment": "notes", "Cache-Control": "no-store", "Vary": "X-ProjMemo-Fragment, Cookie"})

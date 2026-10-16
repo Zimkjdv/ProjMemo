@@ -97,6 +97,8 @@ class MutationRoute(APIRoute):
                 view = form.get("_detail_view")
                 if view in {"cards", "list"}:
                     params["detail_view"] = view
+                if section and form.get("_checklist_filter") == "pending":
+                    params["checklist"] = "pending"
                 for name in ("notes_page", "notes_size"):
                     value = form.get("_" + name, "")
                     if isinstance(value, str) and value.isascii() and value.isdigit() and 0 < len(value) <= 8:

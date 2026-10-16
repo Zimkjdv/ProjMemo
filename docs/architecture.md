@@ -30,6 +30,7 @@ app/main.py：create_app()、lifespan、middleware 與錯誤處理
 | `services/backups.py` | 頁面資料、暫存上傳、還原流程與 session 撤銷、恢復檔案路徑檢查。`backup.py` 保有 SQLite 級驗證、快照、排他與回復。上傳 HTTP 檔案由 router 關閉，暫存 DB 由服務清理。 |
 | `services/exports.py` | 普通／敏感匯出的資料載入、政策及文件產生，回傳 `ExportArtifact`；路由才加下載 header。兩種格式共用完整 `ProjectData`，不受畫面分頁限制。 |
 | `options.py` | 單一份狀態、類別、優先級與環境列舉，以及既有匯出用標籤。頁面透過 `presentation.py` 翻譯；使用者內容和既有匯出文字不自動翻譯。 |
+| `project_search.py` | R10 純查詢條件／白名單、精確 token、分類內建議及交接進度。內容使用參數化 EXISTS、頁面用索引 COUNT；無解密、FTS、migration 或資料寫入。SQLite token 函式僅註冊於該次查詢連線，不寫入 schema。 |
 | `project_data.py` | `ProjectData` 定義專案與五類內容，提供模板 context 與 Markdown／PDF 相同的參數順序。普通查詢只回傳帳號 metadata／`has_secret`，不含密文、nonce 或明文。敏感匯出另外授權／查詢，以新的 projection 取代帳號清單，不污染普通資料。 |
 | `errors.py`／`validation.py`／`form_errors.py` | 服務獨立的業務／欄位錯誤與六類統一輸入規則；HTTP 邊界依原生 HTML／JSON 回覆，展開原表單、跳脫一般值，永不回填或持久化密碼。 |
 | `runtime.py`／`submissions.py` | 每個 app 的 session／限流／單次送出 registry；token 綁定 CSRF，並發單次執行、成功重播 303，不保存表單。單程序、24 小時、最多 10,000 筆，重啟／過期拒絕，不是多人權限或跨重啟 exactly-once。 |
@@ -82,6 +83,7 @@ R07 的 `SafeDiagnosticsMiddleware` 外包既有本機／資料庫 middleware，
 
 - `tests/fixtures/http_contract.json` 固定來自 `45369b5` 重構前的 HTTP 契約；比對 URL／method、operation ID、查詢／表單欄位、預設值及回應 schema。測試不自行更新此基準，真的改 API 時才人工審查。
 - R09 在既有 projects router 追加 GET `/projects/{project_id}/manage` 與 POST `/projects/{project_id}/lifecycle/{action}`，測試將這兩個明列新增路徑分開驗證，所有歷史路徑仍完整比對凍結快照。首頁 `collection` 由 Request 讀取，為相容性未改既有 OpenAPI 參數宣告；合法值與行為見生命週期文件。
+- R10 沿用相同相容方式，從 Request 讀取 `owner`／`tag`／`search_scope`／`handover` 及內容頁的 `checklist`，不修改歷史 OpenAPI 快照。`visible_checklist` 僅供 UI；原完整 `ProjectData` 與匯出不裁切。非敏感 UI 狀態沿用既有 CSRF helper 的隱藏欄位、單次送出 redirect 及錯誤回填，未變更 CSRF 驗證本身。詳見 [搜尋與交接](search-handover.md)。
 - `tests/test_architecture.py` 檢查邊界、共用列舉、app 狀態隔離、16 種內容操作的交易回滾／時間更新、加密失敗回滾及完整／不解密的普通匯出。
 - 依賴替身應套在實際擁有者：PDF 在 `app.services.exports.generate_project_pdf`，reveal 解密在 `app.services.accounts.decrypt_secret`，還原初始化／快照流程在 `app.services.backups`；不要重新匯入 `main.py` 當服務定位器。
 - 測試先以 `PROJMEMO_DB_PATH` 指向隔離資料庫，再進入 app lifespan；不得用正式 DB 驗證。完整執行 Python 與 Node 測試，舊版 migration、備份回復與加密 AAD 仍要一起回歸。

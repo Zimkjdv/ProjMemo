@@ -9,6 +9,7 @@ from ..errors import ApplicationError
 from ..validation import normalize_fields
 from ..options import STATUS_OPTIONS
 from ..project_data import ProjectData
+from ..project_search import PROGRESS_COLUMNS, filter_options, handover_progress, has_token, normalized_filters, project_where
 from .vault import read_vault_settings
 
 
@@ -82,6 +83,7 @@ def project_list_url(
     page_size: int,
     page: int,
     collection: str = 'active',
+    *, owner: str = '', tag: str = '', search_scope: str = 'basic', handover: str = '',
 ) -> str:
     params = {
         "view": view_mode,
@@ -94,6 +96,11 @@ def project_list_url(
         params["status"] = status
     if collection in {"archived", "trash"}:
         params["collection"] = collection
+    for name, value in (("owner", owner), ("tag", tag), ("handover", handover)):
+        if value:
+            params[name] = value
+    if search_scope == "all":
+        params["search_scope"] = search_scope
     return f"/?{urlencode(params)}"
 
 
@@ -105,25 +112,23 @@ def list_projects(
     page_size: int = 10,
     page: int = 1,
     collection: str = 'active',
+    owner: str = '',
+    tag: str = '',
+    search_scope: str = 'basic',
+    handover: str = '',
 ) -> dict[str, object]:
-    q = q.strip()
     selected_status = status if status in {value for value, _ in STATUS_OPTIONS} else ""
     view_mode = view if view in {"cards", "list"} else "cards"
     page_size = page_size if page_size in {10, 20, 50} else 10
-    params: list[str] = []
     collection = collection if collection in {"active", "archived", "trash"} else "active"
-    filters = [{"active": "deleted_at = '' AND archived_at = ''",
-                "archived": "deleted_at = '' AND archived_at != ''",
-                "trash": "deleted_at != ''"}[collection]]
-    if q.strip():
-        filters.append("(name LIKE ? OR description LIKE ? OR tags LIKE ?)")
-        search = f"%{q}%"
-        params.extend([search, search, search])
-    if selected_status:
-        filters.append("status = ?")
-        params.append(selected_status)
-    where_clause = f" WHERE {' AND '.join(filters)}" if filters else ""
+    selected = normalized_filters(q=q, owner=owner, tag=tag, search_scope=search_scope,
+                                  handover=handover, collection=collection)
+    q = selected.pop("q")
+    extra = selected
+    where_clause, params = project_where(collection=collection, status=selected_status, q=q, **extra)
     with db_session() as connection:
+        connection.create_function("projmemo_has_token", 2, has_token, deterministic=True)
+        owner_options, tag_options = filter_options(connection, collection)
         collection_counts = dict(zip(("active", "archived", "trash"), connection.execute(
             "SELECT COALESCE(SUM(deleted_at = '' AND archived_at = ''), 0), "
             "COALESCE(SUM(deleted_at = '' AND archived_at != ''), 0), "
@@ -135,7 +140,7 @@ def list_projects(
         page_count = ceil(total_count / page_size) if total_count else 0
         page = min(max(page, 1), page_count) if page_count else 1
         projects = connection.execute(
-            f"SELECT * FROM projects{where_clause} "
+            f"SELECT projects.*, {PROGRESS_COLUMNS} FROM projects{where_clause} "
             "ORDER BY updated_at DESC, id DESC LIMIT ? OFFSET ?",
             [*params, page_size, (page - 1) * page_size],
         ).fetchall()
@@ -145,7 +150,7 @@ def list_projects(
     pagination_pages = [
         {
             "number": page_number,
-            "url": project_list_url(q, selected_status, view_mode, page_size, page_number, collection),
+            "url": project_list_url(q, selected_status, view_mode, page_size, page_number, collection, **extra),
             "current": page_number == page,
         }
         for page_number in range(first_page, last_page + 1)
@@ -154,9 +159,17 @@ def list_projects(
         projects=projects,
         collection=collection,
         collection_counts=collection_counts,
-        collection_urls={scope: project_list_url(q, selected_status, view_mode, page_size, 1, scope)
+        collection_urls={scope: project_list_url(q, selected_status, view_mode, page_size, 1, scope, **extra)
                          for scope in ("active", "archived", "trash")},
         reset_list_url=project_list_url('', '', 'cards', 10, 1, collection),
+        selected_owner=extra["owner"], selected_tag=extra["tag"], search_scope=extra["search_scope"],
+        selected_handover=extra["handover"], owner_options=owner_options, tag_options=tag_options,
+        has_filters=bool(q or selected_status or extra["owner"] or extra["tag"] or extra["handover"]),
+        handover_progress={row["id"]: handover_progress(row["checklist_total"], row["checklist_completed"])
+                           for row in projects},
+        list_preferences={"view": view_mode, "page_size": page_size, "q": q, "status": selected_status,
+                          **{key: value for key, value in extra.items()
+                             if value and (key != "search_scope" or value != "basic")}},
         q=q,
         selected_status=selected_status,
         view_mode=view_mode,
@@ -168,10 +181,10 @@ def list_projects(
         first_result=(page - 1) * page_size + 1 if total_count else 0,
         last_result=min(page * page_size, total_count),
         pagination_pages=pagination_pages,
-        previous_url=project_list_url(q, selected_status, view_mode, page_size, page - 1, collection) if page > 1 else '',
-        next_url=project_list_url(q, selected_status, view_mode, page_size, page + 1, collection) if page < page_count else '',
-        card_view_url=project_list_url(q, selected_status, 'cards', page_size, page, collection),
-        list_view_url=project_list_url(q, selected_status, 'list', page_size, page, collection),
+        previous_url=project_list_url(q, selected_status, view_mode, page_size, page - 1, collection, **extra) if page > 1 else '',
+        next_url=project_list_url(q, selected_status, view_mode, page_size, page + 1, collection, **extra) if page < page_count else '',
+        card_view_url=project_list_url(q, selected_status, 'cards', page_size, page, collection, **extra),
+        list_view_url=project_list_url(q, selected_status, 'list', page_size, page, collection, **extra),
         clear_filter_url=project_list_url('', '', view_mode, page_size, 1, collection)
     )
 

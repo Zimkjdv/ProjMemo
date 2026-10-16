@@ -37,6 +37,11 @@
         button.classList.toggle("active", active);
         button.setAttribute("aria-pressed", String(active));
       });
+      document.querySelectorAll(".checklist-filters a").forEach((link) => {
+        const destination = new URL(link.href, window.location.href);
+        destination.searchParams.set("detail_view", view);
+        link.href = destination.pathname + destination.search + destination.hash;
+      });
     };
     let savedView = "cards";
     try {

@@ -2,6 +2,7 @@
 <nav class="note-pagination" data-note-pagination aria-label="{{ t('備註分頁') }}">
   <form method="get" action="/projects/{{ project.id }}#project-notes" data-note-page-size>
     <input type="hidden" name="notes_page" value="1">
+    {% if checklist_filter == 'pending' %}<input type="hidden" name="checklist" value="pending">{% endif %}
     <label>{{ t('每頁') }} <select name="notes_size" aria-label="{{ t('每頁備註數量') }}">{% for count in [10,20,50] %}<option value="{{ count }}" {% if note_page.size == count %}selected{% endif %}>{{ count }}</option>{% endfor %}</select></label>
     <button class="button button-ghost" type="submit">{{ t('套用') }}</button>
   </form>

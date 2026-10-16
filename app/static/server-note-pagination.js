@@ -72,6 +72,7 @@
     event.preventDefault();
     const url = new URL(event.target.action, window.location.href);
     url.searchParams.set("notes_page", "1"); url.searchParams.set("notes_size", event.target.elements.notes_size.value);
+    if (event.target.elements.checklist?.value === "pending") url.searchParams.set("checklist", "pending");
     load(url.href);
   });
   document.addEventListener("submit", (event) => {

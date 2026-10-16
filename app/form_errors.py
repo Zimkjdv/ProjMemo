@@ -170,6 +170,7 @@ async def recover_form_error(request: Request, error, *, fields=None):
         values = await request.form()
         request.state.notes_page = values.get("_notes_page", "1")
         request.state.notes_size = values.get("_notes_size", "20")
+        request.state.checklist_filter = "pending" if values.get("_checklist_filter") == "pending" else ""
         if path == "/projects/new":
             response = projects.new_project(request)
         elif match := re.fullmatch(r"/projects/(\d+)/lifecycle/(archive|unarchive|trash|restore|purge)", path):
@@ -204,7 +205,8 @@ async def recover_form_error(request: Request, error, *, fields=None):
                         if project else "/projects/new")
         if pager := response.context.get("note_page"):
             recovery_url += "?" + urlencode({"notes_page": pager["number"], "notes_size": pager["size"],
-                "detail_view": values.get("_detail_view") if values.get("_detail_view") in {"cards", "list"} else "cards"})
+                "detail_view": values.get("_detail_view") if values.get("_detail_view") in {"cards", "list"} else "cards",
+                **({"checklist": "pending"} if response.context.get("checklist_filter") == "pending" else {})})
         markup = restore_form(response.body.decode("utf-8"), path, values, localize(error.detail), errors, localize, recovery_url)
         if markup is None:
             return None

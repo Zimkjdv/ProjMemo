@@ -28,7 +28,7 @@
 - **P2：功能擴充與體驗提升**。按實際使用需求選取，不代表全部必做。
 - **Later：部署與協作**。有前置條件，不列為目前個人版必備功能。
 
-R01 至 R09 的實作與各自驗收已交付並移至 Changelog，包含 R06-B 真正系統剪貼簿與 R06-D 的 Chrome 125%／150% 實機驗收；不再保留 R06／R08 未完成條目。後續依實際需求選取 P2，Docker 另行安排，不自動開始擴充或部署。UI 伺服器端分頁已於 R05 上線，實作與量測見 docs/note-paging.md，不將原 R03 的評估紀錄冒充當時已上線。
+R01 至 R10 的實作與各自驗收已交付並移至 Changelog，包含 R06-B 真正系統剪貼簿與 R06-D 的 Chrome 125%／150% 實機驗收；不再保留 R06／R08 未完成條目。R10 測試發現的 Windows Proactor 停機相容性另列下方補驗，不把測試專用 Selector 結果冒充正式入口驗證。後續依實際需求選取 P2，Docker 另行安排，不自動開始擴充或部署。UI 伺服器端分頁已於 R05 上線，實作與量測見 docs/note-paging.md，不將原 R03 的評估紀錄冒充當時已上線。
 
 ## P1：可靠性、架構與桌面操作
 
@@ -40,15 +40,18 @@ R06 桌面 UI 已完成：長欄位展開、明細行內編輯、首頁偏好、
 
 R07 四項實作與整體驗收已逐項交付，原始五條 checkbox 完整移至 [CHANGELOG.MD](CHANGELOG.MD)。現行規範見 [本機維運](docs/local-operations.md)、[依賴與安全掃描](docs/dependencies.md)、[健康與安全日誌](docs/operations-health.md)。不將 Windows／Python 3.12 的驗證擴大為已認證 Linux／Docker。
 
+- [ ] **Windows／Python 3.12 Proactor 連線重設與停機補驗**：R10 假資料瀏覽器服務捕捉到 `_ProactorBasePipeTransport._call_connection_lost` 的 WinError 10054，回呼在 `socket.shutdown` 拋錯、尚未執行 `_server._detach()`，接著停在伺服器 shutdown。本輪僅將 Windows 測試服務改用 Selector，未修改正式 launcher／app 或放寬停止逾時。後續以正式啟動入口搭配隔離 DB 重現快速導覽／取消請求及停止，再評估 Python 修正版或執行策略；不把測試程序的環境調整當作正式容錯已修復。階段診斷及驗收界線見 [瀏覽器回歸](docs/browser-regression.md)。
+
 R08 的文件、Markdown、catalog、CI、真實瀏覽器／PDF、Linux／CJK 補驗及 R06-B 系統剪貼簿均已完成，原條目與驗收移至 [CHANGELOG.MD](CHANGELOG.MD)，包含歷史四種改寫條目的完整原文。2026-10-16 使用者在實際 Windows Chrome 親手複製／貼回四類原文並逐字比對，另完成 32 組雙語／兩檢視的失敗提示；不是工具虛擬剪貼簿或成功回饋的替代驗收。規範見 [瀏覽器回歸](docs/browser-regression.md)、[實機驗收操作](docs/desktop-acceptance.md) 與 [PDF 驗收](docs/pdf-verification.md)。Linux 仍維持手動 `run_linux`；R06 真正縮放另於本日實測並取得人工鍵盤確認後結案，不與 R08 混算。
 
 ## P2：依需求擴充
 
 R09 專案封存／垃圾桶／復原及先快照再永久刪除已完成；原規劃與驗證紀錄移至 [CHANGELOG.MD](CHANGELOG.MD)，操作與資料／密碼界線見 [專案生命週期](docs/project-lifecycle.md)。以下僅保留未完成項目。
 
+R10 內容搜尋、獨立負責人／標籤篩選、交接完成度與未完成檢視已完成；原規劃及驗證移至 Changelog，規則與實測見 [搜尋與交接效率](docs/search-handover.md)。FTS 已經過指定樣本的語意評估，依短中文需求及個人版規模決定本輪不導入，不宣稱現有 B-tree 最佳化所有子字串。
+
 | ID | 待辦 | 驗收方向 |
 | --- | --- | --- |
-| R10 | 搜尋、載入與交接效率 | 現有搜尋是名稱／描述／標籤文字比對與狀態篩選；可加負責人、內容搜尋、獨立標籤篩選、交接完成度及未完成項目。UI 備註分頁及草稿保護已由 R05 交付，設計／量測見 docs/note-paging.md；索引不代表子字串搜尋已優化，FTS 仍依需求量測 |
 | R11 | 備份操作體驗 | 還原前預覽專案數、版本、保管庫狀態及替換範圍；備份保留策略由使用者設定，不默默刪除復原點；另評估完整備份加密 |
 | R12 | 編輯與匯出 | Markdown 預覽、模板、選擇匯出章節及中英文文件標題；Mermaid 需安全渲染設計，不開放任意 HTML／腳本 |
 | R13 | 主密碼更換 | 必須知道原主密碼；新 salt／金鑰、交易式重新加密、先備份、失敗回復、撤銷全部舊 session；不提供繞過舊密碼的解密「重設」 |
