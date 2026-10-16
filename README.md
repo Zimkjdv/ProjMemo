@@ -229,9 +229,23 @@ python -m pip install --require-hashes -r requirements.txt
 python -m app.launcher --dev
 ```
 
-`run-local.bat` 是一般模式、不自動重載；開發時使用 `run-dev.bat`（或 `run-local.bat --dev`）。兩者固定 `127.0.0.1`、單 worker，從 `8000` 起實際綁定可用 port 並持有 socket 交給服務，不再使用先探測後釋放的方式。衝突時最多嘗試 100 個 port，終端機顯示實際網址；全部不可用時非零結束。可用 `--port 8123 --port-end 8130` 限定範圍，不開放 LAN host／多 worker 選項。本機 SQLite 預設在 `data/projmemo.db`，已加入 `.gitignore`。
+### `run-local.bat` 與 `run-dev.bat` 的區別
 
-啟動及安裝 batch 會固定切換至自己的目錄；手動 Python 指令仍請從專案根目錄執行。開發重載會使保管庫解鎖與舊表單 token 失效，請重新整理頁面；日常使用一般模式。開發模式有監督程序與一個應用 worker，不是多 worker 部署。不要用手動 Uvicorn 指令繞過本機／單 worker 限制，詳見 [本機維運](docs/local-operations.md)。
+| 項目 | `run-local.bat` | `run-dev.bat` |
+| --- | --- | --- |
+| 適用情境 | 日常使用，避免開發重載中斷操作 | 開發、頻繁修改程式 |
+| 修改 Python 程式後 | 不自動重載，須停止服務再啟動 | 偵測 `app/` 內的 Python 檔案變更並自動重啟 |
+| 執行環境 | 專案的 `.venv`，不自動安裝或升級套件 | 與一般模式相同 |
+| 資料庫 | 預設使用 `data/projmemo.db` | 與一般模式相同，不是獨立測試資料庫 |
+| 保管庫與表單 | 手動重啟後，保管庫解鎖狀態與舊表單 token 失效 | 自動重載或手動重啟後，同樣失效 |
+
+`run-dev.bat` 實際上會呼叫 `run-local.bat --dev`。日常使用選一般模式；持續調整程式時可選開發模式。兩者的差異是服務是否自動重載，不是功能或資料隔離。
+
+使用 `run-local.bat` 時，更新程式後請先用 `Ctrl+C` 停止舊服務，再啟動；**只有重新整理瀏覽器，不會載入新版 Python 程式**。開發重載也不代表所有檔案變更都會自動生效；更新依賴或啟動腳本後，仍須停止服務，依需要執行 `setup-local.bat`，再重新啟動。
+
+兩者固定 `127.0.0.1`、單 worker，從 `8000` 起實際綁定可用 port 並持有 socket 交給服務，不再使用先探測後釋放的方式。衝突時最多嘗試 100 個 port，終端機顯示實際網址；全部不可用時非零結束。可用 `--port 8123 --port-end 8130` 限定範圍，不開放 LAN host／多 worker 選項。本機 SQLite 預設在 `data/projmemo.db`，已加入 `.gitignore`。
+
+啟動及安裝 batch 會固定切換至自己的目錄；手動 Python 指令仍請從專案根目錄執行。重啟或重載前請先儲存未完成的內容；完成後重新整理頁面，並視需要重新解鎖保管庫。**不要同時啟動兩份服務共用同一份資料庫**；切換模式時先停止原本服務。開發模式有監督程序與一個應用 worker，不是多 worker 部署。不要用手動 Uvicorn 指令繞過本機／單 worker 限制，詳見 [本機維運](docs/local-operations.md)。
 
 可用 `PROJMEMO_DB_PATH` 指定另一個 SQLite 路徑；PDF 字型可由 `PROJMEMO_PDF_FONT`、`PROJMEMO_PDF_BOLD_FONT` 指定。更換資料庫前請先停止程式並備份。
 
