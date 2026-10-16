@@ -19,7 +19,7 @@
 | 保管庫 | `app/vault.py` 處理 Argon2id、AES-GCM 與程序內 session | 強化輸入邊界、過期清理及單程序限制 |
 | 匯出／備份 | Markdown／PDF／備份獨立模組，共用 `ProjectData` 與列舉；真實 PDF／抽字／跨頁回歸及本輪視覺驗收完成 | 維護字型／長文件回歸，換平台或字型時重新看頁面 |
 | UI | Jinja2 模板、集中 CSS、功能別 JS | 統一表單回饋、選單操作、長內容及桌面密度 |
-| 文件／品質 | README、安全說明、Python／Node、catalog／格式檢查及含真實瀏覽器／PDF 的 Windows → Linux／CJK CI | R06 實機縮放／剪貼簿驗收；維護既有回歸 |
+| 文件／品質 | README、安全說明、Python／Node、catalog／格式檢查及含真實瀏覽器／PDF 的 Windows → Linux／CJK CI；系統剪貼簿已另驗收 | R06 真正縮放驗收；維護既有回歸 |
 
 ## 優先級與執行順序
 
@@ -28,7 +28,7 @@
 - **P2：功能擴充與體驗提升**。按實際使用需求選取，不代表全部必做。
 - **Later：部署與協作**。有前置條件，不列為目前個人版必備功能。
 
-後續可靠性工作順序：R06 實機驗收／R08 → 依需求選取 P2 → Docker。R06-A／R06-B／R06-C 及相依的 R04 已交付，R06-D 視覺實作與自動／隔離瀏覽器回歸已交付，Windows 真正縮放驗收仍保留。R01／R02／R03／R04／R05／R07 已移至 Changelog；R05 與 R07 各項實作及整體驗收依序交付。UI 伺服器端分頁已上線，實作與量測見 docs/note-paging.md，不將原 R03 的評估紀錄冒充當時已上線。
+後續可靠性工作順序：R06 真正縮放驗收 → 依需求選取 P2 → Docker。R06-A／R06-B／R06-C 及相依的 R04 已交付，R06-D 視覺實作與自動／隔離瀏覽器回歸已交付，Windows 真正縮放驗收仍保留。R01／R02／R03／R04／R05／R07／R08 已移至 Changelog；各項實作及驗收依序交付，R08 不再保留未完成條目。UI 伺服器端分頁已上線，實作與量測見 docs/note-paging.md，不將原 R03 的評估紀錄冒充當時已上線。
 
 ## P1：可靠性、架構與桌面操作
 
@@ -50,16 +50,7 @@ R04 已隨 R06-B 完成，期限、session 清理及同步驗收紀錄移至 [CH
 
 R07 四項實作與整體驗收已逐項交付，原始五條 checkbox 完整移至 [CHANGELOG.MD](CHANGELOG.MD)。現行規範見 [本機維運](docs/local-operations.md)、[依賴與安全掃描](docs/dependencies.md)、[健康與安全日誌](docs/operations-health.md)。不將 Windows／Python 3.12 的驗證擴大為已認證 Linux／Docker。
 
-### R08 — 測試與文件維護
-
-- [ ] **R06-B 剩餘驗收**：在實際 Windows 桌面瀏覽器將 URL、主機／登入網址、登入帳號及多行程式碼貼回比對完整原文；確認剪貼簿拒絕／不可用時的雙語手動複製提示。自動化精確文字與失敗回饋、頁面 Clipboard API 寫入已驗證，但不取代系統剪貼簿貼回驗收；完成前 Changelog 的 R06-B 原驗收不勾選。
-  - [ ] 補實際 Windows 瀏覽器剪貼簿貼回驗收，內嵌瀏覽器的虛擬剪貼簿與頁面 Clipboard API 無法互通。
-
-以上兩條為同一待驗收範圍（第二條保留原瀏覽器條目的剩餘原文），依使用者要求留待與 R06 其他實機驗收一起處理。一般瀏覽器互動回歸已移至 Changelog R08-D，現行規範見 [瀏覽器回歸](docs/browser-regression.md)；不因本輪測試而勾選 R06-B。
-
-2026-10-16 已恢復 Chrome 擴充功能連線，並以隔離範例確認正常複製按鈕成功回報；工具 Ctrl+V 仍明確使用虛擬剪貼簿而無法貼回。使用者手動貼回的長 URL 已逐字比對（919 字元、完整 query／fragment），其餘主機／帳號／程式碼與失敗提示仍待完成，未算整個 R06-B 通過。已提供獨立假資料服務、頁面範圍失敗模擬及 [手動貼回步驟](docs/desktop-acceptance.md)，不把驗收支援工具或單一欄位通過當成原驗收完成。
-
-R08 文件子項已隨 R03 交付架構／復原指南；R08-A／B／C／D、R08-E Windows 交付及 2026-10-16 的 Linux／CJK 雲端補驗已移至 Changelog，原條目與拆分界線保留。修正後 `5d74156` 的 [run 38839868250](https://github.com/Zimkjdv/ProjMemo/actions/runs/38839868250) 在明確啟用 `run_linux` 後，Windows 與 Linux 兩個 job 皆成功；仍維持 push／PR 只跑 Windows、Linux 手動選擇的政策。真實瀏覽器規範見 [瀏覽器回歸](docs/browser-regression.md)，PDF 範圍見 [PDF 驗收](docs/pdf-verification.md)。本節只保留與 R06 一起驗收的系統剪貼簿，不將 R06-B 原驗收或整批 R06 一併勾選。
+R08 的文件、Markdown、catalog、CI、真實瀏覽器／PDF、Linux／CJK 補驗及 R06-B 系統剪貼簿均已完成，原條目與驗收移至 [CHANGELOG.MD](CHANGELOG.MD)，包含歷史四種改寫條目的完整原文。2026-10-16 使用者在實際 Windows Chrome 親手複製／貼回四類原文並逐字比對，另完成 32 組雙語／兩檢視的失敗提示；不是工具虛擬剪貼簿或成功回饋的替代驗收。規範見 [瀏覽器回歸](docs/browser-regression.md)、[實機驗收操作](docs/desktop-acceptance.md) 與 [PDF 驗收](docs/pdf-verification.md)。Linux 仍維持手動 `run_linux`，R06 真正縮放的三條原文不因 R08 完成一併勾選。
 
 ## P2：依需求擴充
 

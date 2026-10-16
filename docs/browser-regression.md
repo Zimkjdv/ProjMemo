@@ -42,6 +42,6 @@ Linux 改用 `.venv/bin/python`，安裝引擎時使用 `playwright install --wi
 
 > 補表單錯誤等回歸及更多標準桌面瀏覽器的完整互動驗收；過期 session、重複解鎖、延遲 reveal、CSRF、完整備份驗證及還原異常流程已有隔離測試。來源政策與原生表單的衝突已修正，並完成實際瀏覽器中英文切換驗證；Header／token 測試不能取代瀏覽器驗收。補實際 Windows 瀏覽器剪貼簿貼回驗收，內嵌瀏覽器的虛擬剪貼簿與頁面 Clipboard API 無法互通。
 
-既有過期／延遲 reveal／CSRF／還原異常的隔離 Python／Node 測試仍保留；本套瀏覽器案例不是每個異常分支的替代品。R06-B 系統剪貼簿貼回與 R06 真實 Windows 縮放仍由 ROADMAP 追蹤。
+既有過期／延遲 reveal／CSRF／還原異常的隔離 Python／Node 測試仍保留；本套瀏覽器案例不是每個異常分支的替代品。R06-B 系統剪貼簿已於 2026-10-16 另以使用者實際 Windows Chrome 手動貼回、四類原文逐字比對與 32 組故障提示補驗，原句於 Changelog 完整勾選移錄，方法見 [實機操作](desktop-acceptance.md)。這不表示本套 headless CI 取得 OS 剪貼簿能力；R06 真正 Windows 縮放仍由 ROADMAP 追蹤。
 
 官方工具規範：[Playwright CI](https://playwright.dev/docs/ci)、[瀏覽器引擎](https://playwright.dev/docs/browsers)。fixture 刻意不採用可重用的既有 webServer，避免本機資料混入測試。

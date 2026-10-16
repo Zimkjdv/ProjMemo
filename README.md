@@ -261,4 +261,4 @@ python -m app.launcher
 
 已完成的階段紀錄移至 [CHANGELOG.MD](CHANGELOG.MD)，未完成項目統一維護於 [ROADMAP.MD](ROADMAP.MD)。目前專案本身支援新增、檢視與編輯，尚未提供整個專案刪除；標籤可透過搜尋文字比對，尚無獨立標籤篩選器。
 
-P0、R03／R04／R05／R07 已完成。R08 的 Markdown、catalog、CI、真實瀏覽器互動與真實 PDF 生成／抽字／渲染／Windows 視覺驗收已交付；PDF 字型修正後的 Linux／CJK 雲端補驗亦於 2026-10-16 通過，結果及界線見 CHANGELOG 與各指南。仍保留 R06-B 系統剪貼簿與 R06 真正 Windows 縮放待驗收，不因 CI 成功整批勾選。套用新依賴前先停止舊服務，再執行一次 `setup-local.bat`，日常用 `run-local.bat`。Docker 待本機功能穩定後再進行；多人協作與手機排版不屬於目前個人版範圍。
+P0、R03／R04／R05／R07／R08 已完成。R08 的 Markdown、catalog、CI、真實瀏覽器互動與真實 PDF 生成／抽字／渲染／Windows 視覺驗收已交付；PDF 字型修正後的 Linux／CJK 雲端補驗，以及 R06-B 的實際 Windows 系統剪貼簿手動貼回與雙語失敗回饋，亦於 2026-10-16 通過，結果及界線見 CHANGELOG 與各指南。仍保留 R06 真正 Windows 縮放待驗收，不因 R08 完成整批勾選。套用新依賴前先停止舊服務，再執行一次 `setup-local.bat`，日常用 `run-local.bat`。Docker 待本機功能穩定後再進行；多人協作與手機排版不屬於目前個人版範圍。
