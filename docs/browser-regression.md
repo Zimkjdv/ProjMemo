@@ -1,6 +1,6 @@
 # R08 桌面瀏覽器回歸
 
-測試在獨立 Chromium／Firefox 引擎執行，不以 DOM 替身、TestClient 或 Header 測試代替瀏覽器。`tests/browser/package-lock.json` 固定 Playwright 1.64.1 與 npm integrity；僅開發／CI 使用，不改應用 runtime。兩引擎、兩語言各六項，共 24 項；零自動 retry，任一失敗即非通過。
+測試在獨立 Chromium／Firefox 引擎執行，不以 DOM 替身、TestClient 或 Header 測試代替瀏覽器。`tests/browser/package-lock.json` 固定 Playwright 1.64.1 與 npm integrity；僅開發／CI 使用，不改應用 runtime。原工作區每語言六項，R09 追加生命週期與無 JavaScript 兩項：兩引擎共 32 項，啟用 Edge 則 48 項；零自動 retry，任一失敗即非通過。歷史 run 數量不追改。
 
 ## 重跑
 
@@ -27,8 +27,10 @@ Linux 改用 `.venv/bin/python`，安裝引擎時使用 `playwright install --wi
 | 內容工作區 | 卡片／明細、10／20／50、未存草稿取消／確認換頁、請求失敗保留 DOM／原頁次、重試、語言切換取消保留原文 |
 | 備份 | 真正 SQLite 下載、錯誤上傳、原資料仍在、確認還原舊備份後新增專案消失 |
 | 保管庫 | 假主密碼設定、假帳號加密保存、顯示／鎖定、錯誤解鎖不回填、正確重試；一般 Markdown 不含明文，瀏覽器儲存不含假密碼 |
+| R09 生命週期 | 假資料封存、分類入口、垃圾桶、復原到已封存、取消封存、錯誤名稱拒絕並重新確認、永久刪除及復原點列表 |
+| R09 無 JavaScript | 原生展開確認、完整名稱／勾選、POST 封存及管理頁狀態更新 |
 
-瀏覽器網路限制只允許當例 loopback origin；不造訪 example.invalid，不連外部帳號。失敗上下文只含假資料，存於忽略的 `data/r08-browser-results`；關閉 trace／錄影／截圖，CI 不上傳資料 artifacts。安裝依賴／引擎本身需要網路。
+瀏覽器網路限制只允許當例 loopback origin；不造訪 example.invalid，不連外部帳號。失敗上下文只含假資料，存於忽略的 `data/r08-browser-results`；關閉 trace／錄影／自動失敗截圖，R09 案例另明確保存管理頁與垃圾桶確認頁的純假資料截圖供視覺檢查。CI 不上傳資料 artifacts。安裝依賴／引擎本身需要網路。
 
 ## 驗收界線與原始規劃
 

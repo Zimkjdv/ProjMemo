@@ -14,6 +14,7 @@ ProjMemo 是一個以本機 Python `.venv` 執行的個人專案備註與交接�
 - [保管庫安全說明](docs/vault-security.md)：主密碼、salt、加密金鑰及 session 的關係。
 - [本機請求保護](docs/local-web-security.md)：Host、來源、CSRF 與程式呼叫方式。
 - [資料庫升級與復原](docs/database-migrations.md)：schema 版本、逐版 migration、升級前快照及失敗處理。
+- [專案生命週期](docs/project-lifecycle.md)：封存、垃圾桶、復原、永久刪除與刪除前復原點。
 - [程式架構](docs/architecture.md)：路由／服務邊界、共用資料、SQLite、請求流程及執行設定。
 - [本機啟動與維運](docs/local-operations.md)、[健康檢查與安全日誌](docs/operations-health.md)：一般／開發模式、port 衝突、資料目錄與磁碟故障處理。
 - [表單與驗證](docs/forms.md)：後端字數上限、網址／列舉驗證、正規化與安全回填。
@@ -31,6 +32,8 @@ ProjMemo 是一個以本機 Python `.venv` 執行的個人專案備註與交接�
 ## 目前功能
 
 目前已提供 URL、Markdown 備註、交接清單、環境變數說明，以及 Markdown/PDF 匯出。專案列表可切換卡片或明細清單檢視，並支援每頁 10、20 或 50 筆。
+
+專案可由右上角「管理專案」封存或移至垃圾桶；首頁分類可切換使用中、已封存及垃圾桶。封存仍可編輯與匯出，垃圾桶保留全部內容及密文但阻擋舊網址的內容操作，復原後回原分類。永久刪除僅限垃圾桶，需完整名稱及勾選確認，且先成功建立完整 SQLite 復原點；資料備份頁可下載。這不是安全抹除，復原點及既有備份仍可能保留資料；詳見 [操作與安全界線](docs/project-lifecycle.md)。
 
 首頁會記住已套用的檢視、筆數、搜尋與狀態篩選；明確 URL 參數優先，沒有列表參數時才還原並回到第 1 頁。可用「重設列表」回復預設，空結果的「清除篩選」則保留檢視與筆數。偏好只保存於目前瀏覽器 origin，不保存專案內容、表單草稿或保管庫資料；搜尋詞最多記住 256 字元，請勿把密碼或 Key 當搜尋詞。禁止 storage 或不執行 JavaScript 時，原生表單與 URL 仍可使用。
 
@@ -176,7 +179,7 @@ ProjMemo 是一個以本機 Python `.venv` 執行的個人專案備註與交接�
 - `vault_config`：salt、加密驗證資料及 Argon2id 參數；不保存主密碼或解密金鑰。
 - `app_settings`：是否允許額外的敏感匯出，預設關閉。
 
-實際 schema 與逐版定義以 `app/migrations.py` 為準，由 `app/db.py` 管理交易、快照與失敗復原。`PRAGMA user_version` 現為 **3**：八張業務表、`schema_migrations` 紀錄表及七個依量測新增的查詢索引。支援未標記的 v0（完整五表或八表）、v1 八表及 v2 紀錄版升級；紀錄自 v2 起保存名稱與 UTC 執行時間，不補造 v1 歷史。已是最新版時不重複套用、不新增快照；版本／紀錄／結構或 v3 索引不符則拒絕啟動或還原。操作與限制見 [資料庫升級與復原](docs/database-migrations.md)。
+實際 schema 與逐版定義以 `app/migrations.py` 為準，由 `app/db.py` 管理交易、快照與失敗復原。`PRAGMA user_version` 現為 **4**：八張業務表、`schema_migrations` 紀錄表、七個量測索引與生命週期索引。v4 追加封存／垃圾桶時間與確認用 revision，不改既有 ID 或密文。支援 v0（完整五表或八表）、v1／v2／v3 升級；紀錄自 v2 起保存名稱與 UTC 執行時間，不補造 v1 歷史。已是最新版時不重複套用、不新增快照；版本／紀錄／結構或必要索引不符則拒絕啟動或還原。操作與限制見 [資料庫升級與復原](docs/database-migrations.md)。
 
 寫入服務會先預留 SQLite writer，SQL 鎖等待明確為一秒；忙碌時回滾並回覆 503／Retry-After，不自動重送資料。備份 API 另限制連續鎖等待，不限制健康複製的總時間。索引不改變資料排序、保管庫加密或完整匯出；備註伺服器端分頁與 R05 草稿保護已交付，畫面只讀當頁，匯出仍讀全部資料。見 [量測、代價與設計](docs/performance-r03.md)。
 

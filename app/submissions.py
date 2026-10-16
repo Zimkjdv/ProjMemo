@@ -5,7 +5,7 @@ import hmac
 import secrets
 import threading
 import time
-from urllib.parse import urlencode
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from fastapi.exceptions import RequestValidationError
 from fastapi.routing import APIRoute
@@ -91,7 +91,9 @@ class MutationRoute(APIRoute):
             if response.status_code == 303:
                 parts = request.url.path.strip("/").split("/")
                 section = SECTIONS.get(parts[0]) or (SECTIONS.get(parts[2]) if len(parts) > 2 else "")
-                params = {"notice": "saved"}
+                target = urlsplit(response.headers["location"])
+                params = dict(parse_qsl(target.query, keep_blank_values=True))
+                params.setdefault("notice", "saved")
                 view = form.get("_detail_view")
                 if view in {"cards", "list"}:
                     params["detail_view"] = view
@@ -101,7 +103,7 @@ class MutationRoute(APIRoute):
                         params[name] = value
                 if request.url.path.endswith("/notes"):
                     params["notes_page"] = "1"
-                location = response.headers["location"] + "?" + urlencode(params) + ("#" + section if section else "")
+                location = urlunsplit((target.scheme, target.netloc, target.path, urlencode(params), section or target.fragment))
                 response.headers["location"] = location
                 response.headers["Cache-Control"] = "no-store"
                 registry.finish(token, location)

@@ -37,7 +37,7 @@ test("bare home restores the last applied state with encoded filters, hash, and 
 });
 
 test("any explicit list parameter takes precedence, including blank filters and a shared page", () => {
-  for (const query of ["?q=", "?status=", "?view=cards", "?page_size=50", "?page=2"]) {
+  for (const query of ["?q=", "?status=", "?view=cards", "?page_size=50", "?page=2", "?collection=active"]) {
     const page = harness("http://127.0.0.1:52878/" + query);
     assert.deepEqual(page.replacements, []);
     assert.deepEqual(JSON.parse(page.data.get(key)), defaults);
@@ -67,4 +67,13 @@ test("reset clears only list preferences and leaves the native reset link operat
   assert.equal(page.data.has(key), false);
   const denied = harness("http://127.0.0.1:52878/?view=list", saved, saved, true);
   assert.doesNotThrow(() => denied.reset.click());
+});
+
+test("archive and trash never restore or overwrite active-list preferences", () => {
+  for (const collection of ["archived", "trash"]) {
+    const page = harness("http://127.0.0.1:52878/?collection=" + collection);
+    assert.deepEqual(page.replacements, []);
+    assert.deepEqual(JSON.parse(page.data.get(key)), saved);
+    assert.deepEqual(page.reads, ["list-preferences"]);
+  }
 });

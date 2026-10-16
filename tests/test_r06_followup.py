@@ -33,7 +33,7 @@ def test_list_preferences_use_applied_state_and_clear_links_remain_authoritative
         assert 'data-reset-list-preferences' in page.text
         assert 'href="/?view=list&amp;page_size=20&amp;page=1"' in page.text
         assert 'Reset list' in page.text if language == 'en' else '重設列表' in page.text
-        assert 'list-preferences.js?v=20261014-r06' in page.text
+        assert 'list-preferences.js?v=20261016-r09' in page.text
 
 
 @pytest.mark.parametrize('language', ['zh-Hant', 'en'])

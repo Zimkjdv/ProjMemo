@@ -12,6 +12,7 @@
         <div class="project-title-row">
           <h1>{{ project.name }}</h1>
           <span class="status status-{{ project.status }}">{{ status_label(project.status) }}</span>
+          {% if project.archived_at %}<span class="lifecycle-badge">{{ t('已封存') }}</span>{% endif %}
         </div>
         <div class="project-description">
           <p class="project-field-label">{{ t("專案說明") }}</p>
@@ -19,6 +20,7 @@
         </div>
       </div>
       <div class="project-actions">
+        <a class="button button-ghost" href="/projects/{{ project.id }}/manage">{{ t('管理專案') }}</a>
         <details class="project-export">
           <summary class="button button-ghost"><span aria-hidden="true">↓</span> {{ t("匯出專案") }} <span class="export-chevron" aria-hidden="true">⌄</span></summary>
           <div class="project-export-menu">
@@ -50,6 +52,7 @@
     </dl>
   </div>
 </section>
+{% if project.archived_at %}<p class="lifecycle-hint">{{ t('此專案已封存，仍可編輯與匯出；可從管理專案取消封存。') }}</p>{% endif %}
 
 <div class="detail-toolbar">
   <h2>{{ t("專案內容") }}</h2>

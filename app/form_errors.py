@@ -172,6 +172,12 @@ async def recover_form_error(request: Request, error, *, fields=None):
         request.state.notes_size = values.get("_notes_size", "20")
         if path == "/projects/new":
             response = projects.new_project(request)
+        elif match := re.fullmatch(r"/projects/(\d+)/lifecycle/(archive|unarchive|trash|restore|purge)", path):
+            response = projects.manage_project(request, int(match[1]))
+            # Always require fresh confirmation after an error, especially stale revisions.
+            values = dict(values)
+            values["confirmation_name"] = ""
+            values["confirmed"] = ""
         elif match := re.fullmatch(r"/projects/(\d+)/edit", path):
             response = projects.edit_project(request, int(match[1]))
         elif match := re.fullmatch(r"/projects/(\d+)/(urls|notes|checklist|environment-variables|accounts|export)", path):
@@ -193,6 +199,7 @@ async def recover_form_error(request: Request, error, *, fields=None):
         project = response.context.get("project")
         recovery_url = ("/settings/vault" if path.startswith("/settings/vault/") else
                         "/settings/backup" if path.startswith("/settings/backup/") else
+                        f'/projects/{project["id"]}/manage' if "/lifecycle/" in path and project else
                         f'/projects/{project["id"]}' + ("/edit" if path.endswith("/edit") and path.startswith("/projects/") else "")
                         if project else "/projects/new")
         if pager := response.context.get("note_page"):

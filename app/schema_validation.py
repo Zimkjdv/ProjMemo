@@ -3,7 +3,7 @@
 import sqlite3
 import re
 
-from .migrations import MIGRATIONS, QUERY_INDEXES, SCHEMA_VERSION
+from .migrations import LIFECYCLE_INDEXES, MIGRATIONS, QUERY_INDEXES, SCHEMA_VERSION
 from .vault import VaultError, validate_vault_metadata
 
 
@@ -41,7 +41,7 @@ VAULT_COLUMNS = {
     "app_settings": {"id", "allow_secret_export"},
 }
 INTEGER_COLUMNS = {"id", "project_id", "completed", "is_secret", "allow_secret_export",
-                   "kdf_memory_cost", "kdf_iterations", "kdf_lanes", "version"}
+                   "kdf_memory_cost", "kdf_iterations", "kdf_lanes", "version", "revision"}
 BLOB_COLUMNS = {"secret_ciphertext", "secret_nonce", "salt", "verifier_nonce", "verifier_ciphertext"}
 
 
@@ -69,12 +69,17 @@ def validate_schema(connection: sqlite3.Connection) -> int:
             or (version >= 1 and vault_tables != set(VAULT_COLUMNS))):
         raise SchemaValidationError("備份檔的保管庫資料表不完整，無法還原。")
     tables = {**REQUIRED_COLUMNS, **(VAULT_COLUMNS if vault_tables else {})}
+    lifecycle_columns = {"archived_at", "deleted_at", "revision"}
+    if version >= 4:
+        tables["projects"] = tables["projects"] | lifecycle_columns
     if version >= 2:
         if object_types.get("schema_migrations") != "table":
             raise SchemaValidationError("資料庫的遷移紀錄不完整或不相容。")
         tables["schema_migrations"] = {"version", "name", "applied_at"}
     elif "schema_migrations" in object_types:
         raise SchemaValidationError("資料庫版本與遷移紀錄不一致。")
+    if version < 4 and lifecycle_columns & {row[1] for row in connection.execute('PRAGMA table_info("projects")')}:
+        raise SchemaValidationError("資料庫版本與專案生命週期欄位不一致。")
     for table, required_columns in tables.items():
         columns = {row[1]: row for row in connection.execute(f'PRAGMA table_info("{table}")')}
         if not required_columns <= columns.keys():
@@ -111,6 +116,12 @@ def validate_schema(connection: sqlite3.Connection) -> int:
             raise SchemaValidationError("備份檔含有格式錯誤的資料，無法還原。")
     if vault_tables:
         _validate_vault_data(connection)
+    if version >= 4 and connection.execute(
+        "SELECT 1 FROM projects WHERE revision < 0 "
+        "OR (archived_at != '' AND datetime(archived_at) IS NULL) "
+        "OR (deleted_at != '' AND datetime(deleted_at) IS NULL) LIMIT 1"
+    ).fetchone():
+        raise SchemaValidationError("專案生命週期資料格式錯誤。")
     if version >= 2:
         expected = [(step.version, step.name) for step in MIGRATIONS if 2 <= step.version <= version]
         actual = [tuple(row) for row in connection.execute("SELECT version, name FROM schema_migrations ORDER BY version")]
@@ -121,7 +132,7 @@ def validate_schema(connection: sqlite3.Connection) -> int:
     if connection.execute("PRAGMA foreign_key_check").fetchone() is not None:
         raise SchemaValidationError("備份檔含有不一致的關聯資料，無法還原。")
     if version >= 3:
-        for statement in QUERY_INDEXES:
+        for statement in QUERY_INDEXES + (LIFECYCLE_INDEXES if version >= 4 else ()):
             name = statement.split()[2]
             index = connection.execute("SELECT sql FROM sqlite_master WHERE type='index' AND name=?", (name,)).fetchone()
             if index is None or _index_tokens(index[0]) != _index_tokens(statement):

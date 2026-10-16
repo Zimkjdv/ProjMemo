@@ -12,11 +12,11 @@ from ..project_data import ProjectData
 from .vault import read_vault_settings
 
 
-def get_project(connection: sqlite3.Connection, project_id: int) -> sqlite3.Row:
+def get_project(connection: sqlite3.Connection, project_id: int, *, include_deleted: bool = False) -> sqlite3.Row:
     project = connection.execute(
         "SELECT * FROM projects WHERE id = ?", (project_id,)
     ).fetchone()
-    if project is None:
+    if project is None or ("deleted_at" in project.keys() and project["deleted_at"] and not include_deleted):
         raise ApplicationError(status_code=404, detail="找不到此專案")
     return project
 
@@ -68,8 +68,9 @@ def project_detail(connection: sqlite3.Connection, project_id: int) -> ProjectDa
 
 def touch_project(connection: sqlite3.Connection, project_id: int) -> None:
     """Called inside the content mutation's existing transaction, never commit."""
+    get_project(connection, project_id)  # A trashed parent rolls back the whole child mutation.
     connection.execute(
-        "UPDATE projects SET updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        "UPDATE projects SET updated_at = CURRENT_TIMESTAMP, revision = revision + 1 WHERE id = ?",
         (project_id,),
     )
 
@@ -80,6 +81,7 @@ def project_list_url(
     view_mode: str,
     page_size: int,
     page: int,
+    collection: str = 'active',
 ) -> str:
     params = {
         "view": view_mode,
@@ -90,6 +92,8 @@ def project_list_url(
         params["q"] = q
     if status:
         params["status"] = status
+    if collection in {"archived", "trash"}:
+        params["collection"] = collection
     return f"/?{urlencode(params)}"
 
 
@@ -100,13 +104,17 @@ def list_projects(
     view: str = 'cards',
     page_size: int = 10,
     page: int = 1,
+    collection: str = 'active',
 ) -> dict[str, object]:
     q = q.strip()
     selected_status = status if status in {value for value, _ in STATUS_OPTIONS} else ""
     view_mode = view if view in {"cards", "list"} else "cards"
     page_size = page_size if page_size in {10, 20, 50} else 10
     params: list[str] = []
-    filters: list[str] = []
+    collection = collection if collection in {"active", "archived", "trash"} else "active"
+    filters = [{"active": "deleted_at = '' AND archived_at = ''",
+                "archived": "deleted_at = '' AND archived_at != ''",
+                "trash": "deleted_at != ''"}[collection]]
     if q.strip():
         filters.append("(name LIKE ? OR description LIKE ? OR tags LIKE ?)")
         search = f"%{q}%"
@@ -116,6 +124,11 @@ def list_projects(
         params.append(selected_status)
     where_clause = f" WHERE {' AND '.join(filters)}" if filters else ""
     with db_session() as connection:
+        collection_counts = dict(zip(("active", "archived", "trash"), connection.execute(
+            "SELECT COALESCE(SUM(deleted_at = '' AND archived_at = ''), 0), "
+            "COALESCE(SUM(deleted_at = '' AND archived_at != ''), 0), "
+            "COALESCE(SUM(deleted_at != ''), 0) FROM projects"
+        ).fetchone()))
         total_count = connection.execute(
             f"SELECT COUNT(*) FROM projects{where_clause}", params
         ).fetchone()[0]
@@ -132,13 +145,18 @@ def list_projects(
     pagination_pages = [
         {
             "number": page_number,
-            "url": project_list_url(q, selected_status, view_mode, page_size, page_number),
+            "url": project_list_url(q, selected_status, view_mode, page_size, page_number, collection),
             "current": page_number == page,
         }
         for page_number in range(first_page, last_page + 1)
     ]
     return dict(
         projects=projects,
+        collection=collection,
+        collection_counts=collection_counts,
+        collection_urls={scope: project_list_url(q, selected_status, view_mode, page_size, 1, scope)
+                         for scope in ("active", "archived", "trash")},
+        reset_list_url=project_list_url('', '', 'cards', 10, 1, collection),
         q=q,
         selected_status=selected_status,
         view_mode=view_mode,
@@ -150,11 +168,11 @@ def list_projects(
         first_result=(page - 1) * page_size + 1 if total_count else 0,
         last_result=min(page * page_size, total_count),
         pagination_pages=pagination_pages,
-        previous_url=project_list_url(q, selected_status, view_mode, page_size, page - 1) if page > 1 else '',
-        next_url=project_list_url(q, selected_status, view_mode, page_size, page + 1) if page < page_count else '',
-        card_view_url=project_list_url(q, selected_status, 'cards', page_size, page),
-        list_view_url=project_list_url(q, selected_status, 'list', page_size, page),
-        clear_filter_url=project_list_url('', '', view_mode, page_size, 1)
+        previous_url=project_list_url(q, selected_status, view_mode, page_size, page - 1, collection) if page > 1 else '',
+        next_url=project_list_url(q, selected_status, view_mode, page_size, page + 1, collection) if page < page_count else '',
+        card_view_url=project_list_url(q, selected_status, 'cards', page_size, page, collection),
+        list_view_url=project_list_url(q, selected_status, 'list', page_size, page, collection),
+        clear_filter_url=project_list_url('', '', view_mode, page_size, 1, collection)
     )
 
 
@@ -195,7 +213,7 @@ def update_project(
             """
             UPDATE projects
             SET name = ?, description = ?, status = ?, owner = ?, tags = ?,
-                updated_at = CURRENT_TIMESTAMP
+                updated_at = CURRENT_TIMESTAMP, revision = revision + 1
             WHERE id = ?
             """,
             (name.strip(), description.strip(), status, owner.strip(), tags.strip(), project_id),
@@ -215,6 +233,7 @@ def project_for_item(kind: str, item_id: int) -> int:
         row = connection.execute(f"SELECT project_id FROM {table} WHERE id = ?", (item_id,)).fetchone()
         if row is None:
             raise ApplicationError(404, "找不到此專案")
+        get_project(connection, int(row["project_id"]))
         return int(row["project_id"])
 
 

@@ -62,10 +62,13 @@ def queries(connection, target):
     connection.set_trace_callback(None)
     names = ("project", "urls", "checklist", "environment", "accounts", "notes")
     result = {name: (statement, ()) for name, statement in zip(names, statements)}
+    # Compare the same released business projection across schemas. SELECT *
+    # would add v4 lifecycle columns to only one side of the v2/v3 comparison.
+    project_columns = "id,name,description,status,owner,tags,created_at,updated_at"
     result.update({
-        "home": ("SELECT * FROM projects ORDER BY updated_at DESC, id DESC LIMIT 20 OFFSET 0", ()),
-        "home_status": ("SELECT * FROM projects WHERE status=? ORDER BY updated_at DESC, id DESC LIMIT 20 OFFSET 0", ("maintenance",)),
-        "home_search": ("SELECT * FROM projects WHERE name LIKE ? OR description LIKE ? OR tags LIKE ? ORDER BY updated_at DESC, id DESC LIMIT 20", ("%project%",) * 3),
+        "home": (f"SELECT {project_columns} FROM projects ORDER BY updated_at DESC, id DESC LIMIT 20 OFFSET 0", ()),
+        "home_status": (f"SELECT {project_columns} FROM projects WHERE status=? ORDER BY updated_at DESC, id DESC LIMIT 20 OFFSET 0", ("maintenance",)),
+        "home_search": (f"SELECT {project_columns} FROM projects WHERE name LIKE ? OR description LIKE ? OR tags LIKE ? ORDER BY updated_at DESC, id DESC LIMIT 20", ("%project%",) * 3),
         "notes_page_prototype": ("SELECT * FROM notes WHERE project_id=? ORDER BY id DESC LIMIT 20 OFFSET 0", (target,)),
         "accounts_sensitive_sort": ("SELECT id,label,username,secret_ciphertext,secret_nonce FROM access_accounts WHERE project_id=? ORDER BY label COLLATE NOCASE", (target,)),
     })

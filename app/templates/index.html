@@ -36,7 +36,15 @@
   </div>
 </section>
 
+<nav class="collection-tabs" aria-label="{{ t('專案分類') }}">
+  {% for scope, label in [('active', t('使用中')), ('archived', t('已封存')), ('trash', t('垃圾桶'))] %}
+  <a href="{{ collection_urls[scope] }}" {% if collection == scope %}aria-current="page"{% endif %}>{{ label }} <span>{{ collection_counts[scope] }}</span></a>
+  {% endfor %}
+</nav>
+{% if collection == 'trash' %}<p class="lifecycle-hint">{{ t('垃圾桶不會自動清空。專案可復原；永久刪除須到管理頁逐一確認。') }}</p>{% endif %}
+
 <form class="filter-bar" method="get" action="/">
+  {% if collection != 'active' %}<input type="hidden" name="collection" value="{{ collection }}">{% endif %}
   <label class="search-field"><span class="search-icon" aria-hidden="true">⌕</span><input name="q" value="{{ q }}" aria-label="{{ t("搜尋專案") }}" placeholder="{{ t("搜尋名稱、描述或標籤") }}"></label>
   <label class="filter-select"><span>{{ t("狀態") }}</span><select name="status">
     <option value="">{{ t("全部狀態") }}</option>
@@ -52,11 +60,11 @@
   <input type="hidden" name="view" value="{{ view_mode }}">
   <input type="hidden" name="page" value="1">
   <button class="button button-secondary" type="submit">{{ t("套用篩選") }}</button>
-  <a class="button button-ghost" href="/?view=cards&amp;page_size=10&amp;page=1&amp;q=&amp;status=" data-reset-list-preferences title="{{ t('重設檢視、每頁筆數與篩選') }}">{{ t('重設列表') }}</a>
+  <a class="button button-ghost" href="{{ reset_list_url }}&amp;q=&amp;status=" data-reset-list-preferences title="{{ t('重設檢視、每頁筆數與篩選') }}">{{ t('重設列表') }}</a>
 </form>
 
 <div class="results-toolbar">
-  <div class="list-caption"><h2>{{ t("所有專案") }}</h2><span class="project-count">{{ t('符合條件 {count} 個專案' if q or selected_status else '{count} 個專案', count=total_count) }}</span></div>
+  <div class="list-caption"><h2>{{ t('垃圾桶') if collection == 'trash' else t('已封存') if collection == 'archived' else t('所有專案') }}</h2><span class="project-count">{{ t('符合條件 {count} 個專案' if q or selected_status else '{count} 個專案', count=total_count) }}</span></div>
   <div class="view-switch" role="group" aria-label="{{ t("專案顯示方式") }}">
     <a class="view-switch-button {% if view_mode == 'cards' %}active{% endif %}" href="{{ card_view_url }}" {% if view_mode == 'cards' %}aria-current="page"{% endif %} aria-label="{{ t("卡片檢視") }}"><span aria-hidden="true">▦</span> {{ t("卡片") }}</a>
     <a class="view-switch-button {% if view_mode == 'list' %}active{% endif %}" href="{{ list_view_url }}" {% if view_mode == 'list' %}aria-current="page"{% endif %} aria-label="{{ t("明細清單檢視") }}"><span aria-hidden="true">☷</span> {{ t("清單") }}</a>
@@ -66,12 +74,12 @@
 {% if projects and view_mode == 'cards' %}
 <section class="project-grid" aria-label="{{ t("專案卡片列表") }}">
   {% for project in projects %}
-  <a class="project-card" href="/projects/{{ project.id }}">
+  <a class="project-card" href="/projects/{{ project.id }}{{ '/manage' if collection == 'trash' else '' }}">
     <div class="project-card-top"><span class="project-card-icon" aria-hidden="true">{{ project.name[:1]|upper }}</span><span class="status status-{{ project.status }}">{{ status_label(project.status) }}</span></div>
     <h3>{{ project.name }}</h3>
     <p class="project-card-description">{{ project.description or t('新增一段簡短描述，記下這個專案的目的。') }}</p>
     {% if project.tags %}<div class="tag-list">{% for tag in project.tags.split(',') %}<span class="tag">{{ tag.strip() }}</span>{% endfor %}</div>{% endif %}
-    <div class="project-card-footer"><span>{{ t("更新於") }} {{ project.updated_at }}</span><span class="card-arrow" aria-hidden="true">→</span></div>
+    <div class="project-card-footer"><span>{{ t('移入垃圾桶於') if collection == 'trash' else t('更新於') }} {{ project.deleted_at if collection == 'trash' else project.updated_at }}</span><span class="card-arrow" aria-hidden="true">→</span></div>
   </a>
   {% endfor %}
 </section>
@@ -82,12 +90,12 @@
     <tbody>
       {% for project in projects %}
       <tr class="project-list-row">
-        <td class="project-list-main"><a href="/projects/{{ project.id }}">{{ project.name }}</a><span>{{ project.description or t('尚未填寫專案描述') }}</span></td>
+        <td class="project-list-main"><a href="/projects/{{ project.id }}{{ '/manage' if collection == 'trash' else '' }}">{{ project.name }}</a><span>{{ project.description or t('尚未填寫專案描述') }}</span>{% if collection == 'trash' %}<small>{{ t('移入垃圾桶於') }} {{ project.deleted_at }}</small>{% endif %}</td>
         <td><span class="status status-{{ project.status }}">{{ status_label(project.status) }}</span></td>
         <td>{% if project.tags %}<div class="tag-list">{% for tag in project.tags.split(',') %}<span class="tag">{{ tag.strip() }}</span>{% endfor %}</div>{% else %}<span class="muted">—</span>{% endif %}</td>
         <td>{{ project.owner or t('未指定') }}</td>
         <td class="project-list-updated">{{ project.updated_at }}</td>
-        <td><a class="project-list-open" href="/projects/{{ project.id }}" aria-label="{{ t("開啟") }} {{ project.name }}">→</a></td>
+        <td><a class="project-list-open" href="/projects/{{ project.id }}{{ '/manage' if collection == 'trash' else '' }}" aria-label="{{ t("開啟") }} {{ project.name }}">→</a></td>
       </tr>
       {% endfor %}
     </tbody>
@@ -97,6 +105,7 @@
 <section class="empty-state">
   <span class="empty-icon" aria-hidden="true">▤</span>
   {% if q or selected_status %}<h2>{{ t("沒有符合條件的專案") }}</h2><p>{{ t("試試其他關鍵字或狀態篩選。") }}</p><a class="button button-ghost" href="{{ clear_filter_url }}">{{ t("清除篩選") }}</a>
+  {% elif collection != 'active' %}<h2>{{ t('垃圾桶是空的') if collection == 'trash' else t('尚無封存專案') }}</h2><a class="button button-ghost" href="{{ collection_urls.active }}">{{ t('返回專案列表') }}</a>
   {% else %}<h2>{{ t("開始整理第一個專案") }}</h2><p>{{ t("把常用連結、注意事項與交接資訊集中在一起。") }}</p><a class="button button-primary" href="/projects/new">{{ t("建立第一個專案") }}</a>{% endif %}
 </section>
 {% endif %}
@@ -116,5 +125,5 @@
 </nav>
 {% endif %}
 <script type="application/json" id="list-preferences">{{ {'view': view_mode, 'page_size': page_size, 'q': q, 'status': selected_status}|tojson }}</script>
-<script src="/static/list-preferences.js?v=20261014-r06" defer></script>
+<script src="/static/list-preferences.js?v=20261016-r09" defer></script>
 {% endblock %}

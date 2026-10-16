@@ -8,7 +8,7 @@
 app/main.py：create_app()、lifespan、middleware 與錯誤處理
   └─ routers/：projects、content、accounts、vault、backups、exports、language、health
        ├─ presentation.py：模板、繁中／英文 context、安全 Markdown、轉址
-       └─ services/：projects、workspace、content、accounts、vault、backups、exports
+       └─ services/：projects、workspace、content、accounts、vault、backups、exports、lifecycle
             ├─ db.py／database_access.py：交易與程序內排他作業
             ├─ vault.py：密碼學、session 與限流原件
             ├─ backup.py：SQLite 備份／還原與失敗回復
@@ -26,6 +26,7 @@ app/main.py：create_app()、lifespan、middleware 與錯誤處理
 | `services/projects.py`／`workspace.py` | 共用專案與非備註投影、列表／搜尋、修改與 `touch_project()`；`ProjectData` 保持完整，workspace 另採 COUNT／LIMIT／OFFSET 提供 UI 專用 10／20／50 分頁與深頁錯誤回復。 |
 | `services/content.py`／`accounts.py` | 內容驗證、資料修改與專案更新時間在同一交易內；帳號 ID 先建立再加密，失敗整筆回滾。reveal 在解密前及回傳前檢查解鎖，避免到期後回傳明文。 |
 | `services/vault.py` | 設定／解鎖、限流、session 操作與敏感匯出政策；保留既有錯誤碼。底層 Argon2id／AES-GCM 與 AAD 仍在 `app/vault.py`，本次不改。 |
+| `services/lifecycle.py` | 確認名稱／勾選／revision、封存／垃圾桶／復原及先快照再永久刪除；單筆寫入交易保留原分類、CASCADE 子資料，提交後撤銷 session。共用父專案查詢與 `touch_project` 阻擋垃圾桶的舊讀寫入口。 |
 | `services/backups.py` | 頁面資料、暫存上傳、還原流程與 session 撤銷、恢復檔案路徑檢查。`backup.py` 保有 SQLite 級驗證、快照、排他與回復。上傳 HTTP 檔案由 router 關閉，暫存 DB 由服務清理。 |
 | `services/exports.py` | 普通／敏感匯出的資料載入、政策及文件產生，回傳 `ExportArtifact`；路由才加下載 header。兩種格式共用完整 `ProjectData`，不受畫面分頁限制。 |
 | `options.py` | 單一份狀態、類別、優先級與環境列舉，以及既有匯出用標籤。頁面透過 `presentation.py` 翻譯；使用者內容和既有匯出文字不自動翻譯。 |
@@ -47,11 +48,11 @@ ASGI 入口仍是 `app.main:app`；日常透過 `run-local.bat`／`python -m app
 
 ## SQLite 資料模型
 
-現行 schema **v3**：八張業務表、一張遷移紀錄表與七個查詢索引。`projects.id` 是下列五類內容的父項，外鍵刪除規則為 CASCADE；目前沒有專案永久刪除路由。
+現行 schema **v4**：八張業務表、一張遷移紀錄表、七個量測查詢索引與一個生命週期索引。`projects.id` 是下列五類內容的父項，外鍵刪除規則為 CASCADE；永久刪除只允許垃圾桶專案，需確認並先完成完整快照。封存仍可編輯，垃圾桶父專案則阻擋內容、匯出及密碼讀取，見 [生命週期](project-lifecycle.md)。
 
 | 表 | 內容 |
 | --- | --- |
-| `projects` | 名稱、說明、狀態、負責人、標籤與建立／更新時間。 |
+| `projects` | 名稱、說明、狀態、負責人、標籤與建立／更新時間；v4 追加封存／垃圾桶時間及每次寫入遞增的確認版本 revision。 |
 | `project_urls` | 專案連結的類型、名稱、URL、說明。 |
 | `notes` | 類別、優先級、標題、Markdown 本文。 |
 | `checklist_items` | 交接類別、內容、負責人、完成狀態及備註。 |
@@ -80,6 +81,7 @@ R07 的 `SafeDiagnosticsMiddleware` 外包既有本機／資料庫 middleware，
 ## 測試與後續修改
 
 - `tests/fixtures/http_contract.json` 固定來自 `45369b5` 重構前的 HTTP 契約；比對 URL／method、operation ID、查詢／表單欄位、預設值及回應 schema。測試不自行更新此基準，真的改 API 時才人工審查。
+- R09 在既有 projects router 追加 GET `/projects/{project_id}/manage` 與 POST `/projects/{project_id}/lifecycle/{action}`，測試將這兩個明列新增路徑分開驗證，所有歷史路徑仍完整比對凍結快照。首頁 `collection` 由 Request 讀取，為相容性未改既有 OpenAPI 參數宣告；合法值與行為見生命週期文件。
 - `tests/test_architecture.py` 檢查邊界、共用列舉、app 狀態隔離、16 種內容操作的交易回滾／時間更新、加密失敗回滾及完整／不解密的普通匯出。
 - 依賴替身應套在實際擁有者：PDF 在 `app.services.exports.generate_project_pdf`，reveal 解密在 `app.services.accounts.decrypt_secret`，還原初始化／快照流程在 `app.services.backups`；不要重新匯入 `main.py` 當服務定位器。
 - 測試先以 `PROJMEMO_DB_PATH` 指向隔離資料庫，再進入 app lifespan；不得用正式 DB 驗證。完整執行 Python 與 Node 測試，舊版 migration、備份回復與加密 AAD 仍要一起回歸。

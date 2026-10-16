@@ -24,12 +24,14 @@ def backup_page_data(recovery_filename: str = "") -> dict[str, object]:
     directory = recovery_directory(database_path())
     recovery_backups = []
     try:
-        paths = sorted(directory.glob("projmemo-pre-restore-*.sqlite3"),
+        paths = sorted((path for path in directory.glob("projmemo-pre-*.sqlite3")
+                        if is_recovery_backup_filename(path.name) and not path.is_symlink()),
                        key=lambda path: path.stat().st_mtime, reverse=True)[:10]
         for path in paths:
             stats = path.stat()
             recovery_backups.append({
                 "filename": path.name,
+                "before_delete": path.name.startswith("projmemo-pre-delete-"),
                 "created_at": datetime.fromtimestamp(stats.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
                 "size_mb": max(stats.st_size / (1024 * 1024), 0.01),
             })

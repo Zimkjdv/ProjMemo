@@ -27,6 +27,32 @@ a { color: var(--primary); text-decoration: none; }
 a:hover { text-decoration: underline; }
 .container { width: min(1240px, calc(100% - 48px)); margin: 0 auto; }
 
+/* Project lifecycle: native confirmation forms work without JavaScript. */
+.collection-tabs { display: flex; gap: 8px; margin: 0 0 18px; flex-wrap: wrap; }
+.collection-tabs a { display: inline-flex; align-items: center; gap: 10px; padding: 9px 16px; color: #475467; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); font-weight: 650; }
+.collection-tabs a[aria-current="page"] { color: #253c97; border-color: #bdcbed; background: #e2e9ff; }
+.collection-tabs span, .lifecycle-badge { padding: 2px 9px; border-radius: 7px; color: #344054; background: #f2f4f7; font-size: .8rem; font-weight: 700; }
+.collection-tabs a:focus-visible, .lifecycle-confirmation summary:focus-visible { outline: 3px solid #263f9b; outline-offset: 3px; }
+.lifecycle-hint { margin: 0 0 22px; padding: 14px 18px; border: 1px solid #d0daf8; border-radius: 10px; color: #344d8b; background: #f0f4ff; }
+.lifecycle-page { max-width: 1000px; margin: 0 auto; display: grid; gap: 20px; }
+.lifecycle-title-row, .lifecycle-links { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.lifecycle-title-row > div { min-width: 0; }
+.lifecycle-title-row .lifecycle-badge { flex: none; }
+.lifecycle-overview h1 { font-size: 1.85rem; }
+.lifecycle-counts { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin: 22px 0; padding: 20px 0; border-block: 1px solid var(--line); }
+.lifecycle-counts dt { color: var(--muted); font-size: .8rem; }
+.lifecycle-counts dd { margin: 7px 0 0; font-size: 1.4rem; font-weight: 750; }
+.lifecycle-links { justify-content: flex-start; flex-wrap: wrap; margin-bottom: 16px; }
+.lifecycle-overview > p:last-child { margin-bottom: 0; }
+.lifecycle-action h2 { margin-bottom: 8px; }
+.lifecycle-danger { border-color: #f7cdca; }
+.lifecycle-danger h2 { color: #b42318; }
+.lifecycle-confirmation { border-top: 1px solid var(--line); padding-top: 14px; }
+.lifecycle-confirmation summary { width: fit-content; cursor: pointer; color: var(--primary); font-weight: 650; }
+.lifecycle-confirmation form { max-width: 640px; margin-top: 18px; }
+.lifecycle-confirmation .checkbox-label { margin: 16px 0; }
+.lifecycle-page .security-hint, .lifecycle-page .lifecycle-hint { margin: 0; }
+
 /* Site navigation */
 .site-header { position: sticky; z-index: 20; top: 0; border-bottom: 1px solid var(--line); background: rgba(255, 255, 255, .94); backdrop-filter: blur(12px); }
 .header-inner { min-height: 68px; display: flex; align-items: center; justify-content: space-between; }

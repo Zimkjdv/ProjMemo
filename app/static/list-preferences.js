@@ -14,13 +14,15 @@
   };
   const current = normalize(JSON.parse(state.textContent));
   const url = new URL(window.location.href);
+  // Trash/archive are explicit workspaces, not a remembered home-page preference.
+  if (["archived", "trash"].includes(url.searchParams.get("collection"))) return;
   let saved = null;
   try {
     const raw = localStorage.getItem(key);
     if (raw && raw.length <= 2048) saved = normalize(JSON.parse(raw));
   } catch (_) { /* Explicit URLs and native list controls work without storage. */ }
   // A shared/bookmarked URL is authoritative, including explicit empty filters.
-  const explicit = ["view", "page_size", "page", "q", "status"].some(name => url.searchParams.has(name));
+  const explicit = ["view", "page_size", "page", "q", "status", "collection"].some(name => url.searchParams.has(name));
   if (!explicit && saved && JSON.stringify(saved) !== JSON.stringify(current)) {
     url.searchParams.set("view", saved.view);
     url.searchParams.set("page_size", String(saved.page_size));

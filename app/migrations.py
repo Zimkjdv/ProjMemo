@@ -5,7 +5,7 @@ import sqlite3
 from typing import Callable
 
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 
 @dataclass(frozen=True)
@@ -147,8 +147,23 @@ def query_indexes(connection: sqlite3.Connection) -> None:
         connection.execute(statement)
 
 
+LIFECYCLE_INDEXES = (
+    "CREATE INDEX idx_projects_lifecycle ON projects(deleted_at, archived_at, updated_at DESC, id DESC)",
+)
+
+
+def project_lifecycle(connection: sqlite3.Connection) -> None:
+    """v4: lifecycle is independent of the existing business status."""
+    connection.execute("ALTER TABLE projects ADD COLUMN archived_at TEXT NOT NULL DEFAULT ''")
+    connection.execute("ALTER TABLE projects ADD COLUMN deleted_at TEXT NOT NULL DEFAULT ''")
+    connection.execute("ALTER TABLE projects ADD COLUMN revision INTEGER NOT NULL DEFAULT 0")
+    for statement in LIFECYCLE_INDEXES:
+        connection.execute(statement)
+
+
 MIGRATIONS = (
     Migration(1, "baseline_schema", baseline_schema),
     Migration(2, "migration_history", migration_history),
     Migration(3, "query_indexes", query_indexes),
+    Migration(4, "project_lifecycle", project_lifecycle),
 )

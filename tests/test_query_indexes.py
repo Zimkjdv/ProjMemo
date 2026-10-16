@@ -98,7 +98,7 @@ def test_v2_upgrade_keeps_ciphertext_and_restart_does_not_repeat(tmp_path):
     snapshot, = (tmp_path / "backups/migrations").glob("*.sqlite3")
     assert dump(snapshot) == original
     with closing(db.connect(path)) as connection:
-        assert connection.execute("PRAGMA user_version").fetchone()[0] == 3
+        assert connection.execute("PRAGMA user_version").fetchone()[0] == db.SCHEMA_VERSION
         assert connection.execute("SELECT version,name FROM schema_migrations ORDER BY version").fetchall()[1][1] == "query_indexes"
         row = connection.execute("SELECT * FROM access_accounts").fetchone()
         assert (row["secret_ciphertext"], row["secret_nonce"]) == (ciphertext, nonce)
@@ -190,7 +190,7 @@ def test_v2_restore_upgrades_to_v3_and_keeps_pre_restore_snapshot(tmp_path):
     assert dump(snapshot) == original
     validate_backup(current)
     with closing(sqlite3.connect(current)) as connection:
-        assert connection.execute("PRAGMA user_version").fetchone()[0] == 3
+        assert connection.execute("PRAGMA user_version").fetchone()[0] == db.SCHEMA_VERSION
         assert connection.execute("SELECT name FROM projects").fetchone()[0] == "Index fixture"
 
 

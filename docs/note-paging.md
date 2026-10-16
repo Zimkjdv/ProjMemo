@@ -4,7 +4,7 @@
 
 內容頁預設只讀取 20 筆備註，可選 10／20／50，依 id 由新至舊。`notes_page`／`notes_size` 在 URL 保留頁次，獨立 COUNT 提供總數，導覽與區塊重複計數均保留；非法參數回預設，深頁及刪除後頁數縮減會夾到合法範圍。空清單仍可新增，不提供「全部」以免重新載入大量 HTML。
 
-`services/workspace.py` 是 UI 專用查詢，不建立裁切版 `ProjectData`。完整專案、普通／敏感 Markdown／PDF 及 SQLite 備份維持完整資料；普通查詢不讀密文或解密。`project_related()` 只共用其他內容投影，完整 `project_detail()` 另載入全部備註。schema 仍為 v3，無新資料表或 WAL 更動。
+`services/workspace.py` 是 UI 專用查詢，不建立裁切版 `ProjectData`。完整專案、普通／敏感 Markdown／PDF 及 SQLite 備份維持完整資料；普通查詢不讀密文或解密。`project_related()` 只共用其他內容投影，完整 `project_detail()` 另載入全部備註。分頁交付時 schema 為 v3，分頁本身無新資料表或 WAL 更動；R09 後為 v4，垃圾桶專案的完整／局部備註讀取均拒絕，不能以分頁網址繞過生命週期保護。
 
 ## 原生與局部更新
 

@@ -20,7 +20,7 @@ from .sqlite_policy import SQLITE_LOCK_WAIT_SECONDS, copy_database as _copy_data
 MAX_BACKUP_BYTES = 100 * 1024 * 1024
 UPLOAD_CHUNK_BYTES = 1024 * 1024
 SQLITE_HEADER = b"SQLite format 3\x00"
-RECOVERY_FILENAME = re.compile(r"^projmemo-pre-restore-\d{8}-\d{6}-\d{6}\.sqlite3$")
+RECOVERY_FILENAME = re.compile(r"^projmemo-pre-(?:restore|delete)-\d{8}-\d{6}-\d{6}\.sqlite3$")
 
 
 class BackupRestoreError(RuntimeError):
@@ -115,6 +115,27 @@ def create_temporary_backup(database_file: Path) -> Path:
         temporary_path.unlink(missing_ok=True)
         raise
     return temporary_path
+
+
+def create_deletion_snapshot(database_file: Path) -> Path:
+    """Caller holds BEGIN IMMEDIATE; a separate reader copies the committed DB.
+
+    Do not back up the caller's open write transaction: SQLite would wait on
+    itself. An exclusive filename reservation also prevents snapshot overwrite.
+    """
+    directory = recovery_directory(database_file)
+    directory.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+    destination = directory / f"projmemo-pre-delete-{timestamp}.sqlite3"
+    with destination.open("xb"):
+        pass
+    try:
+        create_database_backup(database_file, destination)
+        validate_backup(destination)
+    except Exception:
+        destination.unlink(missing_ok=True)
+        raise
+    return destination
 
 
 def restore_database(

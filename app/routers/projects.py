@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 
 from ..presentation import page_context, redirect_to_project, templates
 from ..runtime import VAULT_COOKIE_NAME, get_runtime
-from ..services import projects, vault
+from ..services import lifecycle, projects, vault
 from ..services.workspace import load_workspace
 
 from ..submissions import MutationRoute
@@ -22,7 +22,8 @@ def index(
     page_size: int = 10,
     page: int = 1,
 ) -> HTMLResponse:
-    values = projects.list_projects(q=q, status=status, view=view, page_size=page_size, page=page)
+    values = projects.list_projects(q=q, status=status, view=view, page_size=page_size, page=page,
+                                   collection=request.query_params.get("collection", "active"))
     return templates.TemplateResponse(request, "index.html", page_context(request, **values))
 
 
@@ -104,3 +105,21 @@ def update_project(
         tags=tags,
     )
     return redirect_to_project(project_id)
+
+
+@router.get("/projects/{project_id}/manage", response_class=HTMLResponse)
+def manage_project(request: Request, project_id: int) -> HTMLResponse:
+    return templates.TemplateResponse(
+        request, "project_manage.html", page_context(request, **lifecycle.management_data(project_id)),
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@router.post("/projects/{project_id}/lifecycle/{action}")
+def change_lifecycle(
+    request: Request, project_id: int, action: str,
+    revision: int = Form(..., ge=0), confirmation_name: str = Form(""), confirmed: bool = Form(False),
+) -> RedirectResponse:
+    destination = lifecycle.transition(project_id=project_id, action=action, revision=revision,
+        confirmation_name=confirmation_name, confirmed=confirmed, runtime=get_runtime(request))
+    return RedirectResponse(destination, 303, headers={"Cache-Control": "no-store"})

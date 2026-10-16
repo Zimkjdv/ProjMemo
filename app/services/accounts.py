@@ -137,8 +137,9 @@ def reveal_secret(runtime: AppRuntime, token: str | None, account_id: int) -> st
             """,
             (account_id,),
         ).fetchone()
-    if item is None:
-        raise ApplicationError(status_code=404, detail="找不到此帳號資料")
+        if item is None:
+            raise ApplicationError(status_code=404, detail="找不到此帳號資料")
+        get_project(connection, int(item["project_id"]))
     if item["secret_ciphertext"] is None or item["secret_nonce"] is None:
         raise ApplicationError(status_code=404, detail="此帳號沒有保存密碼")
     try:
@@ -153,4 +154,6 @@ def reveal_secret(runtime: AppRuntime, token: str | None, account_id: int) -> st
         raise ApplicationError(status_code=500, detail=str(error)) from error
     if current_vault_key(runtime, token) is None:
         raise ApplicationError(status_code=423, detail="保管庫已鎖定，請先解鎖")
+    with db_session() as connection:
+        get_project(connection, int(item["project_id"]))
     return secret_value
