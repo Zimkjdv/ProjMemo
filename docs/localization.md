@@ -2,6 +2,8 @@
 
 繁中以來源字串為基準，英文在 `app/locales/en.json`；少量原本為英文的選項由 `i18n.ZH_MESSAGES` 提供繁中對應。使用者專案名稱、說明、備註、帳號與匯出原文不自動翻譯。
 
+R12 的文件語言獨立於介面 cookie：新匯出選項用 `app/locales/export-en.json`／`ExportOptions.label` 翻譯固定文件標題、欄位與列舉；舊一鍵匯出維持原標題。內建模板的雙語內容在 `app/locales/note-templates.json`，不插入使用者資料。UI checker 不涵蓋這兩份文件資料 catalog 的語意完整性；`tests/test_editing_exports.py` 另外檢查列舉翻譯、雙語章節組合、模板及原文保留。詳見 [編輯與匯出](editing-export.md)。
+
 在已安裝 runtime 的環境可從任意工作目錄呼叫：
 
 ```powershell

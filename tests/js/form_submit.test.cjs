@@ -52,3 +52,12 @@ test("a later cancellation releases the UI lock without disabling controls", () 
   assert.equal(page.controls[0].disabled, false);
   assert.equal(page.form.dataset.submitting, undefined);
 });
+
+test("read-only export forms permit repeated downloads without a permanent UI lock", () => {
+  const page = harness(); page.form.dataset.readonlyForm = "";
+  assert.equal(page.submit().defaultPrevented, false);
+  assert.equal(page.submit().defaultPrevented, false);
+  assert.equal(page.form.dataset.submitting, undefined);
+  assert.equal(page.pending.length, 0);
+  assert.equal(page.controls[0].disabled, false);
+});

@@ -56,6 +56,12 @@ R10 補強 fixture 結束順序：先關閉該例測試頁面，再讓 `appURL` 
 
 官方工具規範：[Playwright CI](https://playwright.dev/docs/ci)、[瀏覽器引擎](https://playwright.dev/docs/browsers)。fixture 刻意不採用可重用的既有 webServer，避免本機資料混入測試。
 
+## R12 本機補驗（2026-10-19）
+
+Chromium／Edge 全套各 34 項，共 **68 passed**；其中 12 個新案例驗證雙語模板套用／取消、注入防護預覽、過時／失敗回應保留草稿、備註換頁重新綁定、獨立文件語言／章節下載及無 JavaScript 模板／原生預覽。原備份／還原、清理、生命週期、搜尋、草稿、分頁及保管庫流程仍通過，維持零 retry 與原停止期限。全套 Python **675 passed／1 個既有 Linux 專用 skip**，Node **78 passed**；追加原生匯出錯誤保留選項後，R12 16 項另再通過，不重複累加。
+
+檢視純假資料編輯／匯出截圖及雙語各 7 頁 PDF 渲染，未操作正式資料庫、既有復原點或原 `.venv`。本輪沒有重跑本機 Firefox、真正 Windows 縮放／剪貼簿或 Linux／CJK 手動 gate；初期受限環境的失敗輪次不列為成功。操作與 Mermaid 安全設計見 [編輯與匯出](editing-export.md)。
+
 ## R11 本機補驗（2026-10-19）
 
 Chromium／Edge 原全套加 R11 三類流程共 52 項通過；預覽頁語言切換的安全 GET 返回另新增並通過 4 項，共 56 個不同案例。最後的返回標記讓既有 `language.js` 使用正確備份首頁，不只修改 hidden input 後便假定前端不會覆寫。失敗輪次不計入成功，未改既有 5 秒停止期限或零 retry。

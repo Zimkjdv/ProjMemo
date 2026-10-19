@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<header class="editor-page-header"><div><p class="eyebrow">{{ t('匯出專案') }}</p><h1>{{ t('匯出選項') }}</h1><p>{{ project.name }}</p></div><a class="button button-ghost" href="/projects/{{ project.id }}">{{ t('返回專案') }}</a></header>
+<form class="panel export-options" method="post" action="/projects/{{ project.id }}/export" data-readonly-form>
+  {{ csrf_input() }}
+  {% if error %}<p class="form-feedback" role="alert">{{ error }}</p>{% endif %}
+  <div class="form-grid two-columns">
+    <label>{{ t('匯出格式') }}<select name="export_format"><option value="markdown">Markdown</option><option value="pdf" {% if export_format == 'pdf' %}selected{% endif %}>PDF</option></select></label>
+    {% set document_locale = document_language|default(language) %}
+    <label>{{ t('文件語言') }}<select name="document_language"><option value="zh-Hant" {% if document_locale == 'zh-Hant' %}selected{% endif %}>繁中</option><option value="en" {% if document_locale == 'en' %}selected{% endif %}>English</option></select></label>
+  </div>
+  <p class="help-text">{{ t('只翻譯文件標題與欄位，不翻譯專案內容。') }}</p>
+  <fieldset><legend>{{ t('匯出章節') }}</legend><p>{{ t('專案名稱、狀態、負責人與標籤一律保留；請至少選擇一個章節。') }}</p>
+    <div class="export-section-options">{% for value, label in export_sections %}<label class="checkbox-label"><input type="checkbox" name="sections" value="{{ value }}"{% if selected_sections is not defined or value in selected_sections %} checked{% endif %}>{{ t(label) }}</label>{% endfor %}</div>
+  </fieldset>
+  <fieldset><legend>{{ t('密碼匯出保護') }}</legend>
+    <p>{{ t('預設不包含實際密碼。含密碼匯出仍須允許政策、解鎖保管庫及再次確認。') }}</p>
+    <label class="checkbox-label"><input type="checkbox" name="include_secrets" value="true">{{ t('包含實際密碼（敏感）') }}</label>
+    <label class="checkbox-label"><input type="checkbox" name="confirm_sensitive_export" value="true">{{ t('我確認此檔案可能包含實際密碼，並會安全保管。') }}</label>
+  </fieldset>
+  <button class="button button-primary" type="submit">{{ t('下載匯出檔') }}</button>
+</form>
+{% endblock %}

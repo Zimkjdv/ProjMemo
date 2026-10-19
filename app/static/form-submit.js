@@ -4,6 +4,8 @@
   document.addEventListener("submit", (event) => {
     const form = event.target;
     if (event.defaultPrevented || form.method?.toLowerCase() !== "post") return;
+    // Read-only downloads stay on this page; they must remain usable afterwards.
+    if (form.dataset.readonlyForm !== undefined) return;
     if (form.dataset.submissionStale === "true") {
       event.preventDefault();
       if (!form.querySelector(".submission-stale")) {

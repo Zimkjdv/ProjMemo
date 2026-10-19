@@ -1,0 +1,14 @@
+{% macro markdown_editor(content='') %}
+<div class="markdown-editor" data-markdown-editor>
+  <label>{{ t('Markdown 內容') }}<textarea name="content_markdown" rows="9" required maxlength="100000" placeholder="{{ t('支援 Markdown、程式碼區塊與表格') }}">{{ content }}</textarea></label>
+  <div class="markdown-toolbar" data-editor-enhanced hidden>
+    <label>{{ t('備註模板') }}<select data-note-template><option value="">{{ t('選擇模板') }}</option>{% for item in editor_templates(language) %}<option value="{{ item.id }}" data-template-content="{{ item.content }}">{{ item.title }}</option>{% endfor %}</select></label>
+    <button type="button" class="button button-ghost" data-apply-template>{{ t('套用模板') }}</button>
+    <button type="button" class="button button-secondary" data-markdown-preview>{{ t('預覽 Markdown') }}</button>
+  </div>
+  <noscript><p>{{ t('預覽會在新分頁開啟，不會儲存備註。模板可從獨立編輯工具複製。') }}</p><button type="submit" class="button button-ghost" formaction="/editor/preview" formtarget="_blank" formnovalidate>{{ t('預覽 Markdown') }}</button></noscript>
+  <p class="help-text">{{ t('預覽不會儲存；請勿在備註輸入實際密碼。Mermaid 目前以程式碼顯示。') }} <a href="/editor" target="_blank" rel="noopener">{{ t('獨立編輯工具與模板') }}</a></p>
+  <p data-preview-status role="status" aria-live="polite"></p>
+  <iframe class="markdown-preview" data-markdown-frame sandbox="" referrerpolicy="no-referrer" title="{{ t('Markdown 預覽') }}" hidden></iframe>
+</div>
+{% endmacro %}

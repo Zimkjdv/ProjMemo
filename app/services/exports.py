@@ -5,6 +5,7 @@ import sqlite3
 
 from ..db import db_session
 from ..errors import ApplicationError
+from ..export_options import ExportOptions
 from ..markdown_export import build_markdown
 from ..pdf_export import PDFExportError, generate_project_pdf
 from ..project_data import ProjectData
@@ -56,16 +57,18 @@ def _sensitive_export_accounts(
     return accounts
 
 
-def _render(data: ProjectData, export_format: str, *, sensitive: bool = False) -> ExportArtifact:
+def _render(data: ProjectData, export_format: str, *, sensitive: bool = False,
+            options: ExportOptions | None = None) -> ExportArtifact:
+    kwargs = {"include_secrets": True} if sensitive else {}
+    if options is not None:
+        kwargs["options"] = options
     if export_format == "markdown":
         # Keep the original renderer call shapes as well as the rendered bytes.
-        content = (build_markdown(*data.renderer_args(), include_secrets=True)
-                   if sensitive else build_markdown(*data.renderer_args()))
+        content = build_markdown(*data.renderer_args(), **kwargs)
         extension, media_type = "md", "text/markdown; charset=utf-8"
     else:
         try:
-            content = (generate_project_pdf(*data.renderer_args(), include_secrets=True)
-                       if sensitive else generate_project_pdf(*data.renderer_args()))
+            content = generate_project_pdf(*data.renderer_args(), **kwargs)
         except PDFExportError as error:
             raise ApplicationError(503, str(error)) from error
         extension, media_type = "pdf", "application/pdf"
@@ -73,15 +76,16 @@ def _render(data: ProjectData, export_format: str, *, sensitive: bool = False) -
     return ExportArtifact(content, filename, extension, media_type, sensitive)
 
 
-def export_project(project_id: int, export_format: str) -> ExportArtifact:
+def export_project(project_id: int, export_format: str, *, options: ExportOptions | None = None) -> ExportArtifact:
     if export_format not in {"markdown", "pdf"}:
         raise ApplicationError(400, "不支援的匯出格式")
     # Only the metadata projection is loaded, never ciphertext or plaintext.
-    return _render(load_project_data(project_id), export_format)
+    return _render(load_project_data(project_id), export_format, options=options)
 
 
 def export_sensitive_project(runtime: AppRuntime, token: str | None, project_id: int,
-                             export_format: str, confirm_sensitive_export: bool) -> ExportArtifact:
+                             export_format: str, confirm_sensitive_export: bool, *,
+                             options: ExportOptions | None = None) -> ExportArtifact:
     if export_format not in {"markdown", "pdf"}:
         raise ApplicationError(400, "不支援的匯出格式")
     if not confirm_sensitive_export:
@@ -92,5 +96,6 @@ def export_sensitive_project(runtime: AppRuntime, token: str | None, project_id:
         if setting is None or not setting["allow_secret_export"]:
             raise ApplicationError(403, "尚未在保管庫設定中允許含密碼匯出")
         data = project_detail(connection, project_id)
-        accounts = _sensitive_export_accounts(connection, project_id, key)
-    return _render(replace(data, access_accounts=accounts), export_format, sensitive=True)
+        accounts = (_sensitive_export_accounts(connection, project_id, key)
+                    if options is None or "accounts" in options.sections else [])
+    return _render(replace(data, access_accounts=accounts), export_format, sensitive=True, options=options)

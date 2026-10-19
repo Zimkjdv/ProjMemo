@@ -820,3 +820,20 @@ html.project-detail-page { scroll-padding-top: 0; }
   .access-account-meta { grid-template-columns: minmax(0, 1fr); }
   .vault-inline-status { align-items: flex-start; flex-direction: column; }
 }
+/* R12: reusable desktop Markdown editor and explicit document choices. */
+.editor-page-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin: 8px 0 26px; }
+.editor-page-header h1 { margin: 6px 0; font-size: 32px; line-height: 1.35; }
+.editor-page-header p:not(.eyebrow) { color: var(--muted); margin: 8px 0; overflow-wrap: anywhere; }
+.markdown-toolbar { display: flex; align-items: end; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.markdown-toolbar[hidden], .markdown-preview[hidden] { display: none; }
+.markdown-toolbar label { flex: 1 1 160px; margin: 0; }
+.markdown-toolbar .button { padding: 9px 12px; min-height: 42px; }
+.markdown-preview { display: block; width: 100%; height: 360px; border: 1px solid var(--border, #dce2ed); border-radius: 10px; background: white; }
+.markdown-editor [data-preview-status] { color: #62708a; font-size: 13px; min-height: 1.5em; }
+.markdown-editor .help-text { font-size: 12px; line-height: 1.7; color: #62708a; }
+.markdown-template-links { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+.export-options { max-width: 1040px; display: grid; gap: 20px; }
+.export-options fieldset { padding: 20px; border: 1px solid #dce2ed; border-radius: 12px; }
+.export-options legend { padding: 0 8px; font-weight: 700; }
+.export-section-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.export-options > button { justify-self: start; }

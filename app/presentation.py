@@ -15,9 +15,11 @@ from .options import (
     priority_label, environment_label, access_environment_label, access_account_category_label,
 )
 from .web_security import csrf_input
+from .markdown_editor import editor_templates
 
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
 templates.env.globals.update(
+    editor_templates=editor_templates,
     csrf_input=csrf_input, status_label=status_label, url_type_label=url_type_label,
     note_category_label=note_category_label, checklist_category_label=checklist_category_label,
     priority_label=priority_label, environment_label=environment_label,
@@ -81,6 +83,22 @@ def markdown_filter(value: str) -> str:
 
 
 templates.env.filters["markdown"] = markdown_filter
+
+
+PREVIEW_SANITIZER = nh3.Cleaner(tags=MARKDOWN_ALLOWED_TAGS, attributes={}, strip_comments=True, link_rel=None)
+PREVIEW_CSP = "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; sandbox"
+
+
+def preview_document(value: str, language: str) -> str:
+    # A second allowlist removes navigation targets; the iframe has no permissions.
+    body = PREVIEW_SANITIZER.clean(markdown_filter(value))
+    return (f'<!doctype html><html lang="{language}"><head><meta charset="utf-8">'
+            f'<meta http-equiv="Content-Security-Policy" content="{PREVIEW_CSP.removesuffix("; sandbox")}">'
+            '<style>body{font:15px/1.7 system-ui,sans-serif;color:#243047;padding:16px;margin:0;'
+            'overflow-wrap:anywhere}pre{white-space:pre-wrap;background:#f3f5fa;padding:12px}'
+            'table{border-collapse:collapse;max-width:100%}td,th{border:1px solid #ccd3e2;padding:6px}'
+            'h1,h2,h3{line-height:1.4}blockquote{border-left:3px solid #6273ef;padding-left:12px}</style>'
+            f'</head><body>{body}</body></html>')
 
 
 def redirect_to_project(project_id: int) -> RedirectResponse:

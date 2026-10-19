@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 from typing import Any
 
+from .export_options import ExportOptions
 from .options import (
     STATUS_OPTIONS, URL_TYPES, NOTE_CATEGORIES, PRIORITIES, CHECKLIST_CATEGORIES,
     ENVIRONMENTS, ACCESS_ACCOUNT_CATEGORIES, ACCESS_ENVIRONMENTS,
@@ -351,7 +352,8 @@ def _markdown_flowables(content: str, styles: dict[str, ParagraphStyle]) -> list
     return flowables
 
 
-def _header_footer(canvas: Any, document: Any, project_name: str, font_name: str) -> None:
+def _header_footer(canvas: Any, document: Any, project_name: str, font_name: str,
+                   footer: str = "Project handover notes") -> None:
     canvas.saveState()
     page_width, page_height = A4
     canvas.setStrokeColor(LINE)
@@ -367,7 +369,7 @@ def _header_footer(canvas: Any, document: Any, project_name: str, font_name: str
         header += "..."  # The full project title remains in the body and PDF metadata.
     canvas.drawString(18 * mm, page_height - 11 * mm, header)
     canvas.line(18 * mm, 15 * mm, page_width - 18 * mm, 15 * mm)
-    canvas.drawString(18 * mm, 10 * mm, "Project handover notes")
+    canvas.drawString(18 * mm, 10 * mm, footer)
     canvas.drawRightString(page_width - 18 * mm, 10 * mm, f"{document.page}")
     canvas.restoreState()
 
@@ -404,8 +406,12 @@ def generate_project_pdf(
     access_accounts: list[Any] | None = None,
     *,
     include_secrets: bool = False,
+    options: ExportOptions | None = None,
 ) -> bytes:
     """Return the project's current handover contents as an A4 PDF."""
+    t = options.label if options else lambda value: value
+    colon = ": " if options and options.language == "en" else "："
+    selected = options.sections if options else ("description", "urls", "notes", "environment", "accounts", "checklist")
     regular_font, _ = _register_cjk_fonts()
     styles = _styles(regular_font)
     output = BytesIO()
@@ -422,16 +428,16 @@ def generate_project_pdf(
     )
     story: list[Any] = [
         Paragraph(escape(project["name"]), styles["title"]),
-        Paragraph("Project overview and handover reference", styles["subtitle"]),
+        Paragraph(t("Project overview and handover reference"), styles["subtitle"]),
     ]
 
     status_text = dict(STATUS_OPTIONS).get(
         project["status"], project["status"]
     )
     metadata_rows = [
-        [Paragraph("狀態", styles["metadata_label"]), Paragraph(escape(status_text), styles["metadata_value"])],
-        [Paragraph("負責人", styles["metadata_label"]), Paragraph(escape(project["owner"] or "未指定"), styles["metadata_value"])],
-        [Paragraph("標籤", styles["metadata_label"]), Paragraph(escape(project["tags"] or "未設定"), styles["metadata_value"])],
+        [Paragraph(t("狀態"), styles["metadata_label"]), Paragraph(escape(t(status_text)), styles["metadata_value"])],
+        [Paragraph(t("負責人"), styles["metadata_label"]), Paragraph(escape(project["owner"] or t("未指定")), styles["metadata_value"])],
+        [Paragraph(t("標籤"), styles["metadata_label"]), Paragraph(escape(project["tags"] or t("未設定")), styles["metadata_value"])],
     ]
     metadata = LongTable(metadata_rows, colWidths=[CONTENT_WIDTH * 28 / 173, CONTENT_WIDTH * 145 / 173],
                          splitInRow=1, hAlign="LEFT")
@@ -447,129 +453,139 @@ def generate_project_pdf(
     ]))
     story.extend([metadata, Spacer(1, 7)])
 
-    story.extend(_section_heading("專案描述", styles))
-    description = project["description"] or "尚未填寫。"
-    story.extend(_markdown_flowables(description, styles))
+    if include_secrets and "accounts" not in selected:
+        story.append(Paragraph(t("【敏感資料】此 PDF 包含實際密碼，請使用安全管道傳送並在交接後刪除暫存副本。"), styles["small"]))
 
-    story.extend(_section_heading("重要 URL", styles))
-    if urls:
-        rows = [[Paragraph(label, styles["table_header"]) for label in ("類型", "名稱與網址", "備註")]]
-        for item in urls:
-            safe_url = escape(item["url"], quote=True)
-            url_paragraph = Paragraph(
-                f'<b>{escape(item["title"])}</b><br/><link href="{safe_url}" color="#3857D6">{escape(item["url"])}</link>',
-                styles["table"],
-            )
-            rows.append([
-                Paragraph(escape(dict(URL_TYPES).get(item["type"], item["type"])), styles["table"]),
-                url_paragraph,
-                Paragraph(escape(item["note"] or "—"), styles["table"]),
-            ])
-        story.append(_make_table(rows, [30 * mm, 88 * mm, 55 * mm]))
-    else:
-        story.append(Paragraph("尚未建立重要 URL。", styles["small"]))
+    if "description" in selected:
+        story.extend(_section_heading(t("專案描述"), styles))
+        description = project["description"] or t("尚未填寫。")
+        story.extend(_markdown_flowables(description, styles))
 
-    story.extend(_section_heading("備註與注意事項", styles))
-    if notes:
-        for note in notes:
-            note_intro = Paragraph(
-                f"<b>{escape(note['title'])}</b>  "
-                f"<font color=\"#667085\">{escape(dict(NOTE_CATEGORIES).get(note['category'], note['category']))}"
-                f" · {escape(dict(PRIORITIES).get(note['priority'], note['priority']))}</font>",
-                styles["note_title"],
-            )
-            story.append(note_intro)  # KeepWithNext also links to the first content block.
-            story.extend(_markdown_flowables(note["content_markdown"], styles))
-    else:
-        story.append(Paragraph("尚未建立備註。", styles["small"]))
+    if "urls" in selected:
+        story.extend(_section_heading(t("重要 URL"), styles))
+        if urls:
+            rows = [[Paragraph(t(label), styles["table_header"]) for label in (t("類型"), t("名稱與網址"), t("備註"))]]
+            for item in urls:
+                safe_url = escape(item["url"], quote=True)
+                url_paragraph = Paragraph(
+                    f'<b>{escape(item["title"])}</b><br/><link href="{safe_url}" color="#3857D6">{escape(item["url"])}</link>',
+                    styles["table"],
+                )
+                rows.append([
+                    Paragraph(escape(t(dict(URL_TYPES).get(item["type"], item["type"]))), styles["table"]),
+                    url_paragraph,
+                    Paragraph(escape(item["note"] or "—"), styles["table"]),
+                ])
+            story.append(_make_table(rows, [30 * mm, 88 * mm, 55 * mm]))
+        else:
+            story.append(Paragraph(t("尚未建立重要 URL。"), styles["small"]))
 
-    story.extend(_section_heading("環境變數說明", styles))
-    if environment_variables:
-        rows = [[Paragraph(label, styles["table_header"]) for label in ("變數", "環境", "用途與安全說明", "存放位置／負責人")]]
-        for variable in environment_variables:
-            description_text = "Secret（不匯出值）" if variable["is_secret"] else (variable["description"] or "—")
-            rows.append([
-                Paragraph(f"<font name=\"ProjMemoCJK\"><b>{escape(variable['key'])}</b></font>", styles["table"]),
-                Paragraph(escape(dict(ENVIRONMENTS).get(variable["environment"], variable["environment"])), styles["table"]),
-                Paragraph(escape(description_text), styles["table"]),
-                Paragraph(escape(variable["source_or_owner"] or "—"), styles["table"]),
-            ])
-        story.append(_make_table(rows, [38 * mm, 26 * mm, 58 * mm, 51 * mm]))
-    else:
-        story.append(Paragraph("尚未建立環境變數說明。", styles["small"]))
+    if "notes" in selected:
+        story.extend(_section_heading(t("備註與注意事項"), styles))
+        if notes:
+            for note in notes:
+                note_intro = Paragraph(
+                    f"<b>{escape(note['title'])}</b>  "
+                    f"<font color=\"#667085\">{escape(t(dict(NOTE_CATEGORIES).get(note['category'], note['category'])))}"
+                    f" · {escape(t(dict(PRIORITIES).get(note['priority'], note['priority'])))}</font>",
+                    styles["note_title"],
+                )
+                story.append(note_intro)  # KeepWithNext also links to the first content block.
+                story.extend(_markdown_flowables(note["content_markdown"], styles))
+        else:
+            story.append(Paragraph(t("尚未建立備註。"), styles["small"]))
 
-    story.extend(_section_heading("帳號與存取資料", styles))
-    if include_secrets:
-        story.append(Paragraph(
-            "【敏感資料】此 PDF 包含實際密碼，請使用安全管道傳送並在交接後刪除暫存副本。",
-            styles["small"],
-        ))
-    if access_accounts:
-        rows = [[Paragraph(label, styles["table_header"]) for label in ("帳號／類型", "環境／端點／用途", "使用者／權限／密碼")]]
-        category_labels = dict(ACCESS_ACCOUNT_CATEGORIES)
-        access_environment_labels = dict(ACCESS_ENVIRONMENTS)
-        for account in access_accounts:
-            identity = (
-                f"<b>{escape(str(account['label']))}</b><br/>"
-                f"{escape(category_labels.get(str(account['category']), str(account['category'])))}"
-            )
-            endpoint_lines = [
-                escape(access_environment_labels.get(str(account["environment"]), str(account["environment"])))
-            ]
-            if account["endpoint"]:
-                endpoint_lines.append(escape(str(account["endpoint"])))
-            if account["database_name"]:
-                endpoint_lines.append(f"資料庫：{escape(str(account['database_name']))}")
-            if account["purpose"]:
-                endpoint_lines.append(f"用途：{escape(str(account['purpose']))}")
-            identity_lines = []
-            if account["username"]:
-                identity_lines.append(f"帳號：{escape(str(account['username']))}")
-            if account["role_scope"]:
-                identity_lines.append(f"權限：{escape(str(account['role_scope']))}")
-            if account["owner"]:
-                identity_lines.append(f"負責人：{escape(str(account['owner']))}")
-            if include_secrets and account.get("secret_value") is not None:
-                # Paragraph normally collapses whitespace, which would change a password.
-                # NBSP preserves visible spaces; Markdown remains the lossless text format.
-                secret_text = escape(str(account["secret_value"])).replace(" ", "&#160;").replace("\n", "<br/>")
-                identity_lines.append(f"密碼：{secret_text}")
-            elif account["has_secret"]:
-                identity_lines.append("密碼：已保存於 ProjMemo 保管庫（未匯出）")
-            elif account["secret_reference"]:
-                identity_lines.append(f"密碼保管位置：{escape(str(account['secret_reference']))}")
-            else:
-                identity_lines.append("密碼：未保存")
-            rows.append([
-                Paragraph(identity, styles["table"]),
-                Paragraph("<br/>".join(endpoint_lines) or "—", styles["table"]),
-                Paragraph("<br/>".join(identity_lines) or "—", styles["table"]),
-            ])
-        story.append(_make_table(rows, [42 * mm, 64 * mm, 67 * mm]))
-    else:
-        story.append(Paragraph("尚未建立帳號與存取資料。", styles["small"]))
+    if "environment" in selected:
+        story.extend(_section_heading(t("環境變數說明"), styles))
+        if environment_variables:
+            rows = [[Paragraph(label, styles["table_header"]) for label in (t("變數"), t("環境"), t("用途與安全說明"), t("存放位置／負責人"))]]
+            for variable in environment_variables:
+                description_text = t("Secret（不匯出值）") if variable["is_secret"] else (variable["description"] or "—")
+                rows.append([
+                    Paragraph(f"<font name=\"ProjMemoCJK\"><b>{escape(variable['key'])}</b></font>", styles["table"]),
+                    Paragraph(escape(t(dict(ENVIRONMENTS).get(variable["environment"], variable["environment"]))), styles["table"]),
+                    Paragraph(escape(description_text), styles["table"]),
+                    Paragraph(escape(variable["source_or_owner"] or "—"), styles["table"]),
+                ])
+            story.append(_make_table(rows, [38 * mm, 26 * mm, 58 * mm, 51 * mm]))
+        else:
+            story.append(Paragraph(t("尚未建立環境變數說明。"), styles["small"]))
 
-    story.extend(_section_heading("交接清單", styles))
-    if checklist:
-        rows = [[Paragraph(label, styles["table_header"]) for label in ("狀態", "類型", "項目與說明", "負責人")]]
-        for item in checklist:
-            item_details = f"<b>{escape(item['title'])}</b>"
-            if item["description"]:
-                item_details += f"<br/>{escape(item['description']).replace(chr(10), '<br/>')}"
-            if item["note"]:
-                item_details += f"<br/><font color=\"#667085\">備註：{escape(item['note'])}</font>"
-            rows.append([
-                Paragraph("已完成" if item["completed"] else "待處理", styles["table"]),
-                Paragraph(escape(dict(CHECKLIST_CATEGORIES).get(item["category"], item["category"])), styles["table"]),
-                Paragraph(item_details, styles["table"]),
-                Paragraph(escape(item["owner"] or "—"), styles["table"]),
-            ])
-        story.append(_make_table(rows, [20 * mm, 31 * mm, 88 * mm, 34 * mm]))
-    else:
-        story.append(Paragraph("尚未建立交接項目。", styles["small"]))
+    if "accounts" in selected:
+        story.extend(_section_heading(t("帳號與存取資料"), styles))
+        if include_secrets:
+            story.append(Paragraph(
+                t("【敏感資料】此 PDF 包含實際密碼，請使用安全管道傳送並在交接後刪除暫存副本。"),
+                styles["small"],
+            ))
+        if access_accounts:
+            rows = [[Paragraph(label, styles["table_header"]) for label in (t("帳號／類型"), t("環境／端點／用途"), t("使用者／權限／密碼"))]]
+            category_labels = dict(ACCESS_ACCOUNT_CATEGORIES)
+            access_environment_labels = dict(ACCESS_ENVIRONMENTS)
+            for account in access_accounts:
+                identity = (
+                    f"<b>{escape(str(account['label']))}</b><br/>"
+                    f"{escape(t(category_labels.get(str(account['category']), str(account['category']))))}"
+                )
+                endpoint_lines = [
+                    escape(t(access_environment_labels.get(str(account["environment"]), str(account["environment"]))))
+                ]
+                if account["endpoint"]:
+                    endpoint_lines.append(escape(str(account["endpoint"])))
+                if account["database_name"]:
+                    endpoint_lines.append(f"{t('資料庫')}{colon}{escape(str(account['database_name']))}")
+                if account["purpose"]:
+                    endpoint_lines.append(f"{t('用途')}{colon}{escape(str(account['purpose']))}")
+                identity_lines = []
+                if account["username"]:
+                    identity_lines.append(f"{t('帳號')}{colon}{escape(str(account['username']))}")
+                if account["role_scope"]:
+                    identity_lines.append(f"{t('權限')}{colon}{escape(str(account['role_scope']))}")
+                if account["owner"]:
+                    identity_lines.append(f"{t('負責人')}{colon}{escape(str(account['owner']))}")
+                if include_secrets and account.get("secret_value") is not None:
+                    # Paragraph normally collapses whitespace, which would change a password.
+                    # NBSP preserves visible spaces; Markdown remains the lossless text format.
+                    secret_text = escape(str(account["secret_value"])).replace(" ", "&#160;").replace("\n", "<br/>")
+                    identity_lines.append(f"{t('密碼')}{colon}{secret_text}")
+                elif account["has_secret"]:
+                    identity_lines.append(f"{t('密碼')}{colon}{t('已保存於 ProjMemo 保管庫（未匯出）')}")
+                elif account["secret_reference"]:
+                    identity_lines.append(f"{t('密碼保管位置')}{colon}{escape(str(account['secret_reference']))}")
+                else:
+                    identity_lines.append(f"{t('密碼')}{colon}{t('未保存')}")
+                rows.append([
+                    Paragraph(identity, styles["table"]),
+                    Paragraph("<br/>".join(endpoint_lines) or "—", styles["table"]),
+                    Paragraph("<br/>".join(identity_lines) or "—", styles["table"]),
+                ])
+            story.append(_make_table(rows, [42 * mm, 64 * mm, 67 * mm]))
+        else:
+            story.append(Paragraph(t("尚未建立帳號與存取資料。"), styles["small"]))
+
+    if "checklist" in selected:
+        story.extend(_section_heading(t("交接清單"), styles))
+        if checklist:
+            rows = [[Paragraph(label, styles["table_header"]) for label in (t("狀態"), t("類型"), t("項目與說明"), t("負責人"))]]
+            for item in checklist:
+                item_details = f"<b>{escape(item['title'])}</b>"
+                if item["description"]:
+                    item_details += f"<br/>{escape(item['description']).replace(chr(10), '<br/>')}"
+                if item["note"]:
+                    item_details += f"<br/><font color=\"#667085\">{t('備註')}{colon}{escape(item['note'])}</font>"
+                rows.append([
+                    Paragraph(t("已完成") if item["completed"] else t("待處理"), styles["table"]),
+                    Paragraph(escape(t(dict(CHECKLIST_CATEGORIES).get(item["category"], item["category"]))), styles["table"]),
+                    Paragraph(item_details, styles["table"]),
+                    Paragraph(escape(item["owner"] or "—"), styles["table"]),
+                ])
+            widths = [25 * mm, 31 * mm, 83 * mm, 34 * mm] if options and options.language == "en" else [20 * mm, 31 * mm, 88 * mm, 34 * mm]
+            story.append(_make_table(rows, widths))
+        else:
+            story.append(Paragraph(t("尚未建立交接項目。"), styles["small"]))
 
     def page_painter(canvas: Any, doc: Any) -> None:
-        _header_footer(canvas, doc, project["name"], regular_font)
+        _header_footer(canvas, doc, project["name"], regular_font, t("Project handover notes"))
 
     document.build(story, onFirstPage=page_painter, onLaterPages=page_painter)
     return output.getvalue()

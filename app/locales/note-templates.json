@@ -1,0 +1,14 @@
+{
+  "zh-Hant": [
+    {"id":"general","title":"一般備註","content":"## 背景\n\n說明目的與適用環境。\n\n## 操作步驟\n\n1. 第一步\n2. 第二步\n\n## 參考資料\n\n- 文件位置：\n"},
+    {"id":"issue","title":"已知問題與替代方案","content":"## 問題與影響\n\n- 適用版本／環境：\n- 重現步驟：\n- 預期與實際結果：\n\n## 替代方案\n\n1. 操作步驟\n2. 驗證結果\n\n## 後續處理\n\n- 負責人：\n- 追蹤連結：\n"},
+    {"id":"deployment","title":"部署與回復","content":"## 部署前檢查\n\n- [ ] 確認目標環境與版本\n- [ ] 建立並驗證備份\n- [ ] 確認 Secret 存放位置（不填實際密碼）\n\n## 部署步驟\n\n```sh\n# 填寫經確認的部署指令\n```\n\n## 部署後驗證\n\n- [ ] 健康檢查\n- [ ] 主要功能正常\n\n## 回復步驟\n\n1. 停止本次變更\n2. 依已驗證的流程回復\n"},
+    {"id":"handover","title":"交接備註","content":"## 範圍與窗口\n\n- 交接範圍：\n- 聯絡窗口：\n\n## 權限與資源\n\n| 資源 | 負責人 | 安全存放位置 |\n| --- | --- | --- |\n| 範例服務 | 待確認 | 保管庫參照，不填實際密碼 |\n\n## 驗收\n\n- [ ] 接手人可依文件操作\n- [ ] 權限移轉完成\n- [ ] 待辦與風險已說明\n"}
+  ],
+  "en": [
+    {"id":"general","title":"General note","content":"## Background\n\nDescribe the purpose and applicable environment.\n\n## Steps\n\n1. First step\n2. Second step\n\n## References\n\n- Documentation location:\n"},
+    {"id":"issue","title":"Known issue & workaround","content":"## Issue and impact\n\n- Version / environment:\n- Steps to reproduce:\n- Expected and actual result:\n\n## Workaround\n\n1. Steps\n2. Verification\n\n## Follow-up\n\n- Owner:\n- Tracking link:\n"},
+    {"id":"deployment","title":"Deployment & rollback","content":"## Pre-deployment checks\n\n- [ ] Confirm target environment and version\n- [ ] Create and verify a backup\n- [ ] Check Secret location (never enter actual passwords)\n\n## Deployment\n\n```sh\n# Add reviewed deployment commands\n```\n\n## Verification\n\n- [ ] Health check\n- [ ] Main workflows pass\n\n## Rollback\n\n1. Stop the change\n2. Follow the verified recovery procedure\n"},
+    {"id":"handover","title":"Handover note","content":"## Scope and contacts\n\n- Scope:\n- Contact:\n\n## Access and resources\n\n| Resource | Owner | Secure location |\n| --- | --- | --- |\n| Example service | To confirm | Vault reference, not the actual password |\n\n## Acceptance\n\n- [ ] Recipient can follow the instructions\n- [ ] Access transfer completed\n- [ ] Outstanding tasks and risks documented\n"}
+  ]
+}

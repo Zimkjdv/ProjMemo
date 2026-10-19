@@ -16,7 +16,7 @@ from .errors import ApplicationError
 from .form_errors import recover_form_error
 from .i18n import get_language, translate_error
 from .operations import SafeDiagnosticsMiddleware, error_category, operational_log, prepare_storage
-from .routers import accounts, backups, content, exports, health, language, projects, vault
+from .routers import accounts, backups, content, editor, exports, health, language, projects, vault
 from .runtime import AppRuntime
 from .web_security import LocalRequestSecurityMiddleware, NO_STORE_HEADERS, require_csrf
 
@@ -125,7 +125,7 @@ def create_app(runtime: AppRuntime | None = None) -> FastAPI:
     application.add_exception_handler(ApplicationError, application_error)
     application.add_exception_handler(RequestValidationError, validation_error)
     application.add_exception_handler(DatabaseBusyError, database_busy_error)
-    for module in (language, projects, content, accounts, vault, backups, exports, health):
+    for module in (language, projects, content, accounts, vault, backups, exports, editor, health):
         application.include_router(module.router)
     return application
 

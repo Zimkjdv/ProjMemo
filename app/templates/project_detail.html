@@ -26,6 +26,7 @@
           <summary class="button button-ghost"><span aria-hidden="true">↓</span> {{ t("匯出專案") }} <span class="export-chevron" aria-hidden="true">⌄</span></summary>
           <div class="project-export-menu">
             <p>{{ t("選擇匯出格式") }}</p>
+            <a href="/projects/{{ project.id }}/export"><strong>{{ t('匯出選項') }}</strong><span>{{ t('選擇章節與文件語言') }}</span></a>
             <a href="/projects/{{ project.id }}/export.md"><strong>Markdown</strong><span>{{ t("可編輯的專案文件") }}</span></a>
             <a href="/projects/{{ project.id }}/export.pdf"><strong>PDF</strong><span>{{ t("適合閱讀與交接") }}</span></a>
             <small>{{ t("一般匯出不包含實際密碼") }}</small>
@@ -179,6 +180,7 @@
   </aside>
 </div>
 <script src="/static/project-detail.js?v=20261016-r10" defer></script>
+{% include "_markdown_editor_assets.html" %}
 <script type="application/json" id="note-page-messages">{{ {'range': t('顯示第 {first}–{last} 筆備註，共 {count} 筆')}|tojson }}</script>
 <script type="application/json" id="server-note-messages">{{ {"failed": t("載入失敗，草稿與目前內容已保留。"), "fallback": t("直接開啟此頁（會離開目前頁面）")}|tojson }}</script>
 <script src="/static/server-note-pagination.js?v=20261016-r10" defer></script>

@@ -6,7 +6,7 @@
 
 ```text
 app/main.py：create_app()、lifespan、middleware 與錯誤處理
-  └─ routers/：projects、content、accounts、vault、backups、exports、language、health
+  └─ routers/：projects、content、accounts、vault、backups、exports、editor、language、health
        ├─ presentation.py：模板、繁中／英文 context、安全 Markdown、轉址
        └─ services/：projects、workspace、content、accounts、vault、backups、exports、lifecycle
             ├─ db.py／database_access.py：交易與程序內排他作業
@@ -14,12 +14,12 @@ app/main.py：create_app()、lifespan、middleware 與錯誤處理
             ├─ backup.py：SQLite 備份／還原與失敗回復
             └─ markdown_export.py／pdf_export.py：文件產生器
 
-共用：options.py、project_data.py、errors.py、runtime.py
+共用：options.py、project_data.py、errors.py、runtime.py、export_options.py、markdown_editor.py
 ```
 
 | 模組 | 責任與限制 |
 | --- | --- |
-| `main.py` | 組裝 app、掛載 static／八個 router、全域 CSRF 依賴及錯誤處理；啟動先儲存預檢與日誌、遷移，再每 30 秒清理 session／備份預覽，停止時清理暫存、取消工作並關閉自有日誌。不放 SQL／表單業務邏輯。 |
+| `main.py` | 組裝 app、掛載 static／九個 router、全域 CSRF 依賴及錯誤處理；啟動先儲存預檢與日誌、遷移，再每 30 秒清理 session／備份預覽，停止時清理暫存、取消工作並關閉自有日誌。不放 SQL／表單業務邏輯。 |
 | `launcher.py`／`operations.py` | loopback／單 worker／持有式 socket；安全錯誤摘要、64 MiB 基本空間與可寫預檢、唯讀 readiness，不存放請求內容或密碼。 |
 | `sqlite_policy.py` | 明確的一秒 SQL lock wait、BUSY／LOCKED 判斷及有連續鎖等待上限的 SQLite backup API；不自動重播交易，不限制健康大檔案複製總時間。 |
 | `routers/` | 保留既有 URL、參數、表單預設值及回應格式。讀取 Request／cookie，呼叫服務，處理 HTML／JSON、下載、303 及安全 cookie／header；不執行 SQL 或自行提交交易。 |
@@ -29,7 +29,9 @@ app/main.py：create_app()、lifespan、middleware 與錯誤處理
 | `services/lifecycle.py` | 確認名稱／勾選／revision、封存／垃圾桶／復原及先快照再永久刪除；單筆寫入交易保留原分類、CASCADE 子資料，提交後撤銷 session。共用父專案查詢與 `touch_project` 阻擋垃圾桶的舊讀寫入口。 |
 | `services/backups.py` | 頁面資料、上傳預覽／狀態比對、還原與 session 撤銷、保留策略／清理編排及恢復檔案路徑檢查。`backup.py` 保有 SQLite 級驗證、快照、排他與回復。上傳 HTTP 檔案由 router 關閉。 |
 | `backup_inspection.py`／`backup_plans.py`／`backup_retention.py` | 唯讀數量／設定摘要與具型別／長度邊界的邏輯指紋；每 app 的 10 分鐘瀏覽器／DB／種類綁定確認與暫存清理；主機端保留政策及明確預覽後才刪除的檔案白名單。預設不清理，至少保留一份驗證通過的復原點。不改 schema／密碼格式，不含完整備份加密。 |
-| `services/exports.py` | 普通／敏感匯出的資料載入、政策及文件產生，回傳 `ExportArtifact`；路由才加下載 header。兩種格式共用完整 `ProjectData`，不受畫面分頁限制。 |
+| `services/exports.py` | 普通／敏感匯出的資料載入、政策及文件產生，回傳 `ExportArtifact`；路由才加下載 header。兩種格式共用完整 `ProjectData`，不受畫面分頁限制。R12 選項不繞過敏感檢查，排除帳號章節時不讀密文／解密。 |
+| `export_options.py`／`markdown_editor.py` | 不依賴 HTTP／DB 的文件選項白名單、版本化模板及預覽字數驗證；獨立文件 catalog 只翻譯固定欄位，不取代使用者原文。 |
+| `routers/editor.py`／`presentation.py` | 唯讀編輯工具與受 CSRF 保護的預覽；兩層 allowlist、禁止外連的 CSP／無權限框架，不保存草稿。原生／AJAX 共用安全輸出，詳見 [編輯與匯出](editing-export.md)。 |
 | `options.py` | 單一份狀態、類別、優先級與環境列舉，以及既有匯出用標籤。頁面透過 `presentation.py` 翻譯；使用者內容和既有匯出文字不自動翻譯。 |
 | `project_search.py` | R10 純查詢條件／白名單、精確 token、分類內建議及交接進度。內容使用參數化 EXISTS、頁面用索引 COUNT；無解密、FTS、migration 或資料寫入。SQLite token 函式僅註冊於該次查詢連線，不寫入 schema。 |
 | `project_data.py` | `ProjectData` 定義專案與五類內容，提供模板 context 與 Markdown／PDF 相同的參數順序。普通查詢只回傳帳號 metadata／`has_secret`，不含密文、nonce 或明文。敏感匯出另外授權／查詢，以新的 projection 取代帳號清單，不污染普通資料。 |

@@ -42,7 +42,7 @@ def test_detail_polish_retains_heading_and_navigation_counts_and_named_icon_cont
         assert len(controls) == 5
         assert page.text.count('circle cx="19" cy="12"') == 5
         assert 'project-navigation.js?v=20261014-section-counts' in page.text
-        assert 'styles.css?v=20261019-r11' in page.text
+        assert 'styles.css?v=20261019-r12' in page.text
 
 
 @pytest.mark.parametrize('language', ['zh-Hant', 'en'])
@@ -62,4 +62,4 @@ def test_selected_language_contract_and_shared_styles_cover_all_desktop_pages(tm
             active = [attrs for attrs in language_buttons if attrs.get('aria-pressed') == 'true']
             assert len(active) == 1 and active[0]['value'] == language
             assert active[0]['class'] == 'active'
-            assert 'styles.css?v=20261019-r11' in page.text
+            assert 'styles.css?v=20261019-r12' in page.text
