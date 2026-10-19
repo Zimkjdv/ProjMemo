@@ -146,6 +146,10 @@ for (const lang of ['zh-Hant', 'en']) {
     await page.goto(appURL + '/settings/backup');
     await page.locator('#backup-file').setInputFiles({ name: 'fixture.sqlite3', mimeType: 'application/vnd.sqlite3', buffer: backup });
     await submit(page.locator('.backup-restore-form'));
+    await expect(page.locator('#restore-preview')).toBeVisible();
+    await page.locator('#restore-preview [name="acknowledged"]').check();
+    await page.locator('#restore-confirmation').fill('RESTORE');
+    await submit(page.locator('#restore-preview .backup-confirm-form'));
     await expect(page.locator('.backup-success')).toBeVisible();
     await page.goto(appURL + '/');
     await expect(page.locator('main')).not.toContainText('Removed by restore');

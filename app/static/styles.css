@@ -789,6 +789,27 @@ html.project-detail-page { scroll-padding-top: 0; }
 .note-pagination small { flex-basis: 100%; }
 #project-notes[aria-busy="true"] .note-pagination { opacity: .6; pointer-events: none; }
 .note-load-feedback { margin: 12px 0; padding: 12px; border: 1px solid #f4ce8e; border-radius: 8px; background: #fffbeb; }
+.backup-preview, .backup-retention { min-width: 0; margin: 20px 0; padding: 25px 28px; }
+.backup-preview { border-top: 3px solid #6680e9; }
+.backup-comparison-wrap { overflow-x: auto; margin: 18px 0; }
+.backup-comparison { width: 100%; border-collapse: collapse; font-size: .86rem; }
+.backup-comparison th, .backup-comparison td { padding: 10px 14px; text-align: left; border-bottom: 1px solid #e5eaf3; }
+.backup-comparison thead, .backup-comparison td:last-child { background: #f5f7ff; }
+.backup-comparison th { font-weight: 650; }
+.backup-confirm-form { display: grid; max-width: 760px; gap: 14px; margin-top: 20px; }
+.backup-confirm-form label { display: grid; gap: 8px; }
+.backup-confirm-form .checkbox-row { display: flex; align-items: flex-start; gap: 10px; line-height: 1.7; }
+.backup-confirm-form .checkbox-row input { width: auto; margin-top: 6px; flex-shrink: 0; }
+.backup-confirm-form input[name="confirmation"] { max-width: 280px; }
+.backup-confirm-form .button, .backup-policy-form .button { justify-self: start; }
+.backup-cancel-form { margin-top: 12px; }
+.backup-policy-fields { display: grid; grid-template-columns: minmax(220px, 1.3fr) repeat(2, minmax(180px, 1fr)); gap: 18px; }
+.backup-policy-fields label { display: grid; gap: 8px; }
+.backup-cleanup-preview { margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5eaf3; }
+.backup-candidate-list { max-height: 330px; margin: 18px 0; padding: 0; overflow-y: auto; list-style: none; }
+.backup-candidate-list li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 20px; padding: 12px 0; border-bottom: 1px solid #e5eaf3; }
+.backup-candidate-list code { overflow-wrap: anywhere; }
+.backup-candidate-list span { color: var(--muted); font-size: .8rem; }
 [aria-invalid="true"] { border-color: #d92d20; }
 
 @media (max-width: 650px) {

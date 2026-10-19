@@ -95,6 +95,21 @@ class DatabaseAccessMiddleware:
         self.app = app
 
     async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        # A keep-alive protocol can schedule the next request while completing
+        # the previous response, inheriting that task's ContextVars. Admission
+        # and maintenance belong to ONE request, never to a TCP connection.
+        admitted = _admitted.set(None)
+        maintenance = _maintenance.set(None)
+        try:
+            await self._handle_request(scope, receive, send)
+        finally:
+            _maintenance.reset(maintenance)
+            _admitted.reset(admitted)
+
+    async def _handle_request(self, scope, receive, send):
         from .db import database_path
         from .i18n import get_language, translate_error
         from starlette.requests import Request
@@ -108,6 +123,7 @@ class DatabaseAccessMiddleware:
                   or path.startswith("/settings/backup/files/")
                   or path == "/settings/backup"
                   or path == "/settings/backup/restore")
+        bypass = bypass or path in {"/settings/backup/restore/confirm", "/settings/backup/cleanup/confirm"}
         if scope["type"] != "http" or bypass:
             await self.app(scope, receive, send)
             return

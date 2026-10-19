@@ -1,6 +1,5 @@
 from html.parser import HTMLParser
 from pathlib import Path
-import json
 import sqlite3
 
 import pytest
@@ -78,19 +77,19 @@ def test_backup_ui_preserves_restore_confirmation_and_recovery_access(tmp_path: 
         assert any(tag == "a" and attrs.get("href") == "/settings/backup/download" for tag, attrs in page.elements)
         assert "100 MB" in response.text
 
-        form = page.forms["/settings/backup/restore"]
+        form = page.forms["/settings/backup/preview"]
         assert form["attrs"]["method"] == "post"
         assert form["attrs"]["enctype"] == "multipart/form-data"
-        assert "return confirm(" in form["attrs"]["onsubmit"]
-        confirmation = json.loads(form["attrs"]["onsubmit"].removeprefix("return confirm(").removesuffix(")"))
-        assert confirmation == translate("確定以所選備份取代目前所有專案資料？系統會先自動保存目前資料。", language)
+        assert "onsubmit" not in form["attrs"]  # Preview itself cannot replace data.
         assert any(field.get("name") == "csrf_token" and field.get("value") for field in form["inputs"])
         upload = next(field for field in form["inputs"] if field.get("name") == "backup_file")
         assert upload["type"] == "file" and "required" in upload
         assert upload["accept"] == ".sqlite3,.sqlite,.db,application/vnd.sqlite3"
         assert upload["aria-describedby"] in ids
         assert not upload.get("value")
-        assert any(tag == "button" and "button-danger" in attrs.get("class", "").split() for tag, attrs in page.elements)
+        assert any(tag == "button" and "button-primary" in attrs.get("class", "").split() for tag, attrs in page.elements)
+        assert "/settings/backup/retention" in page.forms
+        assert "/settings/backup/cleanup/preview" in page.forms
 
         recovery_links = {attrs["href"] for tag, attrs in page.elements if tag == "a" and attrs.get("href", "").startswith("/settings/backup/files/")}
         assert len(recovery_links) == min(len(snapshots), 10)

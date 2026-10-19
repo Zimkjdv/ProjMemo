@@ -142,6 +142,7 @@ def restore_database(
     uploaded_path: Path, database_file: Path, *,
     initialize: Callable[[Path], None] = init_db,
     on_replace: Callable[[], None] = lambda: None,
+    expected_current: str | None = None,
 ) -> Path:
     """Restore a validated backup, retaining a rollback snapshot before replacement."""
     validate_backup(uploaded_path)
@@ -152,6 +153,12 @@ def restore_database(
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
         recovery_path = backups / f"projmemo-pre-restore-{timestamp}.sqlite3"
         create_database_backup(database_file, recovery_path)
+
+        if expected_current is not None:
+            from .backup_inspection import database_fingerprint
+            from .errors import ApplicationError
+            if database_fingerprint(recovery_path) != expected_current:
+                raise ApplicationError(409, "目前資料已在預覽後變更，尚未替換；請重新預覽並確認。")
 
         try:
             on_replace()

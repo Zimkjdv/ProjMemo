@@ -23,10 +23,12 @@
 {% endif %}
 {% if error %}
 <div class="backup-notice backup-error" role="alert">
-  <strong>{{ t("還原未完成。") }}</strong> {{ error }}
+  <strong>{{ t("備份操作未完成。") }}</strong> {{ error }}
   {% if recovery_filename %}<a href="/settings/backup/files/{{ recovery_filename }}">{{ t("下載還原前自動備份") }}</a>{% endif %}
 </div>
 {% endif %}
+
+{% include "_backup_preview.html" %}
 
 <div class="backup-grid">
   <section class="panel backup-panel backup-download-panel" aria-labelledby="backup-download-title">
@@ -50,12 +52,13 @@
     <div class="backup-notice backup-warning">
       {{ t("還原會以備份內容取代目前所有專案資料。系統會先自動保存目前資料，完成後可下載該份還原前備份。") }}
     </div>
-    <form class="backup-restore-form" method="post" action="/settings/backup/restore" enctype="multipart/form-data" onsubmit="return confirm({{ t("確定以所選備份取代目前所有專案資料？系統會先自動保存目前資料。")|tojson|forceescape }})">{{ csrf_input() }}
+    <form class="backup-restore-form" method="post" action="/settings/backup/preview" enctype="multipart/form-data">{{ csrf_input() }}
       <label for="backup-file">{{ t("選擇 ProjMemo SQLite 備份") }}
         <input id="backup-file" name="backup_file" type="file" accept=".sqlite3,.sqlite,.db,application/vnd.sqlite3" aria-describedby="backup-file-help" required>
       </label>
       <p class="field-help" id="backup-file-help">{{ t("檔案上限 100 MB。若檔案格式、完整性或資料表不符，現有資料不會被取代。") }}</p>
-      <button class="button button-danger" type="submit">{{ backup_icon('restore') }}{{ t("還原備份") }}</button>
+      <p class="field-help">{{ t("先驗證並比較內容，不會立即替換資料；確認頁有效 10 分鐘。") }}</p>
+      <button class="button button-primary" type="submit">{{ backup_icon('restore') }}{{ t("預覽備份") }}</button>
     </form>
   </section>
 </div>
@@ -88,5 +91,6 @@
   <div class="backup-history-empty"><span class="backup-rule-icon">{{ backup_icon('clock') }}</span><p>{{ t("尚無還原前自動備份；每次成功開始還原前，系統都會先建立一份。") }}</p></div>
   {% endif %}
 </section>
+{% include "_backup_retention.html" %}
 </div>
 {% endblock %}

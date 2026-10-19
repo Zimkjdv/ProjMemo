@@ -1,0 +1,34 @@
+<section class="panel backup-retention" aria-labelledby="backup-retention-title">
+  <div class="backup-panel-heading"><span class="backup-section-icon">{{ backup_icon('clock') }}</span><div><h2 id="backup-retention-title">{{ t('復原點保留策略') }}</h2><p>{{ t('只設定候選條件，不會自動刪除任何檔案。') }}</p></div></div>
+  {% if policy_error %}<p class="backup-notice backup-error" role="alert">{{ t(policy_error) }}</p>{% endif %}
+  <form class="backup-policy-form" method="post" action="/settings/backup/retention">{{ csrf_input() }}
+    <div class="backup-policy-fields">
+      <label for="retention-mode">{{ t('保留方式') }}<select id="retention-mode" name="mode"><option value="all" {% if retention_policy.mode == 'all' %}selected{% endif %}>{{ t('全部保留（預設）') }}</option><option value="custom" {% if retention_policy.mode == 'custom' %}selected{% endif %}>{{ t('自訂清理條件') }}</option></select></label>
+      <label for="retention-count">{{ t('至少保留最新份數') }}<input id="retention-count" name="keep_count" type="number" min="1" max="500" value="{{ retention_policy.keep_count }}" required></label>
+      <label for="retention-days">{{ t('最短保留天數（0 為不限）') }}<input id="retention-days" name="min_age_days" type="number" min="0" max="3650" value="{{ retention_policy.min_age_days }}" required></label>
+    </div>
+    <p class="field-help">{{ t('僅在選擇自訂時套用數量與天數；同時保留最新 N 份及未滿指定天數的檔案。每次最多清理 100 份。') }}</p>
+    <button class="button button-ghost" type="submit">{{ t('儲存保留策略') }}</button>
+  </form>
+  <p class="field-help">{{ t('只處理此資料目錄的還原前與永久刪除前復原點；不處理遷移快照、下載備份或未知檔案。設定保存在 backups/retention-policy.json，不隨資料庫還原覆寫。') }}</p>
+  <form method="post" action="/settings/backup/cleanup/preview">{{ csrf_input() }}<button class="button button-ghost" type="submit" {% if policy_error %}disabled{% endif %}>{{ t('預覽可清理的復原點') }}</button></form>
+
+  {% if cleanup_preview is not none %}
+  <div class="backup-cleanup-preview" id="cleanup-preview">
+    <h3>{{ t('清理前確認') }}</h3>
+    {% if cleanup_preview.candidates %}
+    <p>{{ t('本次將永久移除 {count} 份復原點，約 {size} MB。', count=cleanup_preview.candidates|length, size='%.2f'|format(cleanup_preview.size_mb)) }}</p>
+    <p class="backup-notice backup-warning">{{ t('清理不能由程式復原。請先把需要保留的檔案下載到其他安全位置；不會刪除清單以外的檔案。') }}</p>
+    <ul class="backup-candidate-list">{% for item in cleanup_preview.candidates %}<li><code>{{ item.filename }}</code><span>{{ item.created_at }} · {{ '%.2f'|format(item.size / 1048576) }} MB</span><a class="button button-ghost" href="/settings/backup/files/{{ item.filename }}" download>{{ t('下載') }}</a></li>{% endfor %}</ul>
+    <form class="backup-confirm-form" method="post" action="/settings/backup/cleanup/confirm">{{ csrf_input() }}
+      <input type="hidden" name="preview_token" value="{{ cleanup_preview.token }}">
+      <label class="checkbox-row"><input type="checkbox" name="acknowledged" value="yes" required>{{ t('我已核對檔名並保留需要的備份，了解清理後無法復原。') }}</label>
+      <label for="cleanup-confirmation">{{ t('輸入 DELETE 確認清理') }}<input id="cleanup-confirmation" name="confirmation" autocomplete="off" maxlength="6" pattern="DELETE" required></label>
+      <button class="button button-danger" type="submit">{{ t('確認清理列出的復原點') }}</button>
+    </form>
+    <form class="backup-cancel-form" method="post" action="/settings/backup/preview/cancel">{{ csrf_input() }}<input type="hidden" name="preview_token" value="{{ cleanup_preview.token }}"><input type="hidden" name="kind" value="cleanup"><button class="button button-ghost" type="submit">{{ t('取消清理') }}</button></form>
+    {% else %}<p role="status">{{ t('目前沒有符合條件的復原點，未刪除任何檔案。') }}</p>{% endif %}
+  </div>
+  {% endif %}
+  {% if cleanup_result %}<p class="backup-notice {{ 'backup-warning' if cleanup_result.remaining else 'backup-success' }}" role="status">{{ t('已清理 {deleted} 份；尚有 {remaining} 份未清理。', deleted=cleanup_result.deleted, remaining=cleanup_result.remaining) }}{% if cleanup_result.remaining %} {{ t('清理未完成，請保留其餘復原點並檢查檔案權限。') }}{% endif %}</p>{% endif %}
+</section>

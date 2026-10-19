@@ -47,6 +47,7 @@ async def lifespan(application: FastAPI):
             await asyncio.sleep(30)
             try:
                 application.state.runtime.vault_sessions.purge_expired()
+                application.state.runtime.backup_plans.purge_expired()
             except Exception as error:
                 logger.error("session_cleanup_failed category=%s", error_category(error))
     reaper = asyncio.create_task(reap_sessions())
@@ -59,6 +60,7 @@ async def lifespan(application: FastAPI):
             with suppress(asyncio.CancelledError):
                 await reaper
         finally:
+            application.state.runtime.backup_plans.clear()
             logger.info("shutdown_complete")
             application.state.operations_logger = None
             resources.close()
