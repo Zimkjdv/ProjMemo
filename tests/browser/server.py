@@ -13,8 +13,8 @@ import threading
 def main():
     if os.name == "nt":
         # Python 3.12 Proactor's reset callback can raise WinError 10054 before
-        # Server._detach(), leaving wait_closed() pending. This is test-process
-        # policy only, not a change to the user's launcher or application.
+        # Server._detach(), leaving wait_closed() pending. This fixture chooses
+        # its policy separately; test_windows_lifecycle covers the real launcher.
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     root = Path(__file__).resolve().parents[2]
     parent = root / "data"

@@ -6,6 +6,21 @@
 
 ## 2026-10-20
 
+### Windows 正式啟動／停止補驗與相容性修正
+
+原規劃由 `df90887:ROADMAP.MD` 的 P1 待辦移入，保留原驗收全文及當時限制：
+
+- [x] **Windows／Python 3.12 Proactor 連線重設與停機補驗**：R10 假資料瀏覽器服務捕捉到 `_ProactorBasePipeTransport._call_connection_lost` 的 WinError 10054，回呼在 `socket.shutdown` 拋錯、尚未執行 `_server._detach()`，接著停在伺服器 shutdown。本輪僅將 Windows 測試服務改用 Selector，未修改正式 launcher／app 或放寬停止逾時。後續以正式啟動入口搭配隔離 DB 重現快速導覽／取消請求及停止，再評估 Python 修正版或執行策略；不把測試程序的環境調整當作正式容錯已修復。階段診斷及驗收界線見 [瀏覽器回歸](docs/browser-regression.md)。
+- [x] 以正式一般模式在 Python 3.12.10／Uvicorn 0.34.2 重現 Proactor accept 的 WinError 64，導致不再接收新連線；當輪 Ctrl+C 仍正常，未將它混寫為原 10054 的再次重現。Windows 正式 launcher 採 Selector，相容性策略在 `serve()` 結束恢復，非 Windows、app 匯入及 `--check` 不改政策；不修改 stdlib／套件、不隱藏例外或放寬停止驗收。
+- [x] 檔案監看已偵測修改但舊 worker 未結束的 Windows 重載改為私有 spawn Event，沿用檔案監看、worker spawn 與 socket handoff。等待舊 worker 正常退出再啟動替代者；使用者 Ctrl+C 與 Event 同時到達時，不把第一下誤當第二次強制退出，真正第二次的語意保留。不廣播重載訊號、不強制殺 worker，也沒有 HTTP 停機端點。
+- [x] 開發模式只傳入實際存在的監看排除目錄，解決程式副本／ZIP 缺 `.git`／`tests` 時絕對路徑被當 glob 的啟動失敗；保留單 worker、loopback、既有 socket 保留及 port 衝突處理。沒有改動 schema、保管庫格式、依賴或 Linux 策略。
+- [x] 完整回歸捕捉 worker 正常結束、監督程序卻超過五秒的剩餘問題；同步 WatchFiles 的 Rust 預設等待為 5000 ms，Windows adapter 將監看器閒置等待縮至 250 ms，以便及時處理 console 訊號。保留檔案通知／過濾與原五秒停止期限，不靠放寬期限或 retry 通過。
+- [x] 縮短等待後仍有偶發停止延遲，監督程序改在原生 Windows Ctrl+C 控制執行緒直接通知自己的 watcher／worker Event；啟動後註冊、離開解除，不吞其他 console 事件，不依賴主執行緒正好能處理訊號。監督迴圈以 `finally` 執行正常清理，沒有新增外部停機 API 或廣播；註冊／解除與錯誤路徑另有單元回歸。
+- [x] module／batch × 一般／開發四種正式入口，每種兩輪啟動、64 次 RST、真正 OS Ctrl+C、同 port 重啟、DB 位元組／完整性及原主密碼解密檢查。開發模式只改程式副本的 probe，確認新 worker PID 與解鎖失效，不觸發原 app 的監看測試。另啟用獨立 Chromium 導覽／取消；停止均維持五秒內、exit 0、完整 lifespan、無 traceback／WinError／強制清理。
+- [x] 新增 [Windows 啟動、重載與停止驗證](docs/windows-lifecycle.md)，同步 README、維運及瀏覽器指南，說明 Selector 限制、鎖定 Uvicorn adapter 邊界及重跑方法。不將自動 OS 事件宣稱為使用者親手按鍵／關窗驗收；不認證斷電、任意長交易或多程序。R14 依使用者決定移至 Later、保留原待辦與輕量階段，未實作或勾選為完成。
+- [x] 最終完整 Python **720 passed／1 個既有 Linux 專用 skip**（本輪新增 17 項）、Node **78 passed**；保留原兩個第三方棄用警告。明確啟用 Chromium 加強路徑，四入口共八輪導覽／取消、OS Ctrl+C／重啟及四次真正重載均納入本輪回歸，不把它混算成既有 76 項瀏覽器套件已重跑。沒有新增 retry、放寬期限或觸發 Linux／CJK 手動 gate。
+- [x] 來源／catalog、pip check、Git whitespace 及本機文件連結檢查通過。早期失敗輪次與首輪完整回歸的 **715 passed／1 failed／1 skip** 不算成功，補上原生控制處理後才完成最終回歸。只使用隔離假資料與私有 console，未停止既有服務或操作正式 DB／備份、未重建或升級原 `.venv`；Git 排除所有測試資料、日誌與環境。
+
 ### R13 — 主密碼更換
 
 原規劃由 `c697f20:ROADMAP.MD` 的 R13 表格移入，保留原驗收方向：

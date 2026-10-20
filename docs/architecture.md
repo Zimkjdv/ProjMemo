@@ -20,7 +20,8 @@ app/main.py：create_app()、lifespan、middleware 與錯誤處理
 | 模組 | 責任與限制 |
 | --- | --- |
 | `main.py` | 組裝 app、掛載 static／九個 router、全域 CSRF 依賴及錯誤處理；啟動先儲存預檢與日誌、遷移，再每 30 秒清理 session／備份預覽，停止時清理暫存、取消工作並關閉自有日誌。不放 SQL／表單業務邏輯。 |
-| `launcher.py`／`operations.py` | loopback／單 worker／持有式 socket；安全錯誤摘要、64 MiB 基本空間與可寫預檢、唯讀 readiness，不存放請求內容或密碼。 |
+| `launcher.py`／`operations.py` | loopback／單 worker／持有式 socket；Windows 服務期間採 Selector 相容性政策、結束恢復，非 Windows 不改；安全錯誤摘要、64 MiB 基本空間與可寫預檢、唯讀 readiness，不存放請求內容或密碼。 |
+| `windows_reload.py` | Windows 正式 launcher 的重載相容性分層：保留 Uvicorn 監看與 socket handoff、縮短閒置等待以便處理訊號，以私有 Event 等待舊 worker 正常結束再替換，避免重載廣播 Ctrl+C；第一個 console 訊號不因 Event 競態變成強制退出。不提供 HTTP 停機 API、不改 Linux；依賴鎖定版本的 reloader／訊號介面，升級須重跑 [正式啟停驗證](windows-lifecycle.md)。 |
 | `sqlite_policy.py` | 明確的一秒 SQL lock wait、BUSY／LOCKED 判斷及有連續鎖等待上限的 SQLite backup API；不自動重播交易，不限制健康大檔案複製總時間。 |
 | `routers/` | 保留既有 URL、參數、表單預設值及回應格式。讀取 Request／cookie，呼叫服務，處理 HTML／JSON、下載、303 及安全 cookie／header；不執行 SQL 或自行提交交易。 |
 | `services/projects.py`／`workspace.py` | 共用專案與非備註投影、列表／搜尋、修改與 `touch_project()`；`ProjectData` 保持完整，workspace 另採 COUNT／LIMIT／OFFSET 提供 UI 專用 10／20／50 分頁與深頁錯誤回復。 |

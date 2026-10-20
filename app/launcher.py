@@ -1,6 +1,8 @@
 """Single-worker loopback launcher handing an already bound socket to Uvicorn."""
 
 import argparse
+import asyncio
+from contextlib import contextmanager
 import errno
 import importlib
 import os
@@ -65,7 +67,31 @@ def check_dependencies():
     return True
 
 
+@contextmanager
+def server_loop_policy():
+    """Windows local server uses the same Selector strategy as Uvicorn reload.
+
+    Python 3.12.10 Proactor accept/close callbacks can stop accepting or leave
+    wait_closed pending after a peer reset. No stdlib/private transport patches.
+    Keep this local to the official launcher, not application import or Linux.
+    """
+    if sys.platform != "win32":
+        yield
+        return
+    previous = asyncio.get_event_loop_policy()
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    try:
+        yield
+    finally:
+        asyncio.set_event_loop_policy(previous)
+
+
 def serve(reserved, *, development=False):
+    with server_loop_policy():
+        return _serve(reserved, development=development)
+
+
+def _serve(reserved, *, development=False):
     import uvicorn
     from uvicorn.supervisors import ChangeReload
 
@@ -73,13 +99,23 @@ def serve(reserved, *, development=False):
     config = uvicorn.Config(
         "app.main:app", host=HOST, port=port, reload=development, workers=1, access_log=False,
         reload_dirs=[str(ROOT / "app")] if development else None,
-        reload_excludes=[str(ROOT / name) for name in ("data", ".venv", "tests", ".git")] if development else None,
+        # Uvicorn treats a missing absolute exclude as a glob; pathlib rejects
+        # it. A source/ZIP copy need not contain .git, tests or a data folder.
+        reload_excludes=[str(ROOT / name) for name in ("data", ".venv", "tests", ".git")
+                         if (ROOT / name).is_dir()] if development else None,
     )
     server = uvicorn.Server(config)
     mode = "development reload" if development else "normal"
     print(f"ProjMemo [{mode}], single worker: http://{HOST}:{port}/ (waiting for application startup)", flush=True)
     if development:
-        ChangeReload(config, target=server.run, sockets=[reserved]).run()
+        if sys.platform == "win32":
+            from multiprocessing import get_context
+            from .windows_reload import ReloadServer, WindowsReload
+            stop_event = get_context("spawn").Event()
+            server = ReloadServer(config, stop_event)
+            WindowsReload(config, target=server.run, sockets=[reserved], stop_event=stop_event).run()
+        else:
+            ChangeReload(config, target=server.run, sockets=[reserved]).run()
         return 0
     server.run(sockets=[reserved])
     return 0 if server.started else 3

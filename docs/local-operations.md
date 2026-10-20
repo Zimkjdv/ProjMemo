@@ -12,6 +12,8 @@ Windows 使用 `setup-local.bat` 建立／檢查 `.venv` 並安裝專案依賴�
 
 `run-local.bat` 預設一般模式，不重載；`run-dev.bat` 或 `run-local.bat --dev` 才啟用開發重載。固定 IPv4 loopback `127.0.0.1` 與單 worker，不接受 `--host`／`--workers`。開發模式另有監督程序，但只有一個應用 worker；重載會撤銷記憶體中的解鎖與舊表單 token，須重新整理頁面。
 
+Windows 正式入口使用 Selector 相容性策略，避免 Python 3.12.10 Proactor 在連線重設後停止接收／清理；開發重載以私有 Event 等待舊 worker 正常退出，不廣播 Ctrl+C。僅採用存在的監看排除目錄，程式副本不必含 `.git`／`tests`。不改 Linux、依賴或資料庫，限制與可重跑的 OS Ctrl+C／真實重載驗證見 [Windows 啟停驗證](windows-lifecycle.md)。這些變更需重新啟動正式服務才會完整套用，不對現有服務熱更新 venv。
+
 預設從 8000 至 8099；`PROJMEMO_PORT` 或優先的 `--port` 可改起點（1–65535）。最多嘗試 100 個 port，上限截在 65535；`--port-end` 可縮小範圍。例：`run-local.bat --port 8123 --port-end 8130`。不是 TCP 探測後重新綁定：launcher 直接 bind/listen 並持有同一 socket，交由 Uvicorn（包含 Windows reload child）使用；被占用／系統保留的 port 才往下試，其餘網路錯誤立即失敗。不終止其他使用者的服務。
 
 環境或參數錯誤／無可用 port 回傳非零（通常 2，缺 venv 為 1），一般模式啟動失敗回傳 3。終端機網址表示 socket 已保留，需等待 application startup complete 才代表已就緒。開發監督程序在子程序啟動錯誤後可能仍存活、等待修正，不能只憑監督程序存活判斷成功。Ctrl+C 停止服務。`--check` 不 bind、不開 DB、不安裝套件。

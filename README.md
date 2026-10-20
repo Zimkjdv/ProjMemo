@@ -19,6 +19,7 @@ ProjMemo 是一個以本機 Python `.venv` 執行的個人專案備註與交接�
 - [搜尋與交接效率](docs/search-handover.md)：內容搜尋、負責人／標籤篩選、交接進度、未完成檢視與 FTS 量測決策。
 - [程式架構](docs/architecture.md)：路由／服務邊界、共用資料、SQLite、請求流程及執行設定。
 - [本機啟動與維運](docs/local-operations.md)、[健康檢查與安全日誌](docs/operations-health.md)：一般／開發模式、port 衝突、資料目錄與磁碟故障處理。
+- [Windows 正式啟動／重載／停止驗證](docs/windows-lifecycle.md)：Selector 相容性策略、私有 worker 停止事件、真正 OS Ctrl+C 與隔離資料重跑方法。
 - [表單與驗證](docs/forms.md)：後端字數上限、網址／列舉驗證、正規化與安全回填。
 - [R03 量測與分頁評估](docs/performance-r03.md)：可重跑的 SQL／HTML 量測、索引代價、鎖策略及後續 UI 分頁設計。
 

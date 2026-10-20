@@ -1,4 +1,5 @@
 from contextlib import closing
+import asyncio
 import os
 from pathlib import Path
 import queue
@@ -15,6 +16,32 @@ import pytest
 from app import launcher
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_non_windows_loop_policy_is_unchanged(monkeypatch):
+    original = asyncio.get_event_loop_policy()
+    monkeypatch.setattr(launcher.sys, "platform", "linux")
+    with launcher.server_loop_policy():
+        assert asyncio.get_event_loop_policy() is original
+    assert asyncio.get_event_loop_policy() is original
+
+
+def test_dev_source_copy_does_not_require_git_or_test_directories(tmp_path, monkeypatch):
+    import uvicorn.supervisors
+    (tmp_path / "app").mkdir()
+    monkeypatch.setattr(launcher, "ROOT", tmp_path)
+    monkeypatch.setattr(launcher.sys, "platform", "linux")  # Only inspect config/watcher inputs here.
+    seen = {}
+    class FakeReload:
+        def __init__(self, config, target, sockets):
+            seen["config"] = config
+        def run(self):
+            pass
+    monkeypatch.setattr(uvicorn.supervisors, "ChangeReload", FakeReload)
+    with closing(launcher.bind_local_socket(0, 0)) as reserved:
+        assert launcher.serve(reserved, development=True) == 0
+    assert seen["config"].reload_dirs == [tmp_path / "app"]
+    assert seen["config"].reload_excludes == []
 
 
 @pytest.mark.parametrize("value", ["0", "65536", "bad", "8000 & echo unsafe", "-1"])

@@ -21,6 +21,8 @@ R10 補強 fixture 結束順序：先關閉該例測試頁面，再讓 `appURL` 
 
 因此 Windows **測試服務程序**改用 Selector event-loop policy；Linux 不變，不安裝／修補依賴，不更動正式 launcher 或 app 的 loop／timeout。保留 5 秒停止判定、零 retry、EOF／停機／暫存清理階段診斷，任何清理失敗仍算失敗。Selector 下的互動結果不冒充正式 Proactor 入口的連線重設／停機容錯驗收；後者在 Roadmap 另列補驗，未在 R10 擅自更改正式執行策略。
 
+上述是 R10 當時的界線。2026-10-20 已另外以正式 launcher 完成 Windows 補驗並加入 Selector／私有 Event 重載處理，沒有拿本 fixture 的結果代替；原始待辦移至 Changelog。四種正式入口、真正 OS Ctrl+C、真實檔案重載與獨立 Chromium 加強路徑見 [Windows 啟停驗證](windows-lifecycle.md)。本文件的歷史 R10／R13 輪次不追改成當時已完成正式補驗。
+
 ## 驗收內容
 
 | 每語言／引擎案例 | 檢查 |
