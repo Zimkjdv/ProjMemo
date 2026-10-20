@@ -27,7 +27,8 @@ def test_detail_views_share_forms_and_have_compact_empty_sections(tmp_path: Path
         assert sum("detail-panel-empty" in attrs.get("class", "") for _, attrs in elements) == 5
         assert not any("breadcrumb" in attrs.get("class", "") for _, attrs in elements)
         assert any(tag == "nav" and attrs.get("aria-label") == "內容導覽" for tag, attrs in elements)
-        assert 'href="/">我的專案</a>' in page.text
+        assert any(tag == "a" and attrs.get("href") == "/" and attrs.get("aria-current") == "page" for tag, attrs in elements)
+        assert '>我的專案</a>' in page.text
         ids = [attrs["id"] for _, attrs in elements if "id" in attrs]
         assert len(ids) == len(set(ids))
         # Side-column accounts are immediately after the main-column notes.

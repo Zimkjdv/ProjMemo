@@ -21,10 +21,12 @@ class VaultPage(HTMLParser):
         attributes = dict(attrs)
         self.elements.append((tag, attributes))
         if tag == "form":
-            self.current_form = {"attrs": attributes, "inputs": []}
+            self.current_form = {"attrs": attributes, "inputs": [], "buttons": []}
             self.forms[attributes["action"]] = self.current_form
         elif tag == "input" and self.current_form is not None:
             self.current_form["inputs"].append(attributes)
+        elif tag == "button" and self.current_form is not None:
+            self.current_form["buttons"].append(attributes)
 
     def handle_endtag(self, tag):
         if tag == "form":
@@ -58,6 +60,18 @@ def test_vault_ui_preserves_state_forms_and_security_contract(tmp_path: Path, mo
         assert any(tag == "nav" and attrs.get("aria-label") == main_navigation for tag, attrs in page.elements)
         visible_state = "setup" if state == "setup" else "locked" if state.startswith("locked") else "unlocked"
         assert any(attrs.get("data-vault-state") == visible_state for _, attrs in page.elements)
+        badges = [attrs for _, attrs in page.elements if "data-vault-state-label" in attrs]
+        assert len(badges) == 1 and "data-vault-state-short" in badges[0]
+        assert any(tag == "a" and attrs.get("href") == "/settings/vault" and attrs.get("aria-current") == "page" for tag, attrs in page.elements)
+        assert sum(tag == "dd" for tag, _ in page.elements) == 4
+        assert "Argon2id" in response.text and "AES-GCM" in response.text
+        assert any("vault-rule-critical" in attrs.get("class", "").split() for _, attrs in page.elements)
+        timers = [attrs for _, attrs in page.elements if "data-vault-countdown" in attrs]
+        assert len(timers) == int(visible_state == "unlocked")
+        if timers:
+            assert timers[0]["role"] == "timer" and timers[0]["aria-live"] == "off"
+            progress = next(attrs for tag, attrs in page.elements if tag == "progress")
+            assert progress["max"] == "900" and 0 < float(progress["value"]) <= 900
         ids = [attrs["id"] for _, attrs in page.elements if "id" in attrs]
         assert len(ids) == len(set(ids))
         assert {"vault-title", "vault-access-title", "vault-export-title", "vault-notice-title"}.issubset(ids)
@@ -91,8 +105,12 @@ def test_vault_ui_preserves_state_forms_and_security_contract(tmp_path: Path, mo
         if state != "setup":
             policy = next(field for field in page.forms["/settings/vault/export-policy"]["inputs"] if field.get("name") == "allow_secret_export")
             assert policy["type"] == "checkbox"
+            assert policy["role"] == "switch" and policy.get("aria-describedby")
             assert ("checked" in policy) == ("sensitive" in state)
             assert "disabled" not in policy  # A locked vault must still allow disabling sensitive exports.
+            save = page.forms["/settings/vault/export-policy"]["buttons"][0]
+            assert save["class"] == "button button-primary"
+            assert "disabled" not in save  # Native forms remain usable without JavaScript.
 
 
 @pytest.mark.parametrize("language", ["zh-Hant", "en"])

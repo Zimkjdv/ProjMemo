@@ -6,16 +6,16 @@
     <title>{% block title %}ProjMemo{% endblock %}</title>
     <meta name="referrer" content="same-origin">
     <meta name="csrf-token" content="{{ csrf_token }}">
-    <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}?v=20261020-r13">
+    <link rel="stylesheet" href="{{ url_for('static', path='styles.css') }}?v=20261020-vault-ui">
   </head>
   <body>
     <header class="site-header">
       <div class="container header-inner">
         <a class="brand" href="/" aria-label="{{ t("ProjMemo 首頁") }}"><span class="brand-symbol">P</span><span><strong>ProjMemo</strong><small>{{ t('專案備註，整理有序。') }}</small></span></a>
         <nav class="header-nav" aria-label="{{ t("主要導覽") }}">
-          <a class="nav-link" href="/">{{ t("我的專案") }}</a>
-          <a class="nav-link" href="/settings/vault">{{ t("密碼保管庫") }}</a>
-          <a class="nav-link backup-nav-link" href="/settings/backup">{{ t("資料備份") }}</a>
+          <a class="nav-link" href="/"{% if request.url.path == '/' or request.url.path.startswith('/projects') %} aria-current="page"{% endif %}>{{ t("我的專案") }}</a>
+          <a class="nav-link" href="/settings/vault"{% if request.url.path.startswith('/settings/vault') %} aria-current="page"{% endif %}>{{ t("密碼保管庫") }}</a>
+          <a class="nav-link backup-nav-link" href="/settings/backup"{% if request.url.path.startswith('/settings/backup') %} aria-current="page"{% endif %}>{{ t("資料備份") }}</a>
           <form class="language-switch" method="post" action="/settings/language" aria-label="{{ t('介面語言') }}">{{ csrf_input() }}
             <input type="hidden" name="return_to" value="{{ return_to }}">
             <button type="submit" name="language" value="zh-Hant" class="{% if language == 'zh-Hant' %}active{% endif %}" aria-pressed="{{ 'true' if language == 'zh-Hant' else 'false' }}" lang="zh-Hant">繁中</button>
@@ -30,7 +30,7 @@
       {% block content %}{% endblock %}
     </main>
     <script src="/static/language.js?v=20261015-r05" defer></script>
-    <script src="/static/vault-session.js?v=20261014" defer></script>
+    <script src="/static/vault-session.js?v=20261020-vault-ui" defer></script>
     <script src="/static/form-feedback.js?v=20261015" defer></script>
     <script type="application/json" id="submission-messages">{{ {'stale': t('此表單可能已送出。請先確認已保存資料，再重新整理後進行新的修改；目前輸入不會自動重送。')}|tojson }}</script>
     <script src="/static/form-submit.js?v=20261019-r12" defer></script>

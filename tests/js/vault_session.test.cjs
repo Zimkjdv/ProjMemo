@@ -21,6 +21,8 @@ function harness() {
   const lockedLink = {};
   const label = { classList: { toggle() {} }, hasAttribute: () => false };
   const countdown = {};
+  const clock = {};
+  const progress = { max: 900 };
   const noticeText = {};
   const notice = { hidden: true, querySelector: () => noticeText };
   const messages = { locked: "Locked", unlocked: "Unlocked", setup: "Setup", remaining: "Remaining", expires: "Expires", refresh: "Reload", unavailable: "Unavailable" };
@@ -30,6 +32,8 @@ function harness() {
     if (selector === "[data-vault-locked-only]") return [lockedLink];
     if (selector === "[data-vault-state-label]") return [label];
     if (selector === "[data-vault-remaining]") return [countdown];
+    if (selector === "[data-vault-countdown]") return [clock];
+    if (selector === "[data-vault-progress]") return [progress];
     return [];
   };
   const document = { documentElement: root, visibilityState: "visible",
@@ -44,7 +48,7 @@ function harness() {
   };
   vm.runInNewContext(source, { document, window, performance: { now: () => now }, location: { pathname: "/projects/1", search: "" },
     BroadcastChannel: Channel, AbortController, Event, URLSearchParams, fetch: (url, options) => new Promise((resolve, reject) => pending.push({ url, options, resolve, reject })) });
-  return { root, input, reveal, notice, noticeText, label, countdown, dispatched, handlers, channels, pending, document,
+  return { root, input, reveal, notice, noticeText, label, countdown, clock, progress, dispatched, handlers, channels, pending, document,
     async respond(index, status = initial) { pending[index].resolve({ ok: true, json: async () => status }); await new Promise(resolve => setImmediate(resolve)); },
     async reject(index) { pending[index].reject(new Error("Offline")); await new Promise(resolve => setImmediate(resolve)); },
     advance(value) { now = value; const due = [...timers].filter(([, timer]) => timer.due <= now); for (const [id, timer] of due) { if (timers.delete(id)) timer.callback(); } },
@@ -61,7 +65,21 @@ test("the original remaining period expires, disables secrets and preserves non-
   assert.equal(page.input.value, "");
   assert.equal(page.reveal.disabled, true);
   assert.equal(page.notice.hidden, false);
+  assert.equal(page.clock.textContent, "00:00");
+  assert.equal(page.progress.value, 0);
   assert.ok(page.dispatched.includes("projmemo:vault-invalidated"));
+});
+
+test("the prominent timer and progress share the server deadline and subtract request time", async () => {
+  const page = harness();
+  page.advance(2000); // Slow initial status response must not grant two extra seconds.
+  await page.respond(0);
+  assert.equal(page.clock.textContent, "00:08");
+  assert.equal(page.progress.value, 8);
+  page.advance(4000);
+  assert.equal(page.clock.textContent, "00:06");
+  assert.equal(page.progress.value, 6);
+  assert.match(page.countdown.textContent, /00:06/); // Existing project-page timer stays compatible.
 });
 
 test("a cross-tab refresh invalidates reveals immediately and rejects an older unlocked status response", async () => {

@@ -46,10 +46,13 @@
     window.clearTimeout(tickTimer);
     const remaining = Math.max(0, deadline - performance.now());
     const seconds = Math.ceil(remaining / 1000);
+    const clock = `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;
+    document.querySelectorAll("[data-vault-countdown]").forEach((element) => { element.textContent = clock; });
+    document.querySelectorAll("[data-vault-progress]").forEach((element) => { element.value = Math.min(element.max, seconds); });
     document.querySelectorAll("[data-vault-remaining]").forEach((element) => {
       element.hidden = !status.unlocked;
       const time = status.expires_at_ms ? new Date(status.expires_at_ms).toLocaleTimeString(document.documentElement.lang, { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "";
-      element.textContent = `${messages.remaining} ${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")} · ${messages.expires} ${time}`;
+      element.textContent = `${messages.remaining} ${clock} · ${messages.expires} ${time}`;
     });
     if (status.unlocked && remaining <= 0) {
       invalidate();
@@ -85,6 +88,7 @@
       invalidate();
       status = { ...status, unlocked: false };
       updateControls();
+      tick();
       showNotice(messages.unavailable);
     } finally { window.clearTimeout(timeout); }
   };

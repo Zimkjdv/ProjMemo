@@ -12,10 +12,6 @@
     <p class="hero-copy">{{ t("資料庫與測試帳號的實際密碼以主密碼加密保護；主密碼只用於派生金鑰與驗證，不會存入 ProjMemo。") }}</p>
     </div>
   </div>
-  <div class="vault-hero-status">
-    <span class="vault-status-label">{{ t("保管庫狀態") }}</span>
-    {% if vault_configured and vault_unlocked %}<span class="vault-state vault-state-open" data-vault-state-label data-vault-state-short>{{ t("已解鎖") }}</span>{% elif vault_configured %}<span class="vault-state" data-vault-state-label data-vault-state-short>{{ t("已鎖定") }}</span>{% else %}<span class="vault-state" data-vault-state-label data-vault-state-short>{{ t("未設定") }}</span>{% endif %}
-  </div>
 </section>
 
 {% if error %}<div class="alert alert-error" role="alert">{{ error }}</div>{% endif %}
@@ -25,8 +21,12 @@
 <div class="vault-workspace">
 <section class="panel vault-panel vault-access-panel" aria-labelledby="vault-access-title">
   <div class="vault-panel-heading">
-    <span class="vault-section-icon {% if vault_unlocked %}vault-icon-open{% endif %}">{{ vault_icon('unlock' if vault_unlocked else 'lock') }}</span>
-    <div><h2 id="vault-access-title"{% if vault_unlocked %} data-vault-state-label{% endif %}>{% if not vault_configured %}{{ t("開始設定") }}{% elif vault_unlocked %}{{ t("保管庫已解鎖") }}{% else %}{{ t("解鎖保管庫") }}{% endif %}</h2><p>{{ t("主密碼不會保存") }}</p></div>
+    <span class="vault-section-icon">
+      <span data-vault-icon-state="unlocked" {% if not vault_unlocked %}hidden{% endif %}>{{ vault_icon('unlock') }}</span>
+      <span data-vault-icon-state="locked" {% if vault_unlocked %}hidden{% endif %}>{{ vault_icon('lock') }}</span>
+    </span>
+    <div><h2 id="vault-access-title">{{ t("保管庫狀態") }}</h2><p>{{ t("主密碼不會保存") }}</p></div>
+    <span class="vault-state {% if vault_unlocked %}vault-state-open{% endif %}" data-vault-state-label data-vault-state-short>{% if not vault_configured %}{{ t("未設定") }}{% elif vault_unlocked %}{{ t("已解鎖") }}{% else %}{{ t("已鎖定") }}{% endif %}</span>
   </div>
 
   {% if not vault_configured %}
@@ -37,8 +37,15 @@
     <button class="button button-primary" type="submit">{{ vault_icon('shield') }}{{ t("建立加密保管庫") }}</button>
   </form>
   {% elif vault_unlocked %}
-  <div class="vault-unlocked-note" data-vault-unlocked-only>{{ vault_icon('clock') }}<p>{{ t("保管庫已在此瀏覽器解鎖，解鎖滿 15 分鐘或重新啟動 ProjMemo 後會自動鎖定。") }}<br><span data-vault-remaining aria-live="off"></span></p></div>
-  <form method="post" action="/settings/vault/lock" class="vault-lock-form" data-vault-unlocked-only>{{ csrf_input() }}<button class="button button-ghost" type="submit">{{ vault_icon('lock') }}{{ t("立即鎖定") }}</button></form>
+  {% set remaining = vault_session_status.remaining_seconds|round(0, 'ceil')|int %}
+  <div class="vault-countdown-panel" data-vault-unlocked-only>
+    <p class="vault-countdown-label" id="vault-countdown-label">{{ vault_icon('clock') }}{{ t("自動鎖定倒數") }}</p>
+    <span class="vault-countdown" data-vault-countdown role="timer" aria-labelledby="vault-countdown-label" aria-live="off">{{ '%02d:%02d'|format(remaining // 60, remaining % 60) }}</span>
+    <progress class="vault-time-progress" data-vault-progress max="900" value="{{ remaining }}" aria-labelledby="vault-countdown-label"></progress>
+    <p class="vault-countdown-help">{{ t("解鎖滿 15 分鐘或重新啟動 ProjMemo 後會自動鎖定，重新整理不會延長期限。") }}</p>
+    <noscript><p class="vault-countdown-help">{{ t("此為載入時的剩餘時間；啟用 JavaScript 才會即時倒數。") }}</p></noscript>
+  </div>
+  <form method="post" action="/settings/vault/lock" class="vault-lock-form" data-vault-unlocked-only>{{ csrf_input() }}<button class="button vault-lock-button" type="submit">{{ vault_icon('lock') }}{{ t("立即鎖定") }}</button></form>
   {% else %}
   <p class="vault-panel-copy">{{ t("輸入主密碼以查看或保存實際密碼。連續輸入錯誤過多次時，解鎖會暫停一段時間。") }}</p>
   <form method="post" action="/settings/vault/unlock" class="vault-form">{{ csrf_input() }}
@@ -48,7 +55,8 @@
   {% endif %}
 
   <dl class="vault-facts" aria-label="{{ t('安全摘要') }}">
-    <div><dt>{{ t("加密方式") }}</dt><dd>AES-GCM <span>· Argon2id</span></dd></div>
+    <div><dt>{{ t("加密方式") }}</dt><dd>AES-GCM</dd></div>
+    <div><dt>{{ t("金鑰衍生") }}</dt><dd>Argon2id</dd></div>
     <div><dt>{{ t("解鎖時效") }}</dt><dd>{{ t("15 分鐘") }}</dd></div>
     <div><dt>{{ t("加密範圍") }}</dt><dd>{{ t("僅實際密碼") }}</dd></div>
   </dl>
@@ -61,13 +69,19 @@
     <div><h2 id="vault-export-title">{{ t("匯出保護") }}</h2><p>{{ t("匯出規則") }}</p></div>
     <span class="vault-state {% if allow_secret_export %}vault-state-warning{% else %}vault-state-safe{% endif %}">{% if allow_secret_export %}{{ t("允許敏感匯出") }}{% else %}{{ t("預設安全") }}{% endif %}</span>
   </div>
-  <p class="vault-panel-copy">{{ t("一般 Markdown／PDF 匯出永遠不包含實際密碼。啟用下方選項後，專案頁才會額外提供「含密碼匯出」；仍需解鎖保管庫、勾選確認並再次確認，才會產生含密碼的檔案。") }}</p>
-  <div class="security-warning">{{ t("敏感匯出檔可被轉寄或留存在下載資料夾。只在必要時開啟，完成後建議立即關閉，並安全傳送及清除檔案副本。") }}</div>
-  <form method="post" action="/settings/vault/export-policy" class="export-policy-form">{{ csrf_input() }}
-    <label class="checkbox-label vault-policy-option"><input type="checkbox" name="allow_secret_export" value="true" {% if allow_secret_export %}checked{% endif %}><span><strong>{{ t("允許產生含實際密碼的 Markdown／PDF（預設關閉）") }}</strong><small>{{ t("儲存後才會生效") }}</small></span></label>
+  <p class="vault-panel-copy">{{ t("一般 Markdown／PDF 匯出") }}<strong>{{ t("永遠不包含實際密碼") }}</strong>{{ t("。開啟下方選項後，專案頁才會額外提供「含密碼匯出」。") }}</p>
+  <form method="post" action="/settings/vault/export-policy" class="export-policy-form" data-vault-policy-form>{{ csrf_input() }}
+    <label class="vault-policy-option" for="allow-secret-export">
+      <span class="vault-policy-copy"><strong id="vault-policy-label">{{ t("允許產生含實際密碼的檔案") }}</strong><small id="vault-policy-current">{{ t("目前：") }}<b>{% if allow_secret_export %}{{ t("已開啟") }}{% else %}{{ t("關閉") }}{% endif %}</b><span aria-hidden="true"> · </span>{{ t("儲存後才會生效") }}</small></span>
+      <span class="vault-switch"><input id="allow-secret-export" type="checkbox" role="switch" aria-labelledby="vault-policy-label" aria-describedby="vault-policy-current vault-policy-warning" name="allow_secret_export" value="true" {% if allow_secret_export %}checked{% endif %}><span class="vault-switch-track" aria-hidden="true"></span></span>
+    </label>
+    <div class="security-warning vault-policy-warning" id="vault-policy-warning">{{ vault_icon('alert') }}<div><strong>{{ t("開啟前請留意") }}</strong><p>{{ t("敏感匯出檔可被轉寄或留存在下載資料夾。只在必要時開啟，完成後建議立即關閉，並安全傳送及清除檔案副本。") }}</p></div></div>
+    <div class="vault-export-flow"><span>{{ t("含密碼匯出流程") }}</span><ol><li><span aria-hidden="true">①</span> {{ t("解鎖保管庫") }}</li><li><span aria-hidden="true">②</span> {{ t("勾選確認") }}</li><li><span aria-hidden="true">③</span> {{ t("再次確認") }}</li></ol></div>
     {% if not vault_unlocked %}<p class="vault-policy-help">{{ t("開啟敏感匯出前，請先解鎖保管庫。") }}</p>{% endif %}
-    <button class="button {% if allow_secret_export %}button-danger{% else %}button-primary{% endif %}" type="submit">{{ t("儲存匯出設定") }}</button>
+    <div class="vault-policy-actions"><p class="vault-policy-feedback" data-policy-feedback role="status" hidden></p><button class="button button-primary" type="submit">{{ t("儲存匯出設定") }}</button></div>
   </form>
+  <script type="application/json" id="vault-policy-messages">{{ {'unchanged': t('尚無變更'), 'enable': t('尚未儲存：開啟含密碼匯出'), 'disable': t('尚未儲存：關閉含密碼匯出')}|tojson }}</script>
+  <script src="/static/vault-settings.js?v=20261020" defer></script>
 </section>
 {% else %}
 <section class="panel vault-panel export-vault-panel" aria-labelledby="vault-export-title">
@@ -100,8 +114,8 @@
 <section class="panel vault-notice" aria-labelledby="vault-notice-title">
   <div class="vault-notice-heading"><div><p class="eyebrow">{{ t("重要提醒") }}</p><h2 id="vault-notice-title">{{ t("備份與復原注意事項") }}</h2></div><a class="button button-ghost" href="/settings/backup">{{ vault_icon('database') }}{{ t("前往資料備份") }}</a></div>
   <ul class="vault-guidelines">
+    <li class="vault-rule-critical"><div class="vault-rule-heading"><span class="vault-rule-icon">{{ vault_icon('key') }}</span><span class="vault-risk-badge">{{ t("不可逆") }}</span></div><div><h3>{{ t("主密碼無法重設") }}</h3><p>{{ t("忘記主密碼就無法還原已保存的實際密碼。ProjMemo 不提供密碼重設或後門。") }}</p></div></li>
     <li><span class="vault-rule-icon">{{ vault_icon('database') }}</span><div><h3>{{ t("密文備份") }}</h3><p>{{ t("只有實際密碼欄位會加密；SQLite 中的專案、帳號、主機、登入名稱及其他備註仍是一般資料。備份會包含密文，但不包含主密碼或解密金鑰；匯入備份後仍需使用原主密碼。") }}</p></div></li>
-    <li><span class="vault-rule-icon">{{ vault_icon('key') }}</span><div><h3>{{ t("主密碼無法重設") }}</h3><p>{{ t("忘記主密碼就無法還原已保存的實際密碼。ProjMemo 不提供密碼重設或後門。") }}</p></div></li>
     <li><span class="vault-rule-icon">{{ vault_icon('clock') }}</span><div><h3>{{ t("離開時記得鎖定") }}</h3><p>{{ t("解鎖期間，能使用這台電腦與本機 ProjMemo 的人可能查看密碼；請在離開時鎖定保管庫。") }}</p></div></li>
     <li><span class="vault-rule-icon">{{ vault_icon('desktop') }}</span><div><h3>{{ t("僅限本機使用") }}</h3><p>{{ t("ProjMemo 目前沒有登入與多使用者權限，請只在本機使用，不要把服務公開到區域網路或網際網路。") }}</p></div></li>
   </ul>
