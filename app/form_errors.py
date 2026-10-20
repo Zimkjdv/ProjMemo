@@ -18,7 +18,8 @@ from .i18n import translator, translate_error, get_language
 from .web_security import NO_STORE_HEADERS
 
 VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}
-SENSITIVE = {"master_password", "confirm_password", "secret_value", "delete_secret"}
+SENSITIVE = {"master_password", "confirm_password", "secret_value", "delete_secret",
+             "current_master_password", "new_master_password", "confirm_new_password", "confirm_password_change"}
 LEGACY_FIELDS = {
     "專案名稱不可為空白": ("name",), "URL 標題與網址不可為空白": ("title", "url"),
     "網址必須以 http:// 或 https:// 開頭": ("url",),

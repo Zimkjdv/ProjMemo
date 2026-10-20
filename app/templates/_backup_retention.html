@@ -10,7 +10,7 @@
     <p class="field-help">{{ t('僅在選擇自訂時套用數量與天數；同時保留最新 N 份及未滿指定天數的檔案。每次最多清理 100 份。') }}</p>
     <button class="button button-ghost" type="submit">{{ t('儲存保留策略') }}</button>
   </form>
-  <p class="field-help">{{ t('只處理此資料目錄的還原前與永久刪除前復原點；不處理遷移快照、下載備份或未知檔案。設定保存在 backups/retention-policy.json，不隨資料庫還原覆寫。') }}</p>
+  <p class="field-help">{{ t('只處理此資料目錄的還原前、永久刪除前與主密碼更換前復原點；不處理遷移快照、下載備份或未知檔案。設定保存在 backups/retention-policy.json，不隨資料庫還原覆寫。') }}</p>
   <form method="post" action="/settings/backup/cleanup/preview">{{ csrf_input() }}<button class="button button-ghost" type="submit" {% if policy_error %}disabled{% endif %}>{{ t('預覽可清理的復原點') }}</button></form>
 
   {% if cleanup_preview is not none %}

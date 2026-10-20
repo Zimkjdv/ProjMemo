@@ -80,7 +80,7 @@
   <div class="backup-history-list">
     {% for backup in recovery_backups %}
     <div class="backup-history-row">
-      <div><strong>{{ backup.created_at }} · {{ t('永久刪除前自動備份') if backup.before_delete else t('還原前自動備份') }}</strong><span>{{ backup.filename }}</span></div>
+      <div><strong>{{ backup.created_at }} · {{ t('主密碼更換前自動備份') if backup.before_vault_change else t('永久刪除前自動備份') if backup.before_delete else t('還原前自動備份') }}</strong><span>{{ backup.filename }}</span></div>
       <span class="muted">{{ "%.2f"|format(backup.size_mb) }} MB</span>
       <a class="button button-ghost" href="/settings/backup/files/{{ backup.filename }}">{{ backup_icon('export') }}{{ t("下載") }}</a>
     </div>

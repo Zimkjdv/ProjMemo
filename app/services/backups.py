@@ -36,6 +36,7 @@ def backup_page_data(recovery_filename: str = "") -> dict[str, object]:
             recovery_backups.append({
                 "filename": path.name,
                 "before_delete": path.name.startswith("projmemo-pre-delete-"),
+                "before_vault_change": path.name.startswith("projmemo-pre-vault-change-"),
                 "created_at": datetime.fromtimestamp(stats.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
                 "size_mb": max(stats.st_size / (1024 * 1024), 0.01),
             })

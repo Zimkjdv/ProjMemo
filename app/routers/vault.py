@@ -8,6 +8,7 @@ from ..presentation import page_context, templates
 from ..runtime import VAULT_COOKIE_NAME, get_runtime
 from ..services import vault
 from ..web_security import NO_STORE_HEADERS
+from ..submissions import MutationRoute
 
 
 router = APIRouter()
@@ -99,3 +100,21 @@ def update_vault_export_policy(
     except ApplicationError as error:
         return vault_page(request, error=error.detail, status_code=error.status_code)
     return RedirectResponse(url="/settings/vault", status_code=303)
+
+
+password_router = APIRouter(route_class=MutationRoute)
+
+
+@password_router.post("/settings/vault/change-password")
+def change_credential_vault_password(request: Request, current_master_password: str = Form(...),
+                                     new_master_password: str = Form(...), confirm_new_password: str = Form(...),
+                                     confirm_password_change: bool = Form(False)) -> Response:
+    vault.change_master_password(get_runtime(request), current_master_password, new_master_password,
+                                 confirm_new_password, confirm_password_change)
+    response = RedirectResponse("/settings/vault?notice=password-changed", status_code=303)
+    response.delete_cookie(VAULT_COOKIE_NAME, path="/", samesite="strict")
+    response.headers.update(NO_STORE_HEADERS)
+    return response
+
+
+router.include_router(password_router)

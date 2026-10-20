@@ -837,3 +837,8 @@ html.project-detail-page { scroll-padding-top: 0; }
 .export-options legend { padding: 0 8px; font-weight: 700; }
 .export-section-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .export-options > button { justify-self: start; }
+.vault-rotation-details { margin-top: 20px; }
+.vault-rotation-details > summary { cursor: pointer; color: var(--primary); font-weight: 700; }
+.vault-rotation-form { margin: 20px 0 0; max-width: 960px; }
+.vault-rotation-form .checkbox-label input { min-height: auto; margin-top: 0; }
+.vault-rotation-actions { display: flex; gap: 12px; align-items: center; }

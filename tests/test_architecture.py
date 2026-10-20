@@ -51,8 +51,9 @@ def test_pre_refactor_paths_methods_fields_defaults_and_response_contract_are_un
     backup_paths = {f"/settings/backup/{suffix}": "post" for suffix in (
         "preview", "preview/cancel", "restore/confirm", "retention", "cleanup/preview", "cleanup/confirm")}
     editor_paths = {"/editor": "get", "/editor/preview": "post"}
+    rotation_paths = {"/settings/vault/change-password": "post"}
     export_paths = {"/projects/{project_id}/export"}
-    new_paths = set(lifecycle_paths) | set(backup_paths) | set(editor_paths) | export_paths
+    new_paths = set(lifecycle_paths) | set(backup_paths) | set(editor_paths) | export_paths | set(rotation_paths)
     assert [item for item in actual if item["path"] not in new_paths] == expected
     assert {(item["path"], item["method"]) for item in actual if item["path"] in lifecycle_paths} == set(lifecycle_paths.items())
     routes = [route for route in app.routes if hasattr(route, "dependant")]
@@ -64,6 +65,7 @@ def test_pre_refactor_paths_methods_fields_defaults_and_response_contract_are_un
     assert {(item["path"], item["method"]) for item in actual if item["path"] in export_paths} == {
         ("/projects/{project_id}/export", "get"), ("/projects/{project_id}/export", "post")}
     assert len(routes) - len(probes) == len(expected) + len(new_paths) + 1
+    assert {(item["path"], item["method"]) for item in actual if item["path"] in rotation_paths} == set(rotation_paths.items())
     assert len({(route.path, tuple(sorted(route.methods))) for route in routes}) == len(routes)
     assert all(any(dependency.call.__name__ == "require_csrf" for dependency in route.dependant.dependencies)
                for route in routes)

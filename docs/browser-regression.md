@@ -37,6 +37,7 @@ R10 補強 fixture 結束順序：先關閉該例測試頁面，再讓 `appURL` 
 | R10 原生交接 | 無 JavaScript 新增／切換未完成、備註 10 筆換頁、完成最後一項後空結果與全部數量，切回全部可見已完成內容 |
 | R11 備份預覽 | 雙語上傳比較、取消不建復原點、token 不進 URL／storage、1280／1440／1920 寬度及純假資料截圖；原備份回歸改為預覽後明確確認，另驗語言切換返回可 GET 的備份首頁 |
 | R11 原生還原與清理 | 無 JavaScript 勾選／輸入 RESTORE 還原；以相容 API 在私有 fixture 建三份有效快照，存策略不刪除、預覽兩份候選、取消不刪、DELETE 確認後只保留一份 |
+| R13 主密碼更換 | 繁中／英文、JavaScript／原生提交，錯誤不回填三個密碼與勾選，正確重試後鎖定、新密碼可解鎖而舊密碼拒絕；跨分頁遮蔽及更換前快照下載。舊備份實際還原與競態／交易故障由 Python 隔離測試涵蓋 |
 
 瀏覽器網路限制只允許當例 loopback origin；不造訪 example.invalid，不連外部帳號。失敗上下文只含假資料，存於忽略的 `data/r08-browser-results`；關閉 trace／錄影／自動失敗截圖，R09 案例另明確保存管理頁與垃圾桶確認頁的純假資料截圖供視覺檢查。CI 不上傳資料 artifacts。安裝依賴／引擎本身需要網路。
 
@@ -55,6 +56,12 @@ R10 補強 fixture 結束順序：先關閉該例測試頁面，再讓 `appURL` 
 既有過期／延遲 reveal／CSRF／還原異常的隔離 Python／Node 測試仍保留；本套瀏覽器案例不是每個異常分支的替代品。R06-B 系統剪貼簿已於 2026-10-16 另以使用者實際 Windows Chrome 手動貼回、四類原文逐字比對與 32 組故障提示補驗，原句於 Changelog 完整勾選移錄。R06 真正 Chrome 125%／150% 縮放及人工鍵盤錨點亦於同日另行完成並還原 100%，方法及範圍見 [實機操作](desktop-acceptance.md)。這不表示本套 headless CI 取得 OS 剪貼簿或真正桌面縮放驗收能力，兩者仍須分開執行。
 
 官方工具規範：[Playwright CI](https://playwright.dev/docs/ci)、[瀏覽器引擎](https://playwright.dev/docs/browsers)。fixture 刻意不採用可重用的既有 webServer，避免本機資料混入測試。
+
+## R13 本機補驗（2026-10-20）
+
+Chromium／Edge 全套各 38 項，共 **76 passed**；R13 新增 8 個雙語 × JavaScript／原生 × 兩引擎案例，完整驗證錯誤清空／重新確認、正確重試、成功後鎖定、舊密碼拒絕與新密碼解鎖、更換前復原點列表／下載。啟用 JavaScript 時另驗已揭露密碼的分頁在更換後遮蔽並停用揭露，無 JavaScript 不宣稱即時遮蔽。原生命週期、搜尋、備份清理、草稿、編輯／匯出與分頁回歸保留，未增加 retry 或放寬停止期限。
+
+完整 Python **703 passed／1 個既有 Linux 專用 skip**（R13 新增 28 項）、Node **78 passed**，保留原兩個第三方棄用警告。檢視展開且密碼空白的繁中／英文純假資料截圖；未操作正式 DB、既有備份或原 `.venv`。本輪沒有重跑本機 Firefox、真正 Windows 縮放／剪貼簿或 Linux／CJK 手動 gate；Windows 測試服務仍沿用上述 Selector 界線，不代表正式 Proactor 補驗完成。操作、原主密碼必要性與舊備份復原見 [主密碼更換](master-password-change.md)。
 
 ## R12 本機補驗（2026-10-19）
 

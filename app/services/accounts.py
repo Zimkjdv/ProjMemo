@@ -27,11 +27,12 @@ def add_access_account(
     secret_value: str = '',
 ) -> int:
     label, category, environment, endpoint, database_name, username, role_scope, purpose, owner, secret_reference, secret_value = normalize_fields("account", locals())
-    key = current_vault_key(runtime, token) if secret_value else None
-    if secret_value and key is None:
-        raise ApplicationError(status_code=423, detail="請先解鎖保管庫再保存實際密碼")
-
     with db_session(write=True) as connection:
+        # The key lookup belongs to the same admitted write as encryption. A
+        # password rotation must not slip between these steps for service callers.
+        key = current_vault_key(runtime, token) if secret_value else None
+        if secret_value and key is None:
+            raise ApplicationError(status_code=423, detail="請先解鎖保管庫再保存實際密碼")
         get_project(connection, project_id)
         cursor = connection.execute(
             """
@@ -76,11 +77,10 @@ def update_access_account(
     label, category, environment, endpoint, database_name, username, role_scope, purpose, owner, secret_reference, secret_value = normalize_fields("account", locals())
     if delete_secret and secret_value:
         raise ApplicationError(status_code=400, detail="不能同時刪除並更新密碼")
-    key = current_vault_key(runtime, token) if secret_value else None
-    if secret_value and key is None:
-        raise ApplicationError(status_code=423, detail="請先解鎖保管庫再更新實際密碼")
-
     with db_session(write=True) as connection:
+        key = current_vault_key(runtime, token) if secret_value else None
+        if secret_value and key is None:
+            raise ApplicationError(status_code=423, detail="請先解鎖保管庫再更新實際密碼")
         item = connection.execute(
             "SELECT project_id FROM access_accounts WHERE id = ?", (account_id,)
         ).fetchone()

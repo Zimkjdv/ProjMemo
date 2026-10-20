@@ -20,7 +20,7 @@ from .sqlite_policy import SQLITE_LOCK_WAIT_SECONDS, copy_database as _copy_data
 MAX_BACKUP_BYTES = 100 * 1024 * 1024
 UPLOAD_CHUNK_BYTES = 1024 * 1024
 SQLITE_HEADER = b"SQLite format 3\x00"
-RECOVERY_FILENAME = re.compile(r"^projmemo-pre-(?:restore|delete)-\d{8}-\d{6}-\d{6}\.sqlite3$")
+RECOVERY_FILENAME = re.compile(r"^projmemo-pre-(?:restore|delete|vault-change)-\d{8}-\d{6}-\d{6}\.sqlite3$")
 
 
 class BackupRestoreError(RuntimeError):
@@ -123,10 +123,22 @@ def create_deletion_snapshot(database_file: Path) -> Path:
     Do not back up the caller's open write transaction: SQLite would wait on
     itself. An exclusive filename reservation also prevents snapshot overwrite.
     """
+    return _create_reserved_snapshot(database_file, "delete")
+
+
+def create_vault_change_snapshot(database_file: Path) -> Path:
+    """A committed, verified old-key recovery copy, before the caller writes."""
+    directory = recovery_directory(database_file)
+    if directory.is_symlink() or directory.is_junction():
+        raise OSError("Recovery directory must not be a link")
+    return _create_reserved_snapshot(database_file, "vault-change")
+
+
+def _create_reserved_snapshot(database_file: Path, purpose: str) -> Path:
     directory = recovery_directory(database_file)
     directory.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
-    destination = directory / f"projmemo-pre-delete-{timestamp}.sqlite3"
+    destination = directory / f"projmemo-pre-{purpose}-{timestamp}.sqlite3"
     with destination.open("xb"):
         pass
     try:

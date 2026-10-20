@@ -87,27 +87,28 @@ def create_vault(connection: Any, password: str) -> bytes:
     if connection.execute("SELECT 1 FROM vault_config WHERE id = 1").fetchone():
         raise VaultAlreadyInitialized("保管庫已經設定")
 
+    key, values = _new_vault_material(password)
+    connection.execute(
+        """INSERT INTO vault_config
+            (id, salt, verifier_nonce, verifier_ciphertext, kdf_memory_cost, kdf_iterations, kdf_lanes)
+           VALUES (1, ?, ?, ?, ?, ?, ?)""", values,
+    )
+    return key
+
+
+def _new_vault_material(password: str, *, memory_cost: int = KDF_MEMORY_COST,
+                        iterations: int = KDF_ITERATIONS, lanes: int = KDF_LANES) -> tuple[bytes, tuple]:
     salt = os.urandom(16)
     key = _derive_key(
         password,
         salt,
-        memory_cost=KDF_MEMORY_COST,
-        iterations=KDF_ITERATIONS,
-        lanes=KDF_LANES,
+        memory_cost=memory_cost,
+        iterations=iterations,
+        lanes=lanes,
     )
     verifier_nonce = os.urandom(12)
     verifier_ciphertext = AESGCM(key).encrypt(verifier_nonce, _VERIFIER, _VERIFIER_AAD)
-    connection.execute(
-        """
-        INSERT INTO vault_config
-            (id, salt, verifier_nonce, verifier_ciphertext,
-             kdf_memory_cost, kdf_iterations, kdf_lanes)
-        VALUES (1, ?, ?, ?, ?, ?, ?)
-        """,
-        (salt, verifier_nonce, verifier_ciphertext,
-         KDF_MEMORY_COST, KDF_ITERATIONS, KDF_LANES),
-    )
-    return key
+    return key, (salt, verifier_nonce, verifier_ciphertext, memory_cost, iterations, lanes)
 
 
 def unlock_vault(connection: Any, password: str) -> bytes:
@@ -161,6 +162,39 @@ def decrypt_secret(
         return plaintext.decode("utf-8")
     except UnicodeDecodeError as error:
         raise VaultError("密碼資料格式錯誤") from error
+
+
+def reencrypt_vault(connection: Any, old_key: bytes, new_password: str) -> int:
+    """Caller owns the one writer transaction; plaintext is held one row at a time."""
+    validate_master_password(new_password)
+    config = connection.execute("SELECT * FROM vault_config WHERE id = 1").fetchone()
+    if config is None:
+        raise VaultNotInitialized("尚未設定密碼保管庫")
+    validate_vault_metadata(config)
+    new_key, values = _new_vault_material(new_password, memory_cost=config["kdf_memory_cost"],
+        iterations=config["kdf_iterations"], lanes=config["kdf_lanes"])
+    count = 0
+    rows = connection.execute(
+        "SELECT id, project_id, secret_ciphertext, secret_nonce FROM access_accounts "
+        "WHERE secret_ciphertext IS NOT NULL OR secret_nonce IS NOT NULL ORDER BY id")
+    for row in rows:
+        if row["secret_ciphertext"] is None or row["secret_nonce"] is None:
+            raise VaultError("密碼資料格式錯誤")
+        secret = decrypt_secret(old_key, row["project_id"], row["id"], row["secret_ciphertext"], row["secret_nonce"])
+        try:
+            ciphertext, nonce = encrypt_secret(new_key, row["project_id"], row["id"], secret)
+            if decrypt_secret(new_key, row["project_id"], row["id"], ciphertext, nonce) != secret:
+                raise VaultError("密碼資料格式錯誤")
+            connection.execute("UPDATE access_accounts SET secret_ciphertext = ?, secret_nonce = ? WHERE id = ?",
+                               (ciphertext, nonce, row["id"]))
+        finally:
+            # Drop references, not a guarantee of secure memory erasure in Python.
+            secret = None
+        count += 1
+    connection.execute(
+        "UPDATE vault_config SET salt = ?, verifier_nonce = ?, verifier_ciphertext = ?, "
+        "kdf_memory_cost = ?, kdf_iterations = ?, kdf_lanes = ? WHERE id = 1", values)
+    return count
 
 
 @dataclass

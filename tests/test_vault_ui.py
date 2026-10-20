@@ -71,6 +71,7 @@ def test_vault_ui_preserves_state_forms_and_security_contract(tmp_path: Path, mo
         expected_actions = {f"/settings/vault/{operation}"}
         if state != "setup":
             expected_actions.add("/settings/vault/export-policy")
+            expected_actions.add("/settings/vault/change-password")
         assert vault_actions == expected_actions
         for action in vault_actions:
             form = page.forms[action]
@@ -78,13 +79,14 @@ def test_vault_ui_preserves_state_forms_and_security_contract(tmp_path: Path, mo
             assert any(field.get("name") == "csrf_token" and field.get("value") for field in form["inputs"])
 
         passwords = [attrs for tag, attrs in page.elements if tag == "input" and attrs.get("type") == "password"]
-        assert len(passwords) == (2 if state == "setup" else 1 if state.startswith("locked") else 0)
+        assert len(passwords) == (2 if state == "setup" else 4 if state.startswith("locked") else 3)
         for field in passwords:
             assert not field.get("value")
             assert "required" in field
             assert field["maxlength"] == "1024"
-            assert field["autocomplete"] == ("new-password" if state == "setup" else "current-password")
-            if state == "setup":
+            new_password = state == "setup" or field["name"] in {"new_master_password", "confirm_new_password"}
+            assert field["autocomplete"] == ("new-password" if new_password else "current-password")
+            if new_password:
                 assert field["minlength"] == "16"
         if state != "setup":
             policy = next(field for field in page.forms["/settings/vault/export-policy"]["inputs"] if field.get("name") == "allow_secret_export")

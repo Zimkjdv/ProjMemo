@@ -48,7 +48,7 @@ R11 的現行操作與取捨，更新日期：2026-10-19。基本復原與故障
 4. 後端取得排他作業權，重新核對策略、候選檔名／大小／修改時間／檔案識別，以及保留範圍內至少有一份通過既有驗證的復原點。任何變更先拒絕，不沿用過期清單。
 5. 一次最多 100 份，超過 2000 份須先備份再離線整理。刪除遇到檔案鎖或權限錯誤就停止並顯示已刪除／尚未清理數量；不假裝整批成功，也不能回復已刪除的檔案。
 
-只處理 `backups/` 直層、嚴格符合 `projmemo-pre-restore-*.sqlite3` 或 `projmemo-pre-delete-*.sqlite3` 時間戳格式的普通單一連結檔案。跳過 symlink、junction、hard link 與未知檔名；復原點目錄本身為 symlink／junction 時拒絕操作。不遞迴清理 `backups/migrations/`，也不碰下載副本、上傳暫存、正式 DB、日誌或 `.venv`。
+只處理 `backups/` 直層、嚴格符合 `projmemo-pre-restore-*.sqlite3`、`projmemo-pre-delete-*.sqlite3` 或 R13 的 `projmemo-pre-vault-change-*.sqlite3` 時間戳格式的普通單一連結檔案。跳過 symlink、junction、hard link 與未知檔名；復原點目錄本身為 symlink／junction 時拒絕操作。不遞迴清理 `backups/migrations/`，也不碰下載副本、上傳暫存、正式 DB、日誌或 `.venv`。更換主密碼不自動清理舊備份，舊副本仍使用舊主密碼，見 [主密碼更換](master-password-change.md)。
 
 清理只移除已確認的檔案，不是安全抹除，也不會清除其他磁碟、郵件或雲端上的副本。請不要只保留同一磁碟的復原點；獨立備份及人工復原流程仍有必要。
 

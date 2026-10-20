@@ -16,6 +16,7 @@ class DatabaseAccess:
         self._active = 0
         self._restoring = False
         self._unavailable = False
+        self._maintenance_message = "資料還原中，請稍後再試。"
 
     @contextmanager
     def operation(self):
@@ -27,7 +28,7 @@ class DatabaseAccess:
             if self._unavailable:
                 raise DatabaseBusyError("資料庫需要復原，請保留備份並停止程式後復原。")
             if self._restoring:
-                raise DatabaseBusyError("資料還原中，請稍後再試。")
+                raise DatabaseBusyError(self._maintenance_message)
             self._active += 1
         token = _admitted.set(self)
         try:
@@ -39,7 +40,7 @@ class DatabaseAccess:
                 self._condition.notify_all()
 
     @contextmanager
-    def maintenance(self, *, reuse: bool = False):
+    def maintenance(self, *, reuse: bool = False, vault_change: bool = False):
         # Only startup migrations explicitly reuse restore's exclusive lease.
         # A second restore, or a normal admitted request, must not acquire it.
         if reuse and _maintenance.get() is self:
@@ -50,6 +51,7 @@ class DatabaseAccess:
         with self._condition:
             if self._restoring or self._unavailable:
                 raise DatabaseBusyError("資料庫忙碌或需要復原，請先確認還原狀態。")
+            self._maintenance_message = "保管庫主密碼更換中，請稍後再試。" if vault_change else "資料還原中，請稍後再試。"
             self._restoring = True
             self._condition.notify_all()
             if not self._condition.wait_for(lambda: self._active == 0, timeout=10):
@@ -124,6 +126,7 @@ class DatabaseAccessMiddleware:
                   or path == "/settings/backup"
                   or path == "/settings/backup/restore")
         bypass = bypass or path in {"/settings/backup/restore/confirm", "/settings/backup/cleanup/confirm"}
+        bypass = bypass or path == "/settings/vault/change-password"
         if scope["type"] != "http" or bypass:
             await self.app(scope, receive, send)
             return

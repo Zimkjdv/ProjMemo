@@ -9,7 +9,7 @@
     <div>
     <p class="eyebrow">{{ t("本機密碼保管庫") }}</p>
     <h1 id="vault-title">{{ t("密碼保管庫") }}</h1>
-    <p class="hero-copy">{{ t("資料庫與測試帳號的實際密碼以主密碼加密保護；主密碼只用來解鎖，不會存入 ProjMemo。") }}</p>
+    <p class="hero-copy">{{ t("資料庫與測試帳號的實際密碼以主密碼加密保護；主密碼只用於派生金鑰與驗證，不會存入 ProjMemo。") }}</p>
     </div>
   </div>
   <div class="vault-hero-status">
@@ -19,6 +19,7 @@
 </section>
 
 {% if error %}<div class="alert alert-error" role="alert">{{ error }}</div>{% endif %}
+{% if request.query_params.get('notice') == 'password-changed' %}<div class="operation-success" role="status">{{ t('主密碼已更換，所有舊解鎖連線已撤銷。請使用新主密碼重新解鎖。') }}</div>{% endif %}
 {% include "_vault_session.html" %}
 
 <div class="vault-workspace">
@@ -76,6 +77,25 @@
 </section>
 {% endif %}
 </div>
+
+{% if vault_configured %}
+<section class="panel vault-panel vault-rotation-panel" aria-labelledby="vault-rotation-title">
+  <div class="vault-panel-heading"><span class="vault-section-icon">{{ vault_icon('key') }}</span><div><h2 id="vault-rotation-title">{{ t('更換主密碼') }}</h2><p>{{ t('必須知道目前主密碼，不能用來重設遺失的密碼。') }}</p></div></div>
+  <p class="vault-panel-copy">{{ t('系統會先驗證目前主密碼並保存完整復原點，再以新的 salt／金鑰重新加密全部帳號密碼；完成後所有連線都會鎖定。') }}</p>
+  <div class="security-warning">{{ t('更換前的備份仍須使用舊主密碼，不能由新主密碼解鎖。更換不會撤銷已下載的備份或明文匯出；請在外部安全保管新舊主密碼。') }}</div>
+  <details class="vault-rotation-details"><summary>{{ t('開始更換主密碼') }}</summary>
+    <form class="vault-form vault-rotation-form" method="post" action="/settings/vault/change-password">{{ csrf_input() }}
+      <label>{{ t('目前主密碼') }}<input type="password" name="current_master_password" maxlength="1024" required autocomplete="current-password"></label>
+      <div class="form-grid two-columns">
+        <label>{{ t('新主密碼') }}<input type="password" name="new_master_password" minlength="16" maxlength="1024" required autocomplete="new-password"></label>
+        <label>{{ t('再次輸入新主密碼') }}<input type="password" name="confirm_new_password" minlength="16" maxlength="1024" required autocomplete="new-password"></label>
+      </div>
+      <label class="checkbox-label"><input type="checkbox" name="confirm_password_change" value="true" required><span>{{ t('我已了解舊備份須使用舊主密碼，並確認更換後全部連線會鎖定。') }}</span></label>
+      <div class="vault-rotation-actions"><button class="button button-primary" type="submit">{{ t('備份並更換主密碼') }}</button><a class="button button-ghost" href="/settings/backup">{{ t('查看復原點') }}</a></div>
+    </form>
+  </details>
+</section>
+{% endif %}
 
 <section class="panel vault-notice" aria-labelledby="vault-notice-title">
   <div class="vault-notice-heading"><div><p class="eyebrow">{{ t("重要提醒") }}</p><h2 id="vault-notice-title">{{ t("備份與復原注意事項") }}</h2></div><a class="button button-ghost" href="/settings/backup">{{ vault_icon('database') }}{{ t("前往資料備份") }}</a></div>
