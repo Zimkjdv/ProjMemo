@@ -47,6 +47,15 @@ for (const locale of ['zh-Hant', 'en']) {
         for (const width of [1280, 1920]) {
           await page.setViewportSize({ width, height: 1100 });
           await aligned(page);
+          const flow = await page.locator('.vault-export-flow').evaluate(element => {
+            const label = element.querySelector(':scope > span').getBoundingClientRect();
+            const steps = [...element.querySelectorAll('li')].map(step => step.getBoundingClientRect());
+            return { labelTop: label.top, labelRight: label.right, stepTops: steps.map(step => step.top),
+              firstLeft: steps[0].left, lastRight: steps.at(-1).right, right: element.getBoundingClientRect().right };
+          });
+          expect(flow.stepTops.every(top => Math.abs(top - flow.labelTop) < 1)).toBe(true);
+          expect(flow.firstLeft).toBeGreaterThanOrEqual(flow.labelRight);
+          expect(flow.lastRight).toBeLessThanOrEqual(flow.right + 1);
           await page.screenshot({ path: `data/vault-ui-${locale}-${native ? 'native' : 'enhanced'}-${width}.png`, fullPage: true });
         }
         const toggle = page.getByRole('switch');
@@ -56,6 +65,10 @@ for (const locale of ['zh-Hant', 'en']) {
         else {
           await expect(save).toBeDisabled();
           await expect(page.locator('[data-policy-feedback]')).toHaveText(locale === 'en' ? 'No changes' : '尚無變更');
+          expect(await page.locator('[data-policy-feedback]').evaluate(element => ({
+            display: getComputedStyle(element).display, background: getComputedStyle(element).backgroundColor,
+            dotWidth: getComputedStyle(element, '::before').width,
+          }))).toEqual({ display: 'flex', background: 'rgb(246, 248, 251)', dotWidth: '6px' }); // Flex items are blockified.
         }
         const colors = await save.evaluate(element => ({ color: getComputedStyle(element).color, background: getComputedStyle(element).backgroundColor }));
         expect(colors).toEqual({ color: 'rgb(255, 255, 255)', background: 'rgb(56, 87, 214)' });
@@ -65,7 +78,9 @@ for (const locale of ['zh-Hant', 'en']) {
         await expect(page.locator('#vault-policy-current')).toContainText(locale === 'en' ? 'Off' : '關閉');
         if (!native) {
           await expect(page.locator('[data-policy-feedback]')).toContainText(locale === 'en' ? 'Not saved' : '尚未儲存');
+          await expect(page.locator('[data-policy-feedback]')).toHaveClass(/vault-policy-dirty/);
           await toggle.press('Space'); await expect(save).toBeDisabled();
+          await expect(page.locator('[data-policy-feedback]')).not.toHaveClass(/vault-policy-dirty/);
           await toggle.press('Space'); await expect(save).toBeEnabled();
         }
         await save.click();

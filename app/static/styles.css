@@ -722,14 +722,21 @@ html.project-detail-page { scroll-padding-top: 0; }
 .vault-policy-actions .button { flex: none; margin-left: auto; }
 .vault-policy-actions .button:disabled { color: #fff; background: #3857d6; opacity: .65; cursor: not-allowed; box-shadow: none; transform: none; }
 .vault-policy-feedback, .vault-policy-help { margin: 0; color: #475467; font-size: .82rem; }
+.vault-policy-feedback { display: inline-flex; align-items: center; gap: 7px; padding: 6px 11px; border: 1px solid #dfe5ed; border-radius: 999px; background: #f6f8fb; font-weight: 600; }
+.vault-policy-feedback::before { width: 6px; height: 6px; flex: none; border-radius: 50%; background: #8793a5; content: ""; }
 .vault-policy-feedback[hidden] { display: none; }
-.vault-policy-dirty { color: #85400b; font-weight: 650; }
+.vault-policy-dirty { border-color: #fedf89; border-radius: 9px; color: #85400b; background: #fffaeb; font-weight: 650; }
+.vault-policy-dirty::before { background: currentColor; }
 .vault-page .vault-policy-warning { display: flex; align-items: flex-start; gap: 12px; margin: 0; padding: 16px; }
 .vault-policy-warning > svg { width: 22px; height: 22px; margin-top: 2px; flex: none; }
 .vault-policy-warning strong { font-weight: 700; }
 .vault-policy-warning p { margin: 3px 0 0; line-height: 1.8; }
-.vault-export-flow { color: #475467; font-size: .8rem; line-height: 1.8; }
-.vault-export-flow ol { display: flex; flex-wrap: wrap; gap: 4px 8px; margin: 5px 0 0; padding: 0; list-style: none; color: #344054; font-weight: 650; }
+.vault-export-flow { display: flex; align-items: baseline; gap: 8px; color: #475467; font-size: .8rem; line-height: 1.8; }
+.vault-export-flow > span { flex: none; white-space: nowrap; }
+.vault-export-flow > span::after { content: "："; }
+html[lang="en"] .vault-export-flow > span::after { content: ":"; }
+.vault-export-flow ol { display: flex; gap: 8px; margin: 0; padding: 0; list-style: none; color: #344054; font-weight: 650; }
+.vault-export-flow li { white-space: nowrap; }
 .vault-export-flow li + li::before { margin-right: 8px; content: "→"; }
 .vault-policy-pending { display: flex; align-items: center; gap: 10px; margin-top: auto; padding: 16px; border: 1px dashed #d7dfef; border-radius: 10px; color: var(--muted); background: #f8fafc; font-size: .83rem; }
 .vault-policy-pending svg { width: 19px; height: 19px; flex-shrink: 0; }
