@@ -569,7 +569,6 @@ html.project-detail-page { scroll-padding-top: 0; }
 .backup-stat svg { width: 20px; height: 20px; flex-shrink: 0; color: #6680c3; }
 .backup-stat strong { font-weight: 600; }
 .backup-download-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: auto; padding-top: 20px; }
-.backup-download-footer > span { max-width: 230px; color: #475467; font-size: .84rem; }
 .backup-format-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border: 1px solid #d5dfff; border-radius: 999px; color: #3857b4; background: #f1f4ff; font-size: .75rem; font-weight: 700; }
 .backup-format-badge::before { width: 6px; height: 6px; border-radius: 50%; background: currentColor; content: ""; }
 .backup-notice { margin: 0 0 16px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 9px; font-size: .86rem; }
@@ -614,7 +613,6 @@ html.project-detail-page { scroll-padding-top: 0; }
 .backup-summary dd { margin: 5px 0 2px; color: #1d2939; font-size: 1.5rem; font-weight: 750; line-height: 1.4; }
 .backup-summary small { display: block; color: #475467; font-size: .82rem; line-height: 1.6; }
 .backup-summary .backup-summary-time { font-size: .94rem; margin-top: 7px; }
-.backup-summary-help { margin: -7px 2px 20px; color: #475467; font-size: .82rem; }
 .backup-page .backup-panel-heading p { color: #475467; font-size: .84rem; }
 .backup-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 18px; padding: 0; list-style: none; }
 .backup-chips li { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border: 1px solid #dbe3f9; border-radius: 999px; color: #344f9b; background: #eef2ff; font-size: .82rem; font-weight: 600; }

@@ -19,7 +19,6 @@
     <div><dt>{{ t('自動復原點') }}</dt><dd data-backup-recovery-count>{{ recovery_count if recovery_count is not none else '—' }}</dd><small>{{ t('顯示最近 10 份') }}</small></div>
   </dl>
 </section>
-<p class="backup-summary-help">{{ t('下載紀錄為伺服器產生檔案的時間，不代表已儲存到其他裝置；舊版下載不補記。') }}</p>
 
 {% if restored %}
 <div class="backup-notice backup-success" role="status">
@@ -49,7 +48,6 @@
     <aside class="backup-context-note" aria-labelledby="backup-guidance-title"><span class="backup-rule-icon">{{ backup_icon('shield') }}</span><div><h3 id="backup-guidance-title">{{ t('妥善保管備份檔') }}</h3><p>{{ t('專案與帳號等資料仍可讀取，請存放在安全位置，不要公開或隨意轉寄。') }}</p><p>{{ t('還原後仍需備份所屬的原主密碼。') }}</p></div></aside>
     <div class="backup-download-footer">
       <a class="button button-primary" href="/settings/backup/download">{{ backup_icon('export') }}{{ t("下載 SQLite 備份") }}</a>
-      <span>{{ t('請另外保存到安全的位置。') }}</span>
     </div>
   </section>
 
@@ -67,7 +65,7 @@
         <span class="button button-ghost backup-file-pick" data-backup-pick-label hidden>{{ t('選擇檔案') }}</span>
         <input id="backup-file" name="backup_file" type="file" accept=".sqlite3,.sqlite,.db,application/vnd.sqlite3" aria-describedby="backup-file-help" data-max-bytes="104857600" required>
       </label>
-      <p class="backup-file-status" id="backup-file-help" data-backup-file-status role="status">{{ t('請先選擇檔案') }}</p>
+      <p class="backup-file-status" id="backup-file-help" data-backup-file-status role="status" hidden></p>
       <div class="backup-notice backup-warning backup-restore-warning">{{ backup_icon('alert') }}<p><strong>{{ t('確認還原才會取代全部資料。') }}</strong> {{ t('先驗證並預覽比較，10 分鐘內確認；正式替換前會自動建立復原點。') }}</p></div>
       <button class="button button-primary" type="submit" data-backup-preview-button>{{ backup_icon('restore') }}{{ t("預覽備份") }}</button>
       <noscript><p class="field-help">{{ t('未啟用 JavaScript，請用選檔按鈕；瀏覽器與伺服器仍會檢查檔案。') }}</p></noscript>
@@ -95,7 +93,7 @@
   {% endif %}
 </section>
 {% include "_backup_retention.html" %}
-<script type="application/json" id="backup-settings-messages">{{ {'choose': t('請先選擇檔案'), 'empty': t('檔案是空的，請重新選擇。'), 'large': t('備份檔不可超過 100 MB。'), 'multiple': t('一次只能選擇一個備份檔。'), 'selected': t('已選擇；只會在按下預覽後上傳。'), 'unsupported': t('此瀏覽器不支援拖放選檔，請使用選檔按鈕。')}|tojson }}</script>
-<script src="/static/backup-settings.js?v=20261022" defer></script>
+<script type="application/json" id="backup-settings-messages">{{ {'empty': t('檔案是空的，請重新選擇。'), 'large': t('備份檔不可超過 100 MB。'), 'multiple': t('一次只能選擇一個備份檔。'), 'selected': t('已選擇；只會在按下預覽後上傳。'), 'unsupported': t('此瀏覽器不支援拖放選檔，請使用選檔按鈕。')}|tojson }}</script>
+<script src="/static/backup-settings.js?v=20261022-copy2" defer></script>
 </div>
 {% endblock %}

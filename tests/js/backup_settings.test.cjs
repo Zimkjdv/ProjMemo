@@ -16,7 +16,7 @@ function harness() {
   const controls = [{ value: '10' }, { value: '30' }];
   const custom = { querySelectorAll: () => controls };
   const policy = { querySelector: selector => selector.includes('mode') ? mode : custom, addEventListener(name, callback) { modeHandlers['form-' + name] = callback; } };
-  const messages = { choose: 'Choose', empty: 'Empty', large: 'Large', multiple: 'Multiple', selected: 'Selected', unsupported: 'Unsupported' };
+  const messages = { empty: 'Empty', large: 'Large', multiple: 'Multiple', selected: 'Selected', unsupported: 'Unsupported' };
   const document = { getElementById: () => ({ textContent: JSON.stringify(messages) }), querySelector: selector => selector === '.backup-restore-form' ? form : policy };
   const window = { setTimeout: callback => timers.push(callback), addEventListener(name, callback) { (windowHandlers[name] ??= []).push(callback); } };
   class DataTransfer { constructor() { this.files = []; this.items = { add: file => this.files.push(file) }; } }
@@ -28,13 +28,15 @@ function harness() {
 test('native picker requires one nonempty bounded file; display filenames as text only', () => {
   const page = harness();
   assert.equal(page.button.disabled, true);
-  assert.equal(page.status.textContent, 'Choose');
+  assert.equal(page.status.textContent, ''); assert.equal(page.status.hidden, true);
   for (const [file, message] of [[{ size: 0 }, 'Empty'], [{ size: 104857601 }, 'Large']]) {
     page.input.files = [file]; page.handlers.change(); assert.equal(page.input.validity, message); assert.equal(page.button.disabled, true);
+    assert.equal(page.status.hidden, false);
   }
   page.input.files = [{ name: '<img>.sqlite3', size: 104857600 }]; page.handlers.change();
   assert.equal(page.input.validity, ''); assert.equal(page.button.disabled, false);
   assert.match(page.status.textContent, /<img>\.sqlite3/);
+  assert.equal(page.status.hidden, false);
 });
 
 test('drop selects but never submits, and multiple files fail closed', () => {
@@ -52,7 +54,7 @@ test('reset and bfcache recheck files without re-enabling a submitting form', ()
   delete page.form.dataset.submitting;
   page.input.files = []; page.handlers['form-reset'](); page.flush(); assert.equal(page.button.disabled, true);
   for (const callback of page.windowHandlers.pageshow) callback(); page.flush();
-  assert.equal(page.status.textContent, 'Choose');
+  assert.equal(page.status.textContent, ''); assert.equal(page.status.hidden, true);
 });
 
 test('all/custom visibility keeps numeric drafts and disables only hidden fields', () => {

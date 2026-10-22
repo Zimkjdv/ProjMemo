@@ -76,6 +76,12 @@ def test_backup_ui_preserves_restore_confirmation_and_recovery_access(tmp_path: 
         assert any(tag == "nav" and attrs.get("aria-label") == navigation for tag, attrs in page.elements)
         assert any(tag == "a" and attrs.get("href") == "/settings/backup/download" for tag, attrs in page.elements)
         assert "100 MB" in response.text
+        for removed in ("請先選擇檔案", "請另外保存到安全的位置。", "Choose a file first", "Keep another copy in a secure location.",
+                        "下載紀錄為伺服器產生檔案的時間，不代表已儲存到其他裝置；舊版下載不補記。",
+                        "Download records show when the server generated a file, not proof of storage elsewhere. Earlier downloads are not backfilled."):
+            assert removed not in response.text
+        status = next(attrs for _, attrs in page.elements if attrs.get("id") == "backup-file-help")
+        assert "hidden" in status
 
         form = page.forms["/settings/backup/preview"]
         assert form["attrs"]["method"] == "post"

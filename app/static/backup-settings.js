@@ -14,6 +14,7 @@
       input.setCustomValidity(message);
       button.disabled = true;
       status.textContent = message;
+      status.hidden = false;
       status.dataset.state = "error";
     };
     const update = () => {
@@ -25,7 +26,8 @@
       button.disabled = !files.length || form.dataset.submitting === "true";
       status.dataset.state = files.length ? "selected" : "empty";
       status.textContent = files.length
-        ? `${files[0].name} · ${(files[0].size / 1048576).toFixed(2)} MB — ${messages.selected}` : messages.choose;
+        ? `${files[0].name} · ${(files[0].size / 1048576).toFixed(2)} MB — ${messages.selected}` : "";
+      status.hidden = !files.length;
     };
     input.addEventListener("change", update);
     form.addEventListener("reset", () => window.setTimeout(update, 0));

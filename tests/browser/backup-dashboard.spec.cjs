@@ -16,6 +16,10 @@ for (const locale of ['zh-Hant', 'en']) {
     await language(page, appURL, locale); await page.goto(appURL + '/settings/backup');
     const preview = page.locator('[data-backup-preview-button]');
     await expect(preview).toBeDisabled();
+    await expect(page.locator('[data-backup-file-status]')).toBeHidden();
+    await expect(page.locator('[data-backup-file-status]')).toBeEmpty();
+    await expect(page.locator('.backup-download-footer > span')).toHaveCount(0);
+    await expect(page.locator('.backup-summary-help')).toHaveCount(0);
     await expect(page.locator('[data-backup-download-time]')).toHaveText(locale === 'en' ? 'No record yet' : '尚無紀錄');
     await expect(page.locator('.backup-steps [aria-current="step"]')).toContainText('1');
     await expect(page.locator('.backup-retention-details')).not.toHaveAttribute('open');
@@ -46,8 +50,14 @@ for (const locale of ['zh-Hant', 'en']) {
     await page.locator('[data-backup-pick-label]').click();
     await (await chooser).setFiles({ name: 'picker.sqlite3', mimeType: 'application/vnd.sqlite3', buffer });
     await expect(preview).toBeEnabled();
+    await expect(page.locator('[data-backup-file-status]')).toBeVisible();
+    await page.locator('#backup-file').setInputFiles([]);
+    await expect(preview).toBeDisabled();
+    await expect(page.locator('[data-backup-file-status]')).toBeEmpty();
+    await expect(page.locator('[data-backup-file-status]')).toBeHidden();
     await drop(page, [{ name: 'empty.sqlite3', size: 0 }]);
     await expect(preview).toBeDisabled(); await expect(page.locator('[data-backup-file-status]')).toHaveAttribute('data-state', 'error');
+    await expect(page.locator('[data-backup-file-status]')).toBeVisible();
     await drop(page, [{ name: 'one.db', size: 1 }, { name: 'two.db', size: 1 }]);
     await expect(preview).toBeDisabled();
     await drop(page, [{ name: '<img>.sqlite3', base64: buffer.toString('base64') }]);
@@ -93,6 +103,8 @@ for (const locale of ['zh-Hant', 'en']) {
     test('native picker and collapsible retention stay usable', async ({ page, appURL }) => {
       await language(page, appURL, locale); await page.goto(appURL + '/settings/backup');
       await expect(page.locator('[data-backup-preview-button]')).toBeEnabled();
+      await expect(page.locator('[data-backup-file-status]')).toBeHidden();
+      await expect(page.locator('[data-backup-file-status]')).toBeEmpty();
       await page.locator('.backup-retention-details > summary').click();
       await expect(page.locator('[data-retention-custom]')).toBeVisible();
       await page.locator('#retention-mode').selectOption('custom');
