@@ -1,15 +1,15 @@
 """Backup orchestration and recovery-file selection, without HTTP resources."""
 
-from datetime import datetime
 from pathlib import Path
 import sqlite3
 from typing import BinaryIO
 
 from ..backup import (
-    create_temporary_backup, is_recovery_backup_filename, recovery_directory,
+    create_temporary_backup, is_recovery_backup_filename,
     restore_database, save_uploaded_backup,
 )
 from ..backup_inspection import database_fingerprint, inspect_backup
+from ..backup_activity import read_download_activity, record_download_generation
 from .. import backup_retention as retention
 from ..database_access import DatabaseBusyError
 from ..database_access import access_for
@@ -25,38 +25,44 @@ def backup_page_data(recovery_filename: str = "") -> dict[str, object]:
             project_count = connection.execute("SELECT COUNT(*) FROM projects").fetchone()[0]
     except (sqlite3.Error, DatabaseBusyError):
         project_count = None
-    directory = recovery_directory(database_path())
     recovery_backups = []
+    recovery_count = None
     try:
-        paths = sorted((path for path in directory.glob("projmemo-pre-*.sqlite3")
-                        if is_recovery_backup_filename(path.name) and not path.is_symlink()),
-                       key=lambda path: path.stat().st_mtime, reverse=True)[:10]
-        for path in paths:
-            stats = path.stat()
+        records = retention.recovery_files(database_path())
+        recovery_count = len(records)
+        for record in records[:10]:
             recovery_backups.append({
-                "filename": path.name,
-                "before_delete": path.name.startswith("projmemo-pre-delete-"),
-                "before_vault_change": path.name.startswith("projmemo-pre-vault-change-"),
-                "created_at": datetime.fromtimestamp(stats.st_mtime).strftime("%Y-%m-%d %H:%M:%S"),
-                "size_mb": max(stats.st_size / (1024 * 1024), 0.01),
+                "filename": record["filename"],
+                "before_delete": record["filename"].startswith("projmemo-pre-delete-"),
+                "before_vault_change": record["filename"].startswith("projmemo-pre-vault-change-"),
+                "created_at": record["created_at"],
+                "size_mb": max(record["size"] / (1024 * 1024), 0.01),
             })
-    except OSError:
+    except (OSError, ApplicationError):
         recovery_backups = []
-    if (not is_recovery_backup_filename(recovery_filename)
-            or not (directory / recovery_filename).is_file()):
+    try:
+        recovery_backup_path(recovery_filename)
+    except ApplicationError:
         recovery_filename = ""
     policy_error = ""
     try:
         policy = retention.read_policy(database_path())
     except ApplicationError as error:
         policy, policy_error = dict(retention.DEFAULT_POLICY), error.detail
-    return {"project_count": project_count, "recovery_backups": recovery_backups,
+    return {"project_count": project_count, "recovery_backups": recovery_backups, "recovery_count": recovery_count,
+            "download_activity": read_download_activity(database_path()),
             "recovery_filename": recovery_filename, "retention_policy": policy,
             "policy_error": policy_error, "target_schema_version": SCHEMA_VERSION}
 
 
 def database_snapshot() -> Path:
     return create_temporary_backup(database_path())
+
+
+def download_snapshot() -> Path:
+    path = database_snapshot()
+    record_download_generation(database_path())
+    return path
 
 
 def remove_temporary_backup(path: Path) -> None:
@@ -83,13 +89,22 @@ def recovery_backup_path(filename: str) -> Path:
         raise ApplicationError(404, "找不到此備份檔") from None
     path = directory / filename
     try:
-        if path.is_symlink() or path.resolve().parent != directory:
+        if path.is_symlink() or path.is_junction() or path.resolve().parent != directory:
+            raise ApplicationError(404, "找不到此備份檔")
+        if path.is_file() and path.stat().st_nlink != 1:
             raise ApplicationError(404, "找不到此備份檔")
     except OSError as error:
         raise ApplicationError(404, "找不到此備份檔") from error
     if not path.is_file():
         raise ApplicationError(404, "找不到此備份檔")
     return path
+
+
+def preview_recovery(filename: str, runtime: AppRuntime, browser: str) -> dict:
+    # Copy to the same private, bounded upload used by regular previews. The
+    # original recovery point is never consumed or directly restored by this UI.
+    with recovery_backup_path(filename).open("rb") as stream:
+        return preview_upload(stream, runtime, browser)
 
 
 def preview_upload(upload: BinaryIO, runtime: AppRuntime, browser: str) -> dict:

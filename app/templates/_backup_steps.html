@@ -1,0 +1,7 @@
+{% macro restore_steps(current, t) -%}
+<ol class="backup-steps" aria-label="{{ t('還原流程') }}">
+  <li{% if current == 1 %} aria-current="step"{% endif %}><span aria-hidden="true">1</span><strong>{{ t('選擇檔案') }}</strong></li>
+  <li{% if current == 2 %} aria-current="step"{% endif %}><span aria-hidden="true">2</span><strong>{{ t('預覽比較') }}</strong></li>
+  <li{% if current == 3 %} aria-current="step"{% endif %}><span aria-hidden="true">3</span><strong>{{ t('確認還原') }}</strong></li>
+</ol>
+{%- endmacro %}

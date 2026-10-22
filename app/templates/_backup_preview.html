@@ -1,10 +1,12 @@
 {% if restore_preview %}
 <section class="panel backup-preview" id="restore-preview" aria-labelledby="restore-preview-title">
   <div class="backup-panel-heading"><span class="backup-section-icon">{{ backup_icon('restore') }}</span><div><h2 id="restore-preview-title">{{ t('還原前內容比較') }}</h2><p>{{ t('驗證已通過，目前資料尚未替換。') }}</p></div></div>
+  {{ restore_steps(2, t) }}
   <div class="backup-notice backup-warning">{{ t('這是整個資料庫替換，不是專案合併。所有使用中、已封存及垃圾桶專案、帳號、保管庫與匯出設定都會被取代。') }}</div>
   <div class="backup-comparison-wrap">
   <table class="backup-comparison"><thead><tr><th scope="col">{{ t('比較項目') }}</th><th scope="col">{{ t('目前資料') }}</th><th scope="col">{{ t('所選備份') }}</th></tr></thead><tbody>
     <tr><th scope="row">{{ t('資料版本') }}</th><td>v{{ restore_preview.current.version }}</td><td>v{{ restore_preview.incoming.version }}{% if restore_preview.incoming.version < target_schema_version %} · {{ t('還原時升級至 v{version}', version=target_schema_version) }}{% endif %}</td></tr>
+    <tr><th scope="row">{{ t('最近專案更新') }}</th><td>{{ restore_preview.current.latest_project_update or t('無紀錄') }}</td><td>{{ restore_preview.incoming.latest_project_update or t('無紀錄') }}</td></tr>
     {% for key, label in [('projects','專案總數'), ('project_urls','重要 URL'), ('notes','備註'), ('checklist_items','交接項目'), ('environment_variables','環境設定'), ('access_accounts','帳號與權限')] %}
     <tr><th scope="row">{{ t(label) }}</th><td>{{ restore_preview.current.counts[key] }}</td><td>{{ restore_preview.incoming.counts[key] }}</td></tr>
     {% endfor %}
@@ -16,9 +18,10 @@
     <tr><th scope="row">{{ t('允許含密碼匯出') }}</th><td>{{ t('開啟') if restore_preview.current.allow_secret_export else t('關閉') }}</td><td>{{ t('開啟') if restore_preview.incoming.allow_secret_export else t('關閉') }}</td></tr>
   </tbody></table>
   </div>
-  <p class="field-help">{{ t('預覽不會解密密碼，也不能證明原主密碼可用；還原後保管庫會鎖定，仍須備份所屬的原主密碼。') }}</p>
+  <aside class="backup-context-note"><span class="backup-rule-icon">{{ backup_icon('key') }}</span><div><h3>{{ t('保留原主密碼') }}</h3><p>{{ t('預覽不會解密密碼，也不能證明原主密碼可用；還原後保管庫會鎖定，仍須備份所屬的原主密碼。') }}</p></div></aside>
   <p class="field-help">{{ t('若目前資料在預覽後變更，系統會拒絕替換並要求重新預覽。取消、逾時或重啟後須重新上傳。') }}</p>
   {% if restore_preview.incoming.allow_secret_export %}<p class="backup-notice backup-warning">{{ t('備份允許含密碼匯出，還原後會沿用這項設定；實際匯出仍須解鎖並逐次確認。') }}</p>{% endif %}
+  <h3 class="backup-confirm-heading">{{ t('步驟 3：確認還原') }}</h3>
   <form class="backup-confirm-form" method="post" action="/settings/backup/restore/confirm">{{ csrf_input() }}
     <input type="hidden" name="preview_token" value="{{ restore_preview.token }}">
     <label class="checkbox-row"><input type="checkbox" name="acknowledged" value="yes" required>{{ t('我了解這會取代全部資料，並先建立還原前復原點。') }}</label>

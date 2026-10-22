@@ -28,8 +28,9 @@ app/main.py：create_app()、lifespan、middleware 與錯誤處理
 | `services/content.py`／`accounts.py` | 內容驗證、資料修改與專案更新時間在同一交易內；帳號金鑰取得與密文寫入共用 DB admission／writer，避免主密碼更換後寫回舊金鑰密文；帳號 ID 先建立再加密，失敗整筆回滾。reveal 在解密前及回傳前檢查解鎖，避免到期後回傳明文。 |
 | `services/vault.py` | 設定／解鎖、限流、session、敏感匯出政策與 R13 主密碼更換。排他維護先等待舊 HTTP 作業完成，先快照再單一 writer 交易重加密，提交後於重新開放前清除全部 session；不確定結果阻擋資料存取。底層保留 Argon2id／AES-GCM、KDF 參數及 AAD 格式，見 [更換與復原](master-password-change.md)。 |
 | `services/lifecycle.py` | 確認名稱／勾選／revision、封存／垃圾桶／復原及先快照再永久刪除；單筆寫入交易保留原分類、CASCADE 子資料，提交後撤銷 session。共用父專案查詢與 `touch_project` 阻擋垃圾桶的舊讀寫入口。 |
-| `services/backups.py` | 頁面資料、上傳預覽／狀態比對、還原與 session 撤銷、保留策略／清理編排及恢復檔案路徑檢查。`backup.py` 保有 SQLite 級驗證、快照、排他與回復。上傳 HTTP 檔案由 router 關閉。 |
+| `services/backups.py` | 頁面真實數量、下載產生紀錄、上傳／既有復原點預覽及狀態比對、還原與 session 撤銷、保留策略／清理編排及恢復檔案路徑檢查。既有復原點先複製至相同私有暫存，不直接還原原檔。`backup.py` 保有 SQLite 級驗證、快照、排他與回復。上傳 HTTP 檔案由 router 關閉。 |
 | `backup_inspection.py`／`backup_plans.py`／`backup_retention.py` | 唯讀數量／設定摘要與具型別／長度邊界的邏輯指紋；每 app 的 10 分鐘瀏覽器／DB／種類綁定確認與暫存清理；主機端保留政策及明確預覽後才刪除的檔案白名單。預設不清理，至少保留一份驗證通過的復原點。不改 schema／密碼格式，不含完整備份加密。 |
+| `backup_activity.py` | 主機端 `backups/download-activity.json` 保存最近一次成功產生下載檔的 UTC 時間，不證明瀏覽器已收到或已另存。原子替換、拒絕連結、限制讀取大小；缺少與損壞分開呈現，寫入失敗不阻斷下載。內部快照不記錄，不改 SQLite／還原／清理政策，見 [備份摘要](backup-experience.md#備份摘要與檔案選擇)。 |
 | `services/exports.py` | 普通／敏感匯出的資料載入、政策及文件產生，回傳 `ExportArtifact`；路由才加下載 header。兩種格式共用完整 `ProjectData`，不受畫面分頁限制。R12 選項不繞過敏感檢查，排除帳號章節時不讀密文／解密。 |
 | `export_options.py`／`markdown_editor.py` | 不依賴 HTTP／DB 的文件選項白名單、版本化模板及預覽字數驗證；獨立文件 catalog 只翻譯固定欄位，不取代使用者原文。 |
 | `routers/editor.py`／`presentation.py` | 唯讀編輯工具與受 CSRF 保護的預覽；兩層 allowlist、禁止外連的 CSP／無權限框架，不保存草稿。原生／AJAX 共用安全輸出，詳見 [編輯與匯出](editing-export.md)。 |

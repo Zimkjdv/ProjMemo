@@ -1,6 +1,7 @@
 """Read-only backup summaries and logical state markers; never decrypt secrets."""
 
 import hashlib
+from datetime import datetime
 
 from .backup import _read_only_connection, validate_backup
 
@@ -70,7 +71,13 @@ def inspect_backup(path):
                         if "access_accounts" in tables else 0)
         allow_export = (bool(connection.execute("SELECT allow_secret_export FROM app_settings WHERE id=1").fetchone()[0])
                         if "app_settings" in tables else False)
+        latest = connection.execute("SELECT MAX(updated_at) FROM projects").fetchone()[0]
+        try:
+            latest = datetime.fromisoformat(latest).strftime("%Y-%m-%d %H:%M:%S") if latest else None
+        except (ValueError, TypeError):
+            latest = None
         return {"version": version, "counts": counts, "active": active, "archived": archived, "trash": trash,
-                "vault_initialized": initialized, "secret_count": secret_count, "allow_secret_export": allow_export}
+                "vault_initialized": initialized, "secret_count": secret_count, "allow_secret_export": allow_export,
+                "latest_project_update": latest}
     finally:
         connection.close()

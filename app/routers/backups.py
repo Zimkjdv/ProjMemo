@@ -46,7 +46,7 @@ def backup_settings(request: Request, restored: bool = False, recovery: str = ""
 
 @router.get("/settings/backup/download")
 def download_database_backup() -> FileResponse:
-    path = backups.database_snapshot()
+    path = backups.download_snapshot()
     filename = f"projmemo-backup-{datetime.now().strftime('%Y%m%d-%H%M%S')}.sqlite3"
     return FileResponse(path, media_type="application/vnd.sqlite3", filename=filename,
                         background=BackgroundTask(backups.remove_temporary_backup, path), headers=NO_STORE_HEADERS)
@@ -93,6 +93,18 @@ def preview_database_backup(request: Request, backup_file: UploadFile = File(...
         return _backup_page(request, error="預覽作業失敗，資料尚未變更。請確認磁碟空間與檔案權限。", status_code=500)
     finally:
         backup_file.file.close()
+
+
+@router.post("/settings/backup/files/{filename}/preview", response_class=HTMLResponse)
+def preview_recovery_backup(request: Request, filename: str):
+    try:
+        preview = backups.preview_recovery(filename, get_runtime(request), request.state.csrf_token)
+        return _backup_page(request, restore_preview=preview)
+    except (BackupValidationError, ApplicationError) as error:
+        return _backup_page(request, error=str(error) if isinstance(error, BackupValidationError) else error.detail,
+                            status_code=getattr(error, "status_code", 400))
+    except (OSError, sqlite3.Error):
+        return _backup_page(request, error="預覽作業失敗，資料尚未變更。請確認磁碟空間與檔案權限。", status_code=500)
 
 
 @router.post("/settings/backup/restore/confirm")

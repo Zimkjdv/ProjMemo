@@ -1,11 +1,14 @@
 <section class="panel backup-retention" aria-labelledby="backup-retention-title">
-  <div class="backup-panel-heading"><span class="backup-section-icon">{{ backup_icon('clock') }}</span><div><h2 id="backup-retention-title">{{ t('復原點保留策略') }}</h2><p>{{ t('只設定候選條件，不會自動刪除任何檔案。') }}</p></div></div>
+  <details class="backup-retention-details"{% if policy_error or cleanup_preview is not none or cleanup_result or request.url.path.startswith('/settings/backup/retention') or request.query_params.get('notice') == 'saved' %} open{% endif %}>
+  <summary><span class="backup-section-icon">{{ backup_icon('clock') }}</span><span class="backup-retention-summary"><strong id="backup-retention-title">{{ t('進階：復原點保留策略') }}</strong><small>{% if policy_error %}{{ t('紀錄無法讀取') }}{% elif retention_policy.mode == 'all' %}{{ t('目前：全部保留') }}{% else %}{{ t('目前：自訂保留 {count} 份，至少 {days} 天', count=retention_policy.keep_count, days=retention_policy.min_age_days) }}{% endif %} · {{ t('不會自動刪除檔案') }}</small></span><span class="backup-retention-toggle"><span class="when-closed">{{ t('展開設定') }}</span><span class="when-open">{{ t('收合設定') }}</span></span></summary>
+  <div class="backup-retention-body">
   {% if policy_error %}<p class="backup-notice backup-error" role="alert">{{ t(policy_error) }}</p>{% endif %}
   <form class="backup-policy-form" method="post" action="/settings/backup/retention">{{ csrf_input() }}
     <div class="backup-policy-fields">
       <label for="retention-mode">{{ t('保留方式') }}<select id="retention-mode" name="mode"><option value="all" {% if retention_policy.mode == 'all' %}selected{% endif %}>{{ t('全部保留（預設）') }}</option><option value="custom" {% if retention_policy.mode == 'custom' %}selected{% endif %}>{{ t('自訂清理條件') }}</option></select></label>
-      <label for="retention-count">{{ t('至少保留最新份數') }}<input id="retention-count" name="keep_count" type="number" min="1" max="500" value="{{ retention_policy.keep_count }}" required></label>
+      <div class="backup-custom-fields" data-retention-custom><label for="retention-count">{{ t('至少保留最新份數') }}<input id="retention-count" name="keep_count" type="number" min="1" max="500" value="{{ retention_policy.keep_count }}" required></label>
       <label for="retention-days">{{ t('最短保留天數（0 為不限）') }}<input id="retention-days" name="min_age_days" type="number" min="0" max="3650" value="{{ retention_policy.min_age_days }}" required></label>
+      </div>
     </div>
     <p class="field-help">{{ t('僅在選擇自訂時套用數量與天數；同時保留最新 N 份及未滿指定天數的檔案。每次最多清理 100 份。') }}</p>
     <button class="button button-ghost" type="submit">{{ t('儲存保留策略') }}</button>
@@ -31,4 +34,5 @@
   </div>
   {% endif %}
   {% if cleanup_result %}<p class="backup-notice {{ 'backup-warning' if cleanup_result.remaining else 'backup-success' }}" role="status">{{ t('已清理 {deleted} 份；尚有 {remaining} 份未清理。', deleted=cleanup_result.deleted, remaining=cleanup_result.remaining) }}{% if cleanup_result.remaining %} {{ t('清理未完成，請保留其餘復原點並檢查檔案權限。') }}{% endif %}</p>{% endif %}
+  </div></details>
 </section>

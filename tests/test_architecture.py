@@ -50,6 +50,7 @@ def test_pre_refactor_paths_methods_fields_defaults_and_response_contract_are_un
                        "/projects/{project_id}/lifecycle/{action}": "post"}
     backup_paths = {f"/settings/backup/{suffix}": "post" for suffix in (
         "preview", "preview/cancel", "restore/confirm", "retention", "cleanup/preview", "cleanup/confirm")}
+    backup_paths["/settings/backup/files/{filename}/preview"] = "post"
     editor_paths = {"/editor": "get", "/editor/preview": "post"}
     rotation_paths = {"/settings/vault/change-password": "post"}
     export_paths = {"/projects/{project_id}/export"}

@@ -16,7 +16,9 @@ for (const lang of ['zh-Hant', 'en']) {
     await page.locator('#backup-file').setInputFiles({ name: 'fixture.sqlite3', mimeType: 'application/vnd.sqlite3', buffer: backup });
     await submit(page.locator('.backup-restore-form'));
     await expect(page.locator('#restore-preview')).toBeVisible();
-    await expect(page.locator('#restore-preview tbody tr')).toHaveCount(13);
+    await expect(page.locator('#restore-preview tbody tr')).toHaveCount(14);
+    await expect(page.locator('#restore-preview .checkbox-row')).toHaveCSS('display', 'flex');
+    await expect(page.locator('#restore-preview .checkbox-row input')).toHaveCSS('height', '18px');
     const token = await page.locator('#restore-preview [name="preview_token"]').first().inputValue();
     expect(page.url()).not.toContain(token);
     expect(await page.evaluate(() => JSON.stringify([Object.entries(localStorage), Object.entries(sessionStorage)]))).not.toContain(token);
@@ -85,6 +87,7 @@ for (const lang of ['zh-Hant', 'en']) {
     }
     await page.goto(appURL + '/settings/backup');
     await expect(page.locator('.backup-history-row')).toHaveCount(3);
+    await page.locator('.backup-retention-details > summary').click();
     await page.locator('#retention-mode').selectOption('custom');
     await page.locator('#retention-count').fill('1');
     await page.locator('#retention-days').fill('0');
@@ -94,9 +97,12 @@ for (const lang of ['zh-Hant', 'en']) {
     await submit(previewForm);
     await expect(page.locator('.backup-candidate-list li')).toHaveCount(2);
     await expect(page.locator('.backup-history-row')).toHaveCount(3);
+    await expect(page.locator('.backup-policy-form')).toHaveCSS('display', 'grid');
+    await expect(page.locator('.backup-cleanup-preview .checkbox-row input')).toHaveCSS('height', '18px');
     await page.screenshot({ path: testInfo.outputPath('backup-retention.png'), fullPage: true });
     await submit(page.locator('#cleanup-preview .backup-cancel-form'));
     await expect(page.locator('.backup-history-row')).toHaveCount(3);
+    await page.locator('.backup-retention-details > summary').click();
     await submit(previewForm);
     await page.locator('#cleanup-preview [name="acknowledged"]').check();
     await page.locator('#cleanup-confirmation').fill('DELETE');

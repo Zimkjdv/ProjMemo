@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ t("資料備份與還原｜ProjMemo") }}{% endblock %}
 {% from "_settings_icons.html" import settings_icon as backup_icon %}
+{% from "_backup_steps.html" import restore_steps %}
 {% block content %}
 <div class="backup-page">
 <section class="page-hero backup-hero" aria-labelledby="backup-title">
@@ -12,8 +13,13 @@
     <p class="hero-copy">{{ t("下載完整 SQLite 備份，或從先前的 ProjMemo 備份還原資料。") }}</p>
     </div>
   </div>
-  <div class="backup-hero-status"><span class="backup-status-label">{{ t("備份格式") }}</span><span class="backup-format-badge">SQLite</span></div>
+  <dl class="backup-summary" aria-label="{{ t('備份摘要') }}">
+    <div><dt>{{ t('專案數') }}</dt><dd data-backup-project-count>{{ project_count if project_count is not none else '—' }}</dd><small>{{ t('含封存與垃圾桶') }}</small></div>
+    <div><dt>{{ t('上次下載備份') }}</dt><dd class="backup-summary-time" data-backup-download-time>{% if download_activity.state == 'recorded' %}<time datetime="{{ download_activity.iso }}">{{ download_activity.date }}<small>{{ download_activity.time }}</small></time>{% elif download_activity.state == 'unavailable' %}{{ t('紀錄無法讀取') }}{% else %}{{ t('尚無紀錄') }}{% endif %}</dd><small><a href="/settings/backup">{{ t('重新整理紀錄') }}</a></small></div>
+    <div><dt>{{ t('自動復原點') }}</dt><dd data-backup-recovery-count>{{ recovery_count if recovery_count is not none else '—' }}</dd><small>{{ t('顯示最近 10 份') }}</small></div>
+  </dl>
 </section>
+<p class="backup-summary-help">{{ t('下載紀錄為伺服器產生檔案的時間，不代表已儲存到其他裝置；舊版下載不補記。') }}</p>
 
 {% if restored %}
 <div class="backup-notice backup-success" role="status">
@@ -30,17 +36,20 @@
 
 {% include "_backup_preview.html" %}
 
+{% if not restore_preview %}
 <div class="backup-grid">
   <section class="panel backup-panel backup-download-panel" aria-labelledby="backup-download-title">
     <div class="backup-panel-heading">
       <span class="backup-section-icon">{{ backup_icon('export') }}</span>
       <div><h2 id="backup-download-title">{{ t("下載完整備份") }}</h2><p>{{ t("匯出所有專案資料與設定") }}</p></div>
     </div>
-    <p class="backup-panel-copy">{{ t("備份包含專案、URL、備註、交接清單、環境設定、帳號紀錄與加密密碼，不包含主密碼或解密金鑰。") }}</p>
+    <p class="backup-panel-copy">{{ t('匯出專案、URL、備註、交接清單、環境設定與帳號紀錄，格式為 SQLite。') }}</p>
+    <ul class="backup-chips" aria-label="{{ t('備份內容') }}"><li>{{ backup_icon('database') }}{{ t('全部專案與設定') }}</li><li>{{ backup_icon('lock') }}{{ t('密碼以密文保存') }}</li><li class="backup-chip-neutral">{{ t('不含主密碼或解密金鑰') }}</li></ul>
     {% if project_count is not none %}<p class="backup-stat">{{ backup_icon('database') }}<strong>{{ t('目前資料庫有 {count} 個專案。', count=project_count) }}</strong></p>{% endif %}
+    <aside class="backup-context-note" aria-labelledby="backup-guidance-title"><span class="backup-rule-icon">{{ backup_icon('shield') }}</span><div><h3 id="backup-guidance-title">{{ t('妥善保管備份檔') }}</h3><p>{{ t('專案與帳號等資料仍可讀取，請存放在安全位置，不要公開或隨意轉寄。') }}</p><p>{{ t('還原後仍需備份所屬的原主密碼。') }}</p></div></aside>
     <div class="backup-download-footer">
-      <dl class="backup-facts"><div><dt>{{ t("備份格式") }}</dt><dd>SQLite</dd></div><div><dt>{{ t("備份範圍") }}</dt><dd>{{ t("所有專案與設定") }}</dd></div><div><dt>{{ t("密碼資料") }}</dt><dd>{{ t("密碼仍為密文") }}</dd></div></dl>
       <a class="button button-primary" href="/settings/backup/download">{{ backup_icon('export') }}{{ t("下載 SQLite 備份") }}</a>
+      <span>{{ t('請另外保存到安全的位置。') }}</span>
     </div>
   </section>
 
@@ -49,48 +58,44 @@
       <span class="backup-section-icon">{{ backup_icon('restore') }}</span>
       <div><h2 id="backup-restore-title">{{ t("從備份還原") }}</h2><p>{{ t("只接受完整且相容的 ProjMemo 資料庫") }}</p></div>
     </div>
-    <div class="backup-notice backup-warning">
-      {{ t("還原會以備份內容取代目前所有專案資料。系統會先自動保存目前資料，完成後可下載該份還原前備份。") }}
-    </div>
+    {{ restore_steps(1, t) }}
     <form class="backup-restore-form" method="post" action="/settings/backup/preview" enctype="multipart/form-data">{{ csrf_input() }}
-      <label for="backup-file">{{ t("選擇 ProjMemo SQLite 備份") }}
-        <input id="backup-file" name="backup_file" type="file" accept=".sqlite3,.sqlite,.db,application/vnd.sqlite3" aria-describedby="backup-file-help" required>
+      <label for="backup-file" class="backup-upload-zone" data-backup-dropzone>
+        <span class="backup-upload-icon">{{ backup_icon('restore') }}</span>
+        <strong>{{ t('將 SQLite 備份檔拖曳到這裡') }}</strong>
+        <span>{{ t('或選擇檔案・上限 100 MB') }}</span>
+        <span class="button button-ghost backup-file-pick" data-backup-pick-label hidden>{{ t('選擇檔案') }}</span>
+        <input id="backup-file" name="backup_file" type="file" accept=".sqlite3,.sqlite,.db,application/vnd.sqlite3" aria-describedby="backup-file-help" data-max-bytes="104857600" required>
       </label>
-      <p class="field-help" id="backup-file-help">{{ t("檔案上限 100 MB。若檔案格式、完整性或資料表不符，現有資料不會被取代。") }}</p>
-      <p class="field-help">{{ t("先驗證並比較內容，不會立即替換資料；確認頁有效 10 分鐘。") }}</p>
-      <button class="button button-primary" type="submit">{{ backup_icon('restore') }}{{ t("預覽備份") }}</button>
+      <p class="backup-file-status" id="backup-file-help" data-backup-file-status role="status">{{ t('請先選擇檔案') }}</p>
+      <div class="backup-notice backup-warning backup-restore-warning">{{ backup_icon('alert') }}<p><strong>{{ t('確認還原才會取代全部資料。') }}</strong> {{ t('先驗證並預覽比較，10 分鐘內確認；正式替換前會自動建立復原點。') }}</p></div>
+      <button class="button button-primary" type="submit" data-backup-preview-button>{{ backup_icon('restore') }}{{ t("預覽備份") }}</button>
+      <noscript><p class="field-help">{{ t('未啟用 JavaScript，請用選檔按鈕；瀏覽器與伺服器仍會檢查檔案。') }}</p></noscript>
     </form>
   </section>
 </div>
-
-<section class="panel backup-guidance" aria-labelledby="backup-guidance-title">
-  <div class="backup-notice-heading"><div><p class="eyebrow">{{ t("重要提醒") }}</p><h2 id="backup-guidance-title">{{ t("備份與還原注意事項") }}</h2></div></div>
-  <ul class="backup-guidelines">
-    <li><span class="backup-rule-icon">{{ backup_icon('restore') }}</span><div><h3>{{ t("還原會取代資料") }}</h3><p>{{ t("請確認備份日期與內容，再執行還原；還原後會以檔案中的資料取代目前資料。") }}</p></div></li>
-    <li><span class="backup-rule-icon">{{ backup_icon('key') }}</span><div><h3>{{ t("保留原主密碼") }}</h3><p>{{ t("還原後，仍須使用備份所屬的原主密碼解鎖密碼保管庫；備份不包含主密碼或解密金鑰。") }}</p></div></li>
-    <li><span class="backup-rule-icon">{{ backup_icon('clock') }}</span><div><h3>{{ t("自動建立復原點") }}</h3><p>{{ t("備份驗證通過後，系統才會在還原前建立自動備份。復原清單列出最近 10 份，檔案不會自動刪除。") }}</p></div></li>
-    <li><span class="backup-rule-icon">{{ backup_icon('shield') }}</span><div><h3>{{ t("妥善保管備份檔") }}</h3><p>{{ t("只有實際密碼是密文，其餘專案與帳號資料仍可讀取。請把備份放在安全位置，不要公開或隨意轉寄。") }}</p></div></li>
-  </ul>
-</section>
+{% endif %}
 
 <section class="panel backup-history" aria-labelledby="backup-history-title">
-  <div class="backup-notice-heading"><div><p class="eyebrow">{{ t("復原時間點") }}</p><h2 id="backup-history-title">{{ t("自動復原點") }} <span class="backup-history-count">{{ recovery_backups|length }}</span></h2></div></div>
-  <p class="muted">{{ t('還原或永久刪除專案前，系統都會先建立完整資料庫復原點；建立失敗不執行操作。') }}</p>
+  <div class="backup-notice-heading"><div><p class="eyebrow">{{ t("復原時間點") }}</p><h2 id="backup-history-title">{{ t("自動復原點") }} <span class="backup-history-count">{{ recovery_count if recovery_count is not none else '—' }}</span></h2></div><p>{{ t('還原、永久刪除或更換主密碼前自動建立；不會自動刪除。') }}</p></div>
   {% if recovery_backups %}
-  <div class="backup-history-list">
+  <div class="backup-history-list backup-table-wrap"><table class="backup-recovery-table"><thead><tr><th scope="col">{{ t('建立時間與用途') }}</th><th scope="col">{{ t('檔名') }}</th><th scope="col">{{ t('大小') }}</th><th scope="col">{{ t('操作') }}</th></tr></thead><tbody>
     {% for backup in recovery_backups %}
-    <div class="backup-history-row">
-      <div><strong>{{ backup.created_at }} · {{ t('主密碼更換前自動備份') if backup.before_vault_change else t('永久刪除前自動備份') if backup.before_delete else t('還原前自動備份') }}</strong><span>{{ backup.filename }}</span></div>
-      <span class="muted">{{ "%.2f"|format(backup.size_mb) }} MB</span>
-      <a class="button button-ghost" href="/settings/backup/files/{{ backup.filename }}">{{ backup_icon('export') }}{{ t("下載") }}</a>
-    </div>
+    <tr class="backup-history-row">
+      <td><strong>{{ backup.created_at }}</strong><small>{{ t('主密碼更換前自動備份') if backup.before_vault_change else t('永久刪除前自動備份') if backup.before_delete else t('還原前自動備份') }}</small></td>
+      <td><code>{{ backup.filename }}</code></td><td>{{ "%.2f"|format(backup.size_mb) }} MB</td>
+      <td><div class="backup-recovery-actions"><a class="button button-ghost" href="/settings/backup/files/{{ backup.filename }}">{{ backup_icon('export') }}{{ t("下載") }}</a><form method="post" action="/settings/backup/files/{{ backup.filename }}/preview">{{ csrf_input() }}<button class="button button-secondary" type="submit">{{ backup_icon('restore') }}{{ t('預覽還原') }}</button></form></div></td>
+    </tr>
     {% endfor %}
-  </div>
+  </tbody></table></div>
   <p class="muted backup-retention-note">{{ t("列出最近 10 份。自動備份儲存在目前 SQLite 資料庫旁的") }} <code>backups</code> {{ t("資料夾，不會自動刪除。") }}</p>
+  {% elif recovery_count is none %}<div class="backup-notice backup-warning" role="status">{{ t('復原點清單暫時無法讀取，請檢查檔案權限與備份位置。') }}</div>
   {% else %}
-  <div class="backup-history-empty"><span class="backup-rule-icon">{{ backup_icon('clock') }}</span><p>{{ t("尚無還原前自動備份；每次成功開始還原前，系統都會先建立一份。") }}</p></div>
+  <div class="backup-history-empty"><span class="backup-rule-icon">{{ backup_icon('clock') }}</span><p>{{ t('尚無復原點；第一次執行受保護操作前會自動建立。') }}</p></div>
   {% endif %}
 </section>
 {% include "_backup_retention.html" %}
+<script type="application/json" id="backup-settings-messages">{{ {'choose': t('請先選擇檔案'), 'empty': t('檔案是空的，請重新選擇。'), 'large': t('備份檔不可超過 100 MB。'), 'multiple': t('一次只能選擇一個備份檔。'), 'selected': t('已選擇；只會在按下預覽後上傳。'), 'unsupported': t('此瀏覽器不支援拖放選檔，請使用選檔按鈕。')}|tojson }}</script>
+<script src="/static/backup-settings.js?v=20261022" defer></script>
 </div>
 {% endblock %}
